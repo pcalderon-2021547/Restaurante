@@ -2,20 +2,57 @@
 
 import Reservation from './reservation.js';
 import Table from '../table/table.js';
+import mongoose from 'mongoose';
+
+const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
+
+const handleReservationError = (res, error, defaultMessage) => {
+    if (error?.name === 'ValidationError') {
+        return res.status(400).json({
+            success: false,
+            message: 'Datos de reservación inválidos',
+            error: error.message
+        });
+    }
+
+    return res.status(500).json({
+        success: false,
+        message: defaultMessage,
+        error: error.message
+    });
+};
 
 export const createReservation = async (req, res) => {
     try {
         const { table, numberOfPeople, date } = req.body;
 
+        if (!table || !numberOfPeople || !date) {
+            return res.status(400).json({
+                success: false,
+                message: 'table, numberOfPeople y date son obligatorios'
+            });
+        }
+
+        if (!isValidId(table)) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID de mesa inválido'
+            });
+        }
+
         // 🔎 Verificar que la mesa exista
         const foundTable = await Table.findById(table);
         if (!foundTable) {
-            return res.status(404).send({ message: 'Mesa no encontrada' });
+            return res.status(404).json({
+                success: false,
+                message: 'Mesa no encontrada'
+            });
         }
 
         // 🔥 Validar capacidad
         if (numberOfPeople > foundTable.capacity) {
-            return res.status(400).send({
+            return res.status(400).json({
+                success: false,
                 message: 'La cantidad de personas supera la capacidad de la mesa'
             });
         }
@@ -28,7 +65,8 @@ export const createReservation = async (req, res) => {
         });
 
         if (existingReservation) {
-            return res.status(400).send({
+            return res.status(400).json({
+                success: false,
                 message: 'La mesa ya está reservada en esa fecha'
             });
         }
@@ -36,13 +74,14 @@ export const createReservation = async (req, res) => {
         const reservation = new Reservation(req.body);
         await reservation.save();
 
-        res.status(201).send({
+        return res.status(201).json({
+            success: true,
             message: 'Reservación creada',
             reservation
         });
 
-    } catch (err) {
-        res.status(500).send({ message: 'Error al crear reservación', err });
+    } catch (error) {
+        return handleReservationError(res, error, 'Error al crear reservación');
     }
 };
 
@@ -51,46 +90,104 @@ export const getReservations = async (req, res) => {
         const reservations = await Reservation.find()
             .populate('table');
 
-        res.send(reservations);
-    } catch (err) {
-        res.status(500).send({ message: 'Error al listar reservaciones', err });
+        return res.status(200).json({
+            success: true,
+            reservations
+        });
+    } catch (error) {
+        return handleReservationError(res, error, 'Error al listar reservaciones');
     }
 };
 
 export const getReservationById = async (req, res) => {
     try {
+        const { id } = req.params;
+
+        if (!isValidId(id)) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID de reservación inválido'
+            });
+        }
+
         const reservation = await Reservation.findById(req.params.id)
             .populate('table');
 
-        res.send(reservation);
-    } catch (err) {
-        res.status(500).send({ message: 'Error al buscar reservación', err });
+        if (!reservation) {
+            return res.status(404).json({
+                success: false,
+                message: 'Reservación no encontrada'
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            reservation
+        });
+    } catch (error) {
+        return handleReservationError(res, error, 'Error al buscar reservación');
     }
 };
 
 export const updateReservation = async (req, res) => {
     try {
+        const { id } = req.params;
+
+        if (!isValidId(id)) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID de reservación inválido'
+            });
+        }
+
         const reservation = await Reservation.findByIdAndUpdate(
-            req.params.id,
+            id,
             req.body,
-            { new: true }
+            { new: true, runValidators: true }
         );
 
-        res.send({
+        if (!reservation) {
+            return res.status(404).json({
+                success: false,
+                message: 'Reservación no encontrada'
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
             message: 'Reservación actualizada',
             reservation
         });
-    } catch (err) {
-        res.status(500).send({ message: 'Error al actualizar', err });
+    } catch (error) {
+        return handleReservationError(res, error, 'Error al actualizar reservación');
     }
 };
 
 export const deleteReservation = async (req, res) => {
     try {
-        await Reservation.findByIdAndDelete(req.params.id);
+        const { id } = req.params;
 
-        res.send({ message: 'Reservación eliminada' });
-    } catch (err) {
-        res.status(500).send({ message: 'Error al eliminar', err });
+        if (!isValidId(id)) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID de reservación inválido'
+            });
+        }
+
+        const reservation = await Reservation.findByIdAndDelete(id);
+
+        if (!reservation) {
+            return res.status(404).json({
+                success: false,
+                message: 'Reservación no encontrada'
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Reservación eliminada'
+        });
+    } catch (error) {
+        return handleReservationError(res, error, 'Error al eliminar reservación');
     }
 };

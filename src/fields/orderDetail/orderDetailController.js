@@ -3,14 +3,65 @@
 import OrderDetail from './orderDetail.js';
 import Dish from '../dish/dish.js';
 import Order from '../order/order.js';
+import mongoose from 'mongoose';
+
+const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
+
+const handleOrderDetailError = (res, error, defaultMessage) => {
+    if (error?.name === 'ValidationError') {
+        return res.status(400).json({
+            success: false,
+            message: 'Datos de detalle de orden inválidos',
+            error: error.message
+        });
+    }
+
+    return res.status(500).json({
+        success: false,
+        message: defaultMessage,
+        error: error.message
+    });
+};
 
 export const createOrderDetail = async (req, res) => {
     try {
         const { order, dish, quantity } = req.body;
 
+        if (!order || !dish || quantity == null) {
+            return res.status(400).json({
+                success: false,
+                message: 'order, dish y quantity son obligatorios'
+            });
+        }
+
+        if (!isValidId(order) || !isValidId(dish)) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID de orden o platillo inválido'
+            });
+        }
+
+        if (Number(quantity) <= 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'La cantidad debe ser mayor a 0'
+            });
+        }
+
+        const foundOrder = await Order.findById(order);
+        if (!foundOrder) {
+            return res.status(404).json({
+                success: false,
+                message: 'Orden no existe'
+            });
+        }
+
         const foundDish = await Dish.findById(dish);
         if (!foundDish) {
-            return res.status(404).send({ message: 'Plato no existe' });
+            return res.status(404).json({
+                success: false,
+                message: 'Plato no existe'
+            });
         }
 
         const price = foundDish.price;
@@ -31,13 +82,14 @@ export const createOrderDetail = async (req, res) => {
 
         await Order.findByIdAndUpdate(order, { total });
 
-        res.status(201).send({
+        return res.status(201).json({
+            success: true,
             message: 'Detalle creado y orden actualizada',
             detail
         });
 
-    } catch (err) {
-        res.status(500).send({ message: 'Error', err });
+    } catch (error) {
+        return handleOrderDetailError(res, error, 'Error al crear detalle de orden');
     }
 };
 
@@ -47,39 +99,71 @@ export const getOrderDetails = async (req, res) => {
             .populate('order')
             .populate('dish');
 
-        res.send(details);
-    } catch (err) {
-        res.status(500).send({ message: 'Error al listar detalles', err });
+        return res.status(200).json({
+            success: true,
+            details
+        });
+    } catch (error) {
+        return handleOrderDetailError(res, error, 'Error al listar detalles');
     }
 };
 
 export const updateOrderDetail = async (req, res) => {
     try {
+        const { id } = req.params;
+
+        if (!isValidId(id)) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID de detalle inválido'
+            });
+        }
+
         const detail = await OrderDetail.findByIdAndUpdate(
-            req.params.id,
+            id,
             req.body,
-            { new: true }
+            { new: true, runValidators: true }
         );
 
-        res.send({
+        if (!detail) {
+            return res.status(404).json({
+                success: false,
+                message: 'Detalle no encontrado'
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
             message: 'Detalle actualizado',
             detail
         });
-    } catch (err) {
-        res.status(500).send({ message: 'Error al actualizar', err });
+    } catch (error) {
+        return handleOrderDetailError(res, error, 'Error al actualizar detalle');
     }
 };
 
 export const deleteOrderDetail = async (req, res) => {
     try {
-        const detail = await OrderDetail.findById(req.params.id);
+        const { id } = req.params;
+
+        if (!isValidId(id)) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID de detalle inválido'
+            });
+        }
+
+        const detail = await OrderDetail.findById(id);
         if (!detail) {
-            return res.status(404).send({ message: 'Detalle no encontrado' });
+            return res.status(404).json({
+                success: false,
+                message: 'Detalle no encontrado'
+            });
         }
 
         const orderId = detail.order;
 
-        await OrderDetail.findByIdAndDelete(req.params.id);
+        await OrderDetail.findByIdAndDelete(id);
 
         // 🔥 Recalcular total después de eliminar
         const details = await OrderDetail.find({ order: orderId });
@@ -87,9 +171,12 @@ export const deleteOrderDetail = async (req, res) => {
 
         await Order.findByIdAndUpdate(orderId, { total });
 
-        res.send({ message: 'Detalle eliminado y total actualizado' });
+        return res.status(200).json({
+            success: true,
+            message: 'Detalle eliminado y total actualizado'
+        });
 
-    } catch (err) {
-        res.status(500).send({ message: 'Error al eliminar', err });
+    } catch (error) {
+        return handleOrderDetailError(res, error, 'Error al eliminar detalle');
     }
 };
