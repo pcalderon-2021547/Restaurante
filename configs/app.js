@@ -4,7 +4,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import { dbConnection } from './db.js';
+import { dbConnection, connectPostgres, sequelize } from './db.js';
 import { corsOptions } from './cors-configuration.js';
 import { helmetConfiguration } from './helmet-configurations.js';
 
@@ -16,6 +16,8 @@ import tableRoutes from '../src/fields/table/tableRoutes.js';
 import orderRoutes from '../src/fields/order/orderRoutes.js';
 import orderDetailRoutes from '../src/fields/orderDetail/orderDetailRoutes.js';
 import reservationRoutes from '../src/fields/reservation/reservationRoutes.js';
+import authRoutes from '../src/fields/auth/auth.routes.js';
+
 
 const BASE_PATH = '/restaurantManagement/v1';
 
@@ -39,6 +41,8 @@ const routes = (app) => {
     app.use(`${BASE_PATH}/order`, orderRoutes);
     app.use(`${BASE_PATH}/orderDetail`, orderDetailRoutes);
     app.use(`${BASE_PATH}/reservation`, reservationRoutes);
+    app.use(`${BASE_PATH}/auth`, authRoutes);
+
 
     app.get(`${BASE_PATH}/Health`, (request, response) => {
         response.status(200).json({
@@ -60,13 +64,17 @@ const routes = (app) => {
 export const initServer = async () => {
     const app = express();
     const PORT = process.env.PORT || 3000;
+
     app.set('trust proxy', 1);
 
     try {
         await dbConnection();
+        await connectPostgres();
+        await sequelize.sync({ alter: true });
+
         middlewares(app);
         routes(app);
-        
+
         app.listen(PORT, () => {
             console.log(`Restaurant Server running on port ${PORT}`);
             console.log(`Health check: http://localhost:${PORT}${BASE_PATH}/Health`);
@@ -76,4 +84,4 @@ export const initServer = async () => {
         console.error(`Error starting Server: ${error.message}`);
         process.exit(1);
     }
-}
+};

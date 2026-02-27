@@ -1,69 +1,73 @@
 'use strict';
 
-import mongoose from "mongoose";
+import { DataTypes } from 'sequelize';
+import { sequelize } from '../../../configs/db.js'; // ajusta la ruta si es necesario
 
-const userSchema = mongoose.Schema(
-    {
-        name: {
-            type: String,
-            required: [true, 'El nombre es requerido'],
-            trim: true
-        },
-        surname: {
-            type: String,
-            required: [true, 'El apellido es requerido'],
-            trim: true
-        },
-        username: {
-            type: String,
-            required: [true, 'El nombre de usuario es requerido'],
-            unique: true,
-            lowercase: true,
-            trim: true
-        },
-        email: {
-            type: String,
-            required: [true, 'El correo electrónico es requerido'],
-            unique: true,
-            lowercase: true,
-            trim: true
-        },
-        password: {
-            type: String,
-            required: [true, 'La contraseña es requerida'],
-            minLength: [8, 'La contraseña debe tener al menos 8 caracteres']
-        },
-       
-        profilePicture: {
-            type: String
-        },
-        phone: {
-            type: String,
-            required: [true, 'El número de teléfono es requerido'],
-            minLength: [8, 'El teléfono debe tener 8 dígitos'],
-            maxLength: [8, 'El teléfono debe tener 8 dígitos']
-        },
-        role: {
-            type: String,
-            required: [true, 'El rol es requerido'],
-            uppercase: true,
-            enum: {
-                values: ['ADMIN_ROLE', 'WAITER_ROLE', 'CLIENT_ROLE'],
-                message: 'El rol {VALUE} no es un rol válido'
-            },
-            default: 'CLIENT_ROLE'
-        },
-        status: {
-            type: Boolean,
-            default: true
-        }
+const User = sequelize.define('User', {
+    id: {
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        primaryKey: true
     },
-    {
-        timestamps: true,
-        versionKey: false
+
+    name: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+
+    surname: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+
+    username: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true
+    },
+
+    email: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true
+    },
+
+    password: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+
+    role: {
+        type: DataTypes.ENUM('ADMIN_ROLE', 'USER_ROLE'),
+        defaultValue: 'USER_ROLE'
+    },
+
+    status: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true
+    },
+    emailVerified: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+    },
+    emailToken: {
+        type: DataTypes.STRING
+    },
+    resetToken: {
+        type: DataTypes.STRING
+    },
+    resetTokenExpiration: {
+        type: DataTypes.BIGINT
+    },
+    deleteToken: {
+        type: DataTypes.STRING
+    },
+    deleteTokenExpiration: {
+        type: DataTypes.BIGINT
     }
-);
 
-userSchema.index({ status: 1 });
+}, {
+    timestamps: true
+});
 
-export default mongoose.model('User', userSchema);
+export default User;
