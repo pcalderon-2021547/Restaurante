@@ -48,7 +48,8 @@ export const register = async (req, res) => {
             auth: {
                 user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_PASS
-            }
+            },
+            tls: { rejectUnauthorized: false }
         });
 
         const verifyLink =
@@ -225,7 +226,8 @@ export const resendVerification = async (req, res) => {
             auth: {
                 user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_PASS
-            }
+            },
+            tls: { rejectUnauthorized : false}
         });
 
         const verifyLink =
