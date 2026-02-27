@@ -1,60 +1,71 @@
 'use strict';
 
 import mongoose from 'mongoose';
+import { Sequelize } from 'sequelize';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+/* ===========================
+   🔹 PostgreSQL - Sequelize
+=========================== */
+
+export const sequelize = new Sequelize(
+  process.env.DB_NAME,
+  process.env.DB_USER,
+  process.env.DB_PASS,
+  {
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
+    dialect: 'postgres',
+    logging: false,
+  }
+);
+
+export const connectPostgres = async () => {
+  try {
+    await sequelize.authenticate();
+    console.log('PostgreSQL | Conectado correctamente');
+  } catch (error) {
+    console.error('PostgreSQL | Error de conexión:', error.message);
+  }
+};
+
+/* ===========================
+   🔹 MongoDB - Mongoose
+=========================== */
 
 export const dbConnection = async () => {
-    try {
-        // Mensajes para saber qué está pasando con la base de datos
-        mongoose.connection.on('error', () => {
-            console.log('MongoDB | No se pudo conectar a la base de datos del restaurante');
-            mongoose.disconnect();
-        });
+  try {
+    mongoose.connection.on('connected', () => {
+      console.log('MongoDB | Conectado correctamente');
+    });
 
-        mongoose.connection.on('connecting', () => {
-            console.log('MongoDB | Intentando conectar al servidor...');
-        });
+    mongoose.connection.on('error', () => {
+      console.log('MongoDB | Error de conexión');
+      mongoose.disconnect();
+    });
 
-        mongoose.connection.on('connected', () => {
-            console.log('MongoDB | Conectado con éxito');
-        });
+    await mongoose.connect(process.env.URI_MONGO, {
+      serverSelectionTimeoutMS: 5000,
+      maxPoolSize: 10
+    });
 
-        mongoose.connection.on('open', () => {
-            console.log('MongoDB | Base de datos "gestionrestaurante" lista para usar');
-        });
+  } catch (error) {
+    console.log(`Error al conectar MongoDB: ${error}`);
+  }
+};
 
-        mongoose.connection.on('reconnected', () => {
-            console.log('MongoDB | La conexión se ha restablecido');
-        });
+/* ===========================
+   🔹 Cierre limpio
+=========================== */
 
-        mongoose.connection.on('disconnected', () => {
-            console.log('MongoDB | Se perdió la conexión a la base de datos');
-        });
+const gracefulShutdown = async (signal) => {
+  console.log(`Recibido ${signal}. Cerrando conexiones...`);
+  await mongoose.connection.close();
+  await sequelize.close();
+  process.exit(0);
+};
 
-        // Conexión principal usando tu variable URI_MONGO
-        await mongoose.connect(process.env.URI_MONGO, {
-            serverSelectionTimeoutMS: 5000,
-            maxPoolSize: 10
-        });
-
-    } catch (error) {
-        console.log(`Error al conectar la db: ${error}`);
-    }
-}
-
-// Función para cerrar la conexión si el servidor se apaga
-const gracefulShutdown = async(signal) => {
-    console.log(`MongoDB | Recibido ${signal}. Cerrando conexión...`);
-    try {
-        await mongoose.connection.close();
-        console.log('MongoDB | Conexión cerrada correctamente');
-        process.exit(0);
-    } catch (error) {
-        console.error('MongoDB | Error al cerrar la conexión:', error.message);
-        process.exit(1);
-    }
-}
-
-// Escuchas para cuando detienes el servidor (Ctrl+C o Nodemon)
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-process.on('SIGUSR2', () => gracefulShutdown('SIGUSR2'));
