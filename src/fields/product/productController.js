@@ -7,9 +7,7 @@ import mongoose from 'mongoose';
 const sendLowStockAlert = async (product) => {
     try {
         const admins = await User.findAll({ where: { role: 'ADMIN_ROLE', status: true } });
-
         if (!admins.length) return;
-
         const transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
@@ -69,12 +67,9 @@ export const createProduct = async (req, res) => {
     try {
         const product = new Product(req.body);
         await product.save();
-
-        
         if (product.stock === 0) {
             await sendLowStockAlert(product);
         }
-
         return res.status(201).json({
             success: true,
             product
@@ -106,20 +101,17 @@ export const updateProduct = async (req, res) => {
                 message: 'ID de producto inválido'
             });
         }
-
         const product = await Product.findByIdAndUpdate(
             id,
             req.body,
             { new: true, runValidators: true }
         );
-
         if (!product) {
             return res.status(404).json({
                 success: false,
                 message: 'Producto no encontrado'
             });
         }
-
         if (product.stock === 0) {
             await sendLowStockAlert(product);
         }
@@ -239,7 +231,6 @@ export const restockProduct = async (req, res) => {
         const stockAnterior = product.stock;
         product.stock = product.stock + Number(amount);
         await product.save();
-
         return res.status(200).json({
             success: true,
             message: 'Stock actualizado correctamente',
@@ -294,9 +285,7 @@ export const toggleProductStatus = async (req, res) => {
                 message: 'El ID del producto es inválido'
             });
         }
-
         const product = await Product.findById(id);
-
         if (!product) {
             return res.status(404).json({
                 success: false,

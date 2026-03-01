@@ -1,5 +1,5 @@
 import { Router } from 'express';
-// se agregaron las nuevas funciones de controller
+// se agregaron las nuevas funciones de controller con un mejor formateo
 import {
     createProduct,
     getProducts,
