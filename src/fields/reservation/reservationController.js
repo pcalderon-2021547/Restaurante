@@ -90,8 +90,13 @@ export const createReservation = async (req, res) => {
             });
         }
 
-        const reservation = new Reservation(req.body);
-        await reservation.save();
+        const reservation = new Reservation({
+            ...req.body,
+            user: req.user.id
+        });
+         await reservation.save();
+         foundTable.status = 'reserved';
+await foundTable.save();
 
         return res.status(201).json({
             success: true,
@@ -184,7 +189,7 @@ export const updateReservation = async (req, res) => {
     }
 };
 
-export const deleteReservation = async (req, res) => {
+export const cancelReservation = async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -195,7 +200,7 @@ export const deleteReservation = async (req, res) => {
             });
         }
 
-        const reservation = await Reservation.findByIdAndDelete(id);
+        const reservation = await Reservation.findById(id);
 
         if (!reservation) {
             return res.status(404).json({
@@ -204,15 +209,25 @@ export const deleteReservation = async (req, res) => {
             });
         }
 
+        reservation.status = 'cancelled';
+        await reservation.save();
+
+        // liberar mesa
+        const table = await Table.findById(reservation.table);
+        if (table) {
+            table.status = 'available';
+            await table.save();
+        }
+
         return res.status(200).json({
             success: true,
-            message: 'Reservación eliminada'
+            message: 'Reservación cancelada'
         });
+
     } catch (error) {
-        return handleReservationError(res, error, 'Error al eliminar reservación');
+        return handleReservationError(res, error, 'Error al cancelar reservación');
     }
 };
-
 export const getReservationsByDate = async (req, res) => {
     try {
         const { date } = req.query;

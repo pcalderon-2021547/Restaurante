@@ -3,13 +3,17 @@
 import mongoose from "mongoose";
 
 const reservationSchema = mongoose.Schema({
+    user: {
+        type: Number,
+        required: true
+    },
     customerName: {
         type: String,
         required: [true, 'El nombre es obligatorio'],
         trim: true
     },
     customerPhone: {
-    type: String,
+        type: String,
         required: [true, 'El teléfono es obligatorio'],
         trim: true,
         maxlength: [8, 'El teléfono no puede superar los 8 caracteres'],
