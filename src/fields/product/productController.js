@@ -1,13 +1,17 @@
-'use strict';
-import nodemailer from 'nodemailer';
-import Product from './product.js';
-import User from '../user/user.js';
-import mongoose from 'mongoose';
+'use strict'; 
+import nodemailer from 'nodemailer'; // Librería para enviar correos
+import Product from './product.js'; 
+import User from '../user/user.js'; 
+import mongoose from 'mongoose'; 
 
+// Enviar alerta cuando el stock llega a 0
 const sendLowStockAlert = async (product) => {
     try {
+        // Buscar administradores activos
         const admins = await User.findAll({ where: { role: 'ADMIN_ROLE', status: true } });
-        if (!admins.length) return;
+        if (!admins.length) return; // Si no hay admins, salir
+
+        // Configurar transporte de correo
         const transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
@@ -16,7 +20,10 @@ const sendLowStockAlert = async (product) => {
             }
         });
 
+        // Obtener correos de administradores
         const adminEmails = admins.map(a => a.email);
+
+        // Enviar correo de alerta
         await transporter.sendMail({
             from: process.env.EMAIL_USER,
             to: adminEmails,
@@ -34,13 +41,16 @@ const sendLowStockAlert = async (product) => {
             `
         });
 
-        console.log(`Alerta de stock enviada a: ${adminEmails.join(', ')}`);
+        console.log(`Alerta de stock enviada a: ${adminEmails.join(', ')}`); // Log éxitoso
     } catch (error) {
-        console.error('Error enviando alerta de stock:', error.message);
+        console.error('Error enviando alerta de stock:', error.message); // Log error
     }
 };
 
+// Manejo general de errores de producto
 const handleProductError = (res, error, defaultMessage) => {
+
+    // Error por duplicado
     if (error?.code === 11000) {
         return res.status(400).json({
             success: false,
@@ -48,6 +58,7 @@ const handleProductError = (res, error, defaultMessage) => {
         });
     }
 
+    // Error de validación
     if (error?.name === 'ValidationError') {
         return res.status(400).json({
             success: false,
@@ -56,6 +67,7 @@ const handleProductError = (res, error, defaultMessage) => {
         });
     }
 
+    // Error general
     return res.status(500).json({
         success: false,
         message: defaultMessage,
@@ -63,13 +75,17 @@ const handleProductError = (res, error, defaultMessage) => {
     });
 };
 
+// Crear producto
 export const createProduct = async (req, res) => {
     try {
-        const product = new Product(req.body);
-        await product.save();
+        const product = new Product(req.body); // Crear instancia
+        await product.save(); // Guardar en Mongo
+
+        // Si el stock es 0 enviar alerta
         if (product.stock === 0) {
             await sendLowStockAlert(product);
         }
+
         return res.status(201).json({
             success: true,
             product
@@ -79,9 +95,10 @@ export const createProduct = async (req, res) => {
     }
 };
 
+// Obtener todos los productos
 export const getProducts = async (req, res) => {
     try {
-        const products = await Product.find();
+        const products = await Product.find(); // Buscar todos
         return res.status(200).json({
             success: true,
             products
@@ -91,27 +108,35 @@ export const getProducts = async (req, res) => {
     }
 };
 
+// Actualizar producto
 export const updateProduct = async (req, res) => {
     try {
-        const { id } = req.params;
+        const { id } = req.params; // Obtener ID
 
+        // Validar ID
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({
                 success: false,
                 message: 'ID de producto inválido'
             });
         }
+
+        // Actualizar producto
         const product = await Product.findByIdAndUpdate(
             id,
             req.body,
             { new: true, runValidators: true }
         );
+
+        // Esto por si no existe
         if (!product) {
             return res.status(404).json({
                 success: false,
                 message: 'Producto no encontrado'
             });
         }
+
+        // Enviar alerta si stock queda en 0
         if (product.stock === 0) {
             await sendLowStockAlert(product);
         }
@@ -125,10 +150,12 @@ export const updateProduct = async (req, res) => {
     }
 };
 
+// Eliminar producto
 export const deleteProduct = async (req, res) => {
     try {
-        const { id } = req.params;
+        const { id } = req.params; // Obtener ID
 
+        // Validar ID
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({
                 success: false,
@@ -136,8 +163,9 @@ export const deleteProduct = async (req, res) => {
             });
         }
 
-        const product = await Product.findByIdAndDelete(id);
+        const product = await Product.findByIdAndDelete(id); // Eliminar
 
+        // Si no existe
         if (!product) {
             return res.status(404).json({
                 success: false,
@@ -154,10 +182,12 @@ export const deleteProduct = async (req, res) => {
     }
 };
 
+// Buscar producto por nombre
 export const searchProductByName = async (req, res) => {
     try {
-        const { name } = req.query;
+        const { name } = req.query; // Obtener nombre
 
+        // Validar parámetro
         if (!name) {
             return res.status(400).json({
                 success: false,
@@ -165,6 +195,7 @@ export const searchProductByName = async (req, res) => {
             });
         }
 
+        // Buscar con expresión regular
         const products = await Product.find({
             name: { $regex: name, $options: 'i' }
         });
@@ -178,10 +209,12 @@ export const searchProductByName = async (req, res) => {
     }
 };
 
+// Filtrar productos por categoría
 export const filterByCategory = async (req, res) => {
     try {
-        const { category } = req.query;
+        const { category } = req.query; // Obtener categoría
 
+        // Validar categoría
         if (!category) {
             return res.status(400).json({
                 success: false,
@@ -189,7 +222,7 @@ export const filterByCategory = async (req, res) => {
             });
         }
 
-        const products = await Product.find({ category });
+        const products = await Product.find({ category }); // Buscar por categoría
 
         return res.status(200).json({
             success: true,
@@ -200,11 +233,13 @@ export const filterByCategory = async (req, res) => {
     }
 };
 
+// Reabastecer producto
 export const restockProduct = async (req, res) => {
     try {
-        const { id } = req.params;
-        const { amount } = req.body;
+        const { id } = req.params; // Obtener ID
+        const { amount } = req.body; // Cantidad a agregar
 
+        // Validar ID
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({
                 success: false,
@@ -212,6 +247,7 @@ export const restockProduct = async (req, res) => {
             });
         }
 
+        // Validar cantidad
         if (!amount || Number(amount) <= 0) {
             return res.status(400).json({
                 success: false,
@@ -219,8 +255,9 @@ export const restockProduct = async (req, res) => {
             });
         }
 
-        const product = await Product.findById(id);
+        const product = await Product.findById(id); // Buscar producto
 
+        // Si no existe
         if (!product) {
             return res.status(404).json({
                 success: false,
@@ -228,9 +265,10 @@ export const restockProduct = async (req, res) => {
             });
         }
 
-        const stockAnterior = product.stock;
-        product.stock = product.stock + Number(amount);
-        await product.save();
+        const stockAnterior = product.stock; // Guardar stock anterior
+        product.stock = product.stock + Number(amount); // Sumar stock
+        await product.save(); // Guardar cambios
+
         return res.status(200).json({
             success: true,
             message: 'Stock actualizado correctamente',
@@ -245,10 +283,12 @@ export const restockProduct = async (req, res) => {
     }
 };
 
+// Obtener producto por ID
 export const getProductById = async (req, res) => {
     try {
-        const { id } = req.params;
+        const { id } = req.params; // Obtener ID
 
+        // Validar ID
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({
                 success: false,
@@ -256,8 +296,9 @@ export const getProductById = async (req, res) => {
             });
         }
 
-        const product = await Product.findById(id);
+        const product = await Product.findById(id); // Buscar producto
 
+        // Si no existe
         if (!product) {
             return res.status(404).json({
                 success: false,
@@ -275,17 +316,22 @@ export const getProductById = async (req, res) => {
     }
 };
 
+// Activar o desactivar producto
 export const toggleProductStatus = async (req, res) => {
     try {
-        const { id } = req.params;
+        const { id } = req.params; // Obtener ID
 
+        // Validar ID
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({
                 success: false,
                 message: 'El ID del producto es inválido'
             });
         }
-        const product = await Product.findById(id);
+
+        const product = await Product.findById(id); // Buscar producto
+
+        // Si no existe
         if (!product) {
             return res.status(404).json({
                 success: false,
@@ -293,8 +339,8 @@ export const toggleProductStatus = async (req, res) => {
             });
         }
 
-        product.isActive = !product.isActive;
-        await product.save();
+        product.isActive = !product.isActive; // Cambiar estado
+        await product.save(); // Guardar cambio
 
         return res.status(200).json({
             success: true,
