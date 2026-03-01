@@ -40,7 +40,7 @@ export const createReservation = async (req, res) => {
             });
         }
 
-        // 🔎 Verificar que la mesa exista
+        //ver si la mesa existe
         const foundTable = await Table.findById(table);
         if (!foundTable) {
             return res.status(404).json({
@@ -49,7 +49,7 @@ export const createReservation = async (req, res) => {
             });
         }
 
-        // 🔥 Validar capacidad
+        //ver la capacidad
         if (numberOfPeople > foundTable.capacity) {
             return res.status(400).json({
                 success: false,
@@ -57,7 +57,7 @@ export const createReservation = async (req, res) => {
             });
         }
 
-        // ❌ Verificar si ya existe reserva en esa fecha para la misma mesa
+        //ver si ya hay reservacion para esa mesa en esa fecha
         const existingReservation = await Reservation.findOne({
             table,
             date,
