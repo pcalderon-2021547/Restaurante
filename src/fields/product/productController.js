@@ -4,6 +4,7 @@ import Product from './product.js';
 import User from '../user/user.js';
 import mongoose from 'mongoose';
 
+
 const sendLowStockAlert = async (product) => {
     try {
         const admins = await User.findAll({ where: { role: 'ADMIN_ROLE', status: true } });
@@ -43,6 +44,10 @@ const sendLowStockAlert = async (product) => {
     }
 };
 
+/* ===========================
+   MANEJADOR DE ERRORES
+=========================== */
+
 const handleProductError = (res, error, defaultMessage) => {
     if (error?.code === 11000) {
         return res.status(400).json({
@@ -66,12 +71,16 @@ const handleProductError = (res, error, defaultMessage) => {
     });
 };
 
+/* ===========================
+   CREATE
+=========================== */
+
 export const createProduct = async (req, res) => {
     try {
         const product = new Product(req.body);
         await product.save();
 
-      
+        // Alerta si se crea con stock 0
         if (product.stock === 0) {
             await sendLowStockAlert(product);
         }
@@ -85,6 +94,10 @@ export const createProduct = async (req, res) => {
     }
 };
 
+/* ===========================
+   GET ALL
+=========================== */
+
 export const getProducts = async (req, res) => {
     try {
         const products = await Product.find();
@@ -96,6 +109,10 @@ export const getProducts = async (req, res) => {
         return handleProductError(res, error, 'Error al obtener productos');
     }
 };
+
+/* ===========================
+   UPDATE
+=========================== */
 
 export const updateProduct = async (req, res) => {
     try {
@@ -121,6 +138,7 @@ export const updateProduct = async (req, res) => {
             });
         }
 
+        // Alerta si el stock llega a 0 tras la actualización
         if (product.stock === 0) {
             await sendLowStockAlert(product);
         }
@@ -133,6 +151,10 @@ export const updateProduct = async (req, res) => {
         return handleProductError(res, error, 'Error al actualizar el producto');
     }
 };
+
+/* ===========================
+   DELETE
+=========================== */
 
 export const deleteProduct = async (req, res) => {
     try {
@@ -163,6 +185,9 @@ export const deleteProduct = async (req, res) => {
     }
 };
 
+/* ===========================
+   SEARCH BY NAME
+=========================== */
 
 export const searchProductByName = async (req, res) => {
     try {
@@ -188,6 +213,10 @@ export const searchProductByName = async (req, res) => {
     }
 };
 
+/* ===========================
+   FILTER BY CATEGORY
+=========================== */
+
 export const filterByCategory = async (req, res) => {
     try {
         const { category } = req.query;
@@ -207,5 +236,55 @@ export const filterByCategory = async (req, res) => {
         });
     } catch (error) {
         return handleProductError(res, error, 'Error al filtrar por categoría');
+    }
+};
+
+/* ===========================
+   RESTOCK
+=========================== */
+
+export const restockProduct = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { amount } = req.body;
+
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID de producto inválido'
+            });
+        }
+
+        if (!amount || Number(amount) <= 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'La cantidad a agregar debe ser mayor a 0'
+            });
+        }
+
+        const product = await Product.findById(id);
+
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: 'Producto no encontrado'
+            });
+        }
+
+        const stockAnterior = product.stock;
+        product.stock = product.stock + Number(amount);
+        await product.save();
+
+        return res.status(200).json({
+            success: true,
+            message: 'Stock actualizado correctamente',
+            producto: product.name,
+            stockAnterior,
+            stockAgregado: Number(amount),
+            stockActual: product.stock
+        });
+
+    } catch (error) {
+        return handleProductError(res, error, 'Error al reabastecer producto');
     }
 };
