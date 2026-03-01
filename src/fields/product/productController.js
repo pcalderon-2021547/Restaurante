@@ -254,3 +254,33 @@ export const restockProduct = async (req, res) => {
         return handleProductError(res, error, 'Error al reabastecer producto');
     }
 };
+
+export const getProductById = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID de producto inválido'
+            });
+        }
+
+        const product = await Product.findById(id);
+
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: 'Producto no encontrado'
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            product
+        });
+
+    } catch (error) {
+        return handleProductError(res, error, 'Error al obtener el producto');
+    }
+};
