@@ -1,4 +1,5 @@
 import { Router } from 'express';
+// se agregaron las nuevas funciones de controller
 import {
     createProduct,
     getProducts,
@@ -15,6 +16,7 @@ import { requireRole } from '../../../middlewares/validate_role.js';
 
 const router = Router();
 
+// Rutas agregadas
 router.post('/create', validateJWT, requireRole('ADMIN_ROLE'), createProduct);
 router.get('/', getProducts);
 router.get('/search', searchProductByName);   
