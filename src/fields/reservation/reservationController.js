@@ -32,6 +32,15 @@ export const createReservation = async (req, res) => {
                 message: 'table, numberOfPeople y date son obligatorios'
             });
         }
+
+        //ver que la fecha no este pasada
+        const reservationDate = new Date(date);
+        if (reservationDate < new Date()) {
+            return res.status(400).json({
+                success: false,
+                message: 'No se puede reservar en una fecha pasada'
+            });
+        }
  
         if (!isValidId(table)) {
             return res.status(400).json({
