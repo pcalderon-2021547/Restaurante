@@ -4,7 +4,6 @@ import Product from './product.js';
 import User from '../user/user.js';
 import mongoose from 'mongoose';
 
-
 const sendLowStockAlert = async (product) => {
     try {
         const admins = await User.findAll({ where: { role: 'ADMIN_ROLE', status: true } });
@@ -24,7 +23,7 @@ const sendLowStockAlert = async (product) => {
         await transporter.sendMail({
             from: process.env.EMAIL_USER,
             to: adminEmails,
-            subject: `⚠️ Sin stock: ${product.name}`,
+            subject: `Sin stock: ${product.name}`,
             html: `
                 <h2>Alerta de inventario</h2>
                 <p>El producto <strong>${product.name}</strong> ha llegado a <strong>0 unidades</strong> en stock.</p>
@@ -44,10 +43,6 @@ const sendLowStockAlert = async (product) => {
     }
 };
 
-/* ===========================
-   MANEJADOR DE ERRORES
-=========================== */
-
 const handleProductError = (res, error, defaultMessage) => {
     if (error?.code === 11000) {
         return res.status(400).json({
@@ -59,7 +54,7 @@ const handleProductError = (res, error, defaultMessage) => {
     if (error?.name === 'ValidationError') {
         return res.status(400).json({
             success: false,
-            message: 'Datos de producto inválidos',
+            message: 'Los datos del producto son inválidos',
             error: error.message
         });
     }
@@ -71,16 +66,12 @@ const handleProductError = (res, error, defaultMessage) => {
     });
 };
 
-/* ===========================
-   CREATE
-=========================== */
-
 export const createProduct = async (req, res) => {
     try {
         const product = new Product(req.body);
         await product.save();
 
-        // Alerta si se crea con stock 0
+        
         if (product.stock === 0) {
             await sendLowStockAlert(product);
         }
@@ -94,10 +85,6 @@ export const createProduct = async (req, res) => {
     }
 };
 
-/* ===========================
-   GET ALL
-=========================== */
-
 export const getProducts = async (req, res) => {
     try {
         const products = await Product.find();
@@ -109,10 +96,6 @@ export const getProducts = async (req, res) => {
         return handleProductError(res, error, 'Error al obtener productos');
     }
 };
-
-/* ===========================
-   UPDATE
-=========================== */
 
 export const updateProduct = async (req, res) => {
     try {
@@ -138,7 +121,6 @@ export const updateProduct = async (req, res) => {
             });
         }
 
-        // Alerta si el stock llega a 0 tras la actualización
         if (product.stock === 0) {
             await sendLowStockAlert(product);
         }
@@ -151,10 +133,6 @@ export const updateProduct = async (req, res) => {
         return handleProductError(res, error, 'Error al actualizar el producto');
     }
 };
-
-/* ===========================
-   DELETE
-=========================== */
 
 export const deleteProduct = async (req, res) => {
     try {
@@ -185,10 +163,6 @@ export const deleteProduct = async (req, res) => {
     }
 };
 
-/* ===========================
-   SEARCH BY NAME
-=========================== */
-
 export const searchProductByName = async (req, res) => {
     try {
         const { name } = req.query;
@@ -213,10 +187,6 @@ export const searchProductByName = async (req, res) => {
     }
 };
 
-/* ===========================
-   FILTER BY CATEGORY
-=========================== */
-
 export const filterByCategory = async (req, res) => {
     try {
         const { category } = req.query;
@@ -238,10 +208,6 @@ export const filterByCategory = async (req, res) => {
         return handleProductError(res, error, 'Error al filtrar por categoría');
     }
 };
-
-/* ===========================
-   RESTOCK
-=========================== */
 
 export const restockProduct = async (req, res) => {
     try {

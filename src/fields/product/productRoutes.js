@@ -1,13 +1,5 @@
 import { Router } from 'express';
-import {
-    createProduct,
-    getProducts,
-    updateProduct,
-    deleteProduct,
-    searchProductByName,
-    filterByCategory,
-    restockProduct
-} from './productController.js';
+import {createProduct,getProducts,updateProduct,deleteProduct,searchProductByName,filterByCategory,restockProduct} from './productController.js';
 import { validateJWT } from '../../../middlewares/validate_jwt.js';
 import { requireRole } from '../../../middlewares/validate_role.js';
 
