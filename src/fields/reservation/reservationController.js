@@ -33,6 +33,14 @@ export const createReservation = async (req, res) => {
             });
         }
 
+        //numero de personas solo sea entero
+        if (!Number.isInteger(Number(numberOfPeople))) {
+            return res.status(400).json({
+                success: false,
+                message: 'El número de personas debe ser un entero'
+            });
+        }
+
         //ver que la fecha no este pasada
         const reservationDate = new Date(date);
         if (reservationDate < new Date()) {
