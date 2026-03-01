@@ -9,10 +9,12 @@ const reservationSchema = mongoose.Schema({
         trim: true
     },
     customerPhone: {
-        type: String,
-        required: [true, 'El teléfono es obligatorio'],
-        trim: true
-    },
+    type: String,
+    required: [true, 'El teléfono es obligatorio'],
+    trim: true,
+    maxlength: [8, 'El teléfono no puede superar los 8 caracteres'],
+    match: [/^\d{8}$/, 'El teléfono solo debe contener 8 dígitos numéricos']
+},
     table: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Table',
