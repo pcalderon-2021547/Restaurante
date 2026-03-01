@@ -1,8 +1,8 @@
 'use strict';
 
 import Order from './order.js';
-import mongoose from 'mongoose';
 
+// manejo centralizado de errores para las operaciones de orden
 const handleOrderError = (res, error, defaultMessage) => {
     if (error?.name === 'ValidationError') {
         return res.status(400).json({
@@ -19,42 +19,53 @@ const handleOrderError = (res, error, defaultMessage) => {
     });
 };
 
+
 export const createOrder = async (req, res) => {
     try {
         const order = new Order(req.body);
         await order.save();
-        return res.status(201).json({ success: true, message: 'Orden creada', order });
+
+        return res.status(201).json({
+            success: true,
+            message: 'Orden creada',
+            order
+        });
+
     } catch (error) {
         return handleOrderError(res, error, 'Error al crear orden');
     }
 };
 
+
 export const getOrders = async (req, res) => {
     try {
         const orders = await Order.find()
-            .populate('table')
-            .populate('products');
-        return res.status(200).json({ success: true, orders });
+            .populate('user')
+            .populate('restaurant')
+            .populate('table');
+
+        return res.status(200).json({
+            success: true,
+            orders
+        });
+
     } catch (error) {
         return handleOrderError(res, error, 'Error al listar órdenes');
     }
 };
 
+
 export const updateOrder = async (req, res) => {
     try {
         const { id } = req.params;
 
-        if (!mongoose.Types.ObjectId.isValid(id)) {
-            return res.status(400).json({
-                success: false,
-                message: 'ID de orden inválido'
-            });
-        }
-
         const order = await Order.findByIdAndUpdate(
             id,
             req.body,
-            { new: true, runValidators: true }
+            {
+                new: true,
+                runValidators: true
+            }
         );
 
         if (!order) {
@@ -64,22 +75,21 @@ export const updateOrder = async (req, res) => {
             });
         }
 
-        return res.status(200).json({ success: true, message: 'Orden actualizada', order });
+        return res.status(200).json({
+            success: true,
+            message: 'Orden actualizada',
+            order
+        });
+
     } catch (error) {
         return handleOrderError(res, error, 'Error al actualizar orden');
     }
 };
 
+
 export const deleteOrder = async (req, res) => {
     try {
         const { id } = req.params;
-
-        if (!mongoose.Types.ObjectId.isValid(id)) {
-            return res.status(400).json({
-                success: false,
-                message: 'ID de orden inválido'
-            });
-        }
 
         const order = await Order.findByIdAndDelete(id);
 
@@ -90,7 +100,11 @@ export const deleteOrder = async (req, res) => {
             });
         }
 
-        return res.status(200).json({ success: true, message: 'Orden eliminada' });
+        return res.status(200).json({
+            success: true,
+            message: 'Orden eliminada'
+        });
+
     } catch (error) {
         return handleOrderError(res, error, 'Error al eliminar orden');
     }
