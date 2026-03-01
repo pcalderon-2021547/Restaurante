@@ -6,6 +6,7 @@ import mongoose from 'mongoose';
 
 const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
 
+//respuesta de errores segun el tipo
 const handleReservationError = (res, error, defaultMessage) => {
     if (error?.name === 'ValidationError') {
         return res.status(400).json({
@@ -24,12 +25,30 @@ const handleReservationError = (res, error, defaultMessage) => {
 
 export const createReservation = async (req, res) => {
     try {
-        const { table, numberOfPeople, date } = req.body;
+        const { table, numberOfPeople, date, notes, customerPhone } = req.body;
 
+        //validar que todos los campos requeridos esten presentes
         if (!table || !numberOfPeople || !date) {
             return res.status(400).json({
                 success: false,
                 message: 'table, numberOfPeople y date son obligatorios'
+            });
+        }
+
+        //asegurar que la cantidad de personas no sea decimal
+        if (!Number.isInteger(Number(numberOfPeople))) {
+            return res.status(400).json({
+                success: false,
+                message: 'El número de personas debe ser un entero'
+            });
+        }
+
+        //evitar reservaciones en dias o horas ya pasadas
+        const reservationDate = new Date(date);
+        if (reservationDate < new Date()) {
+            return res.status(400).json({
+                success: false,
+                message: 'No se puede reservar en una fecha pasada'
             });
         }
 
@@ -40,7 +59,7 @@ export const createReservation = async (req, res) => {
             });
         }
 
-        // 🔎 Verificar que la mesa exista
+        //confirmar existencia de la mesa antes de asignar
         const foundTable = await Table.findById(table);
         if (!foundTable) {
             return res.status(404).json({
@@ -49,7 +68,7 @@ export const createReservation = async (req, res) => {
             });
         }
 
-        // 🔥 Validar capacidad
+        //validar que la mesa tenga capacidad
         if (numberOfPeople > foundTable.capacity) {
             return res.status(400).json({
                 success: false,
@@ -57,7 +76,7 @@ export const createReservation = async (req, res) => {
             });
         }
 
-        // ❌ Verificar si ya existe reserva en esa fecha para la misma mesa
+        //verificar que la mesa no este ocupada en esa fecha
         const existingReservation = await Reservation.findOne({
             table,
             date,
@@ -87,8 +106,10 @@ export const createReservation = async (req, res) => {
 
 export const getReservations = async (req, res) => {
     try {
+        //obtener todas las reservas con datos de mesa y orden de fehca mas cercana
         const reservations = await Reservation.find()
-            .populate('table');
+            .populate('table')
+            .sort({ date: 1 });
 
         return res.status(200).json({
             success: true,
@@ -110,8 +131,7 @@ export const getReservationById = async (req, res) => {
             });
         }
 
-        const reservation = await Reservation.findById(req.params.id)
-            .populate('table');
+        const reservation = await Reservation.findById(id).populate('table');
 
         if (!reservation) {
             return res.status(404).json({
@@ -140,6 +160,7 @@ export const updateReservation = async (req, res) => {
             });
         }
 
+        //actualizar y revisar que los nuevos datos sigan las reglas
         const reservation = await Reservation.findByIdAndUpdate(
             id,
             req.body,
@@ -189,5 +210,48 @@ export const deleteReservation = async (req, res) => {
         });
     } catch (error) {
         return handleReservationError(res, error, 'Error al eliminar reservación');
+    }
+};
+
+export const getReservationsByDate = async (req, res) => {
+    try {
+        const { date } = req.query;
+
+        if (!date) {
+            return res.status(400).json({
+                success: false,
+                message: 'El parámetro date es obligatorio (formato: YYYY-MM-DD)'
+            });
+        }
+
+        //definir el inicio y el fin del dia
+        const startOfDay = new Date(date);
+        startOfDay.setUTCHours(0, 0, 0, 0);
+
+        const endOfDay = new Date(date);
+        endOfDay.setUTCHours(23, 59, 59, 999);
+
+        //ver que el string recibido sea una fecha real
+        if (isNaN(startOfDay.getTime())) {
+            return res.status(400).json({
+                success: false,
+                message: 'Formato de fecha inválido. Use YYYY-MM-DD'
+            });
+        }
+
+        //buscar reservas dentro del rango de 24 horas
+        const reservations = await Reservation.find({
+            date: { $gte: startOfDay, $lte: endOfDay }
+        }).populate('table');
+
+        return res.status(200).json({
+            success: true,
+            date,
+            total: reservations.length,
+            reservations
+        });
+
+    } catch (error) {
+        return handleReservationError(res, error, 'Error al buscar reservaciones por fecha');
     }
 };
