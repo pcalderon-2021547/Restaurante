@@ -10,10 +10,10 @@ const reservationSchema = mongoose.Schema({
     },
     customerPhone: {
     type: String,
-    required: [true, 'El teléfono es obligatorio'],
-    trim: true,
-    maxlength: [8, 'El teléfono no puede superar los 8 caracteres'],
-    match: [/^\d{8}$/, 'El teléfono solo debe contener 8 dígitos numéricos']
+        required: [true, 'El teléfono es obligatorio'],
+        trim: true,
+        maxlength: [8, 'El teléfono no puede superar los 8 caracteres'],
+        match: [/^\d{8}$/, 'El teléfono solo debe contener 8 dígitos numéricos']
     },
     table: {
         type: mongoose.Schema.Types.ObjectId,
@@ -35,9 +35,9 @@ const reservationSchema = mongoose.Schema({
         default: 'pending'
     },
     notes: {
-    type: String,
-    trim: true,
-    maxlength: [300, 'Las notas no pueden superar los 300 caracteres']
+        type: String,
+        trim: true,
+        maxlength: [300, 'Las notas no pueden superar los 300 caracteres']
     }
 }, { timestamps: true });
 
