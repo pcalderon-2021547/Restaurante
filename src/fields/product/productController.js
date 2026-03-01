@@ -19,7 +19,6 @@ const sendLowStockAlert = async (product) => {
         });
 
         const adminEmails = admins.map(a => a.email);
-
         await transporter.sendMail({
             from: process.env.EMAIL_USER,
             to: adminEmails,
