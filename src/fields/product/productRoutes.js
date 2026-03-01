@@ -7,7 +7,8 @@ import {
     searchProductByName,
     filterByCategory,
     restockProduct,
-    getProductById
+    getProductById,
+    toggleProductStatus
 } from './productController.js';
 import { validateJWT } from '../../../middlewares/validate_jwt.js';
 import { requireRole } from '../../../middlewares/validate_role.js';
@@ -18,9 +19,10 @@ router.post('/create', validateJWT, requireRole('ADMIN_ROLE'), createProduct);
 router.get('/', getProducts);
 router.get('/search', searchProductByName);   
 router.get('/category', filterByCategory);      
-router.get('/:id', getProductById);        
+router.get('/:id', getProductById); 
+router.put('/toggle/:id', validateJWT, requireRole('ADMIN_ROLE'), toggleProductStatus);       
 router.put('/update/:id', validateJWT, requireRole('ADMIN_ROLE'), updateProduct);
 router.delete('/delete/:id', validateJWT, requireRole('ADMIN_ROLE'), deleteProduct);
-router.patch('/restock/:id', validateJWT, requireRole('ADMIN_ROLE'), restockProduct);
+router.put('/restock/:id', validateJWT, requireRole('ADMIN_ROLE'), restockProduct);
 
 export default router;

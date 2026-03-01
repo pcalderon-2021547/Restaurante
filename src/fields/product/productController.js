@@ -283,3 +283,37 @@ export const getProductById = async (req, res) => {
         return handleProductError(res, error, 'Error al obtener el producto');
     }
 };
+
+export const toggleProductStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID de producto inválido'
+            });
+        }
+
+        const product = await Product.findById(id);
+
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: 'Producto no encontrado'
+            });
+        }
+
+        product.isActive = !product.isActive;
+        await product.save();
+
+        return res.status(200).json({
+            success: true,
+            message: `Producto ${product.isActive ? 'activado' : 'desactivado'} correctamente`,
+            product
+        });
+
+    } catch (error) {
+        return handleProductError(res, error, 'Error al cambiar estado del producto');
+    }
+};
