@@ -105,7 +105,8 @@ export const createReservation = async (req, res) => {
 export const getReservations = async (req, res) => {
     try {
         const reservations = await Reservation.find()
-            .populate('table');
+    .populate('table')
+    .sort({ date: 1 }); // más próximas primero
  
         return res.status(200).json({
             success: true,
