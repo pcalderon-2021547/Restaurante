@@ -5,8 +5,7 @@ import mongoose from "mongoose";
 const tableSchema = mongoose.Schema({
     number: {
         type: Number,
-        required: true,
-        unique: true
+        required: true
     },
     capacity: {
         type: Number,
@@ -14,8 +13,13 @@ const tableSchema = mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['available', 'occupied'],
+        enum: ['available', 'occupied', 'reserved'],
         default: 'available'
+    },
+    restaurant: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Restaurant',
+        required: true
     }
 }, { timestamps: true });
 
