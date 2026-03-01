@@ -261,7 +261,7 @@ export const getProductById = async (req, res) => {
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({
                 success: false,
-                message: 'ID de producto inválido'
+                message: 'El ID del producto es inválido'
             });
         }
 
@@ -270,7 +270,7 @@ export const getProductById = async (req, res) => {
         if (!product) {
             return res.status(404).json({
                 success: false,
-                message: 'Producto no encontrado'
+                message: 'El Producto no fue encontrado'
             });
         }
 
@@ -291,7 +291,7 @@ export const toggleProductStatus = async (req, res) => {
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({
                 success: false,
-                message: 'ID de producto inválido'
+                message: 'El ID del producto es inválido'
             });
         }
 
@@ -300,7 +300,7 @@ export const toggleProductStatus = async (req, res) => {
         if (!product) {
             return res.status(404).json({
                 success: false,
-                message: 'Producto no encontrado'
+                message: 'El Producto no fue encontrado'
             });
         }
 
