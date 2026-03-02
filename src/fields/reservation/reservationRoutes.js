@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import {createReservation,getReservations,getReservationById,updateReservation,cancelReservation,getReservationsByDate } from './reservationController.js';
+import {createReservation,getReservations,getReservationById,updateReservation,cancelReservation,getReservationsByDate, getMyReservations } from './reservationController.js';
 import { validateJWT } from '../../../middlewares/validate_jwt.js';
 import { requireRole } from '../../../middlewares/validate_role.js';
 
@@ -15,6 +15,8 @@ router.post(
 router.get(
     '/', getReservations
 );
+router.get('/my-reservations', validateJWT, getMyReservations);
+
 //listar por fecha
 router.get(
     '/by-date', getReservationsByDate
@@ -33,5 +35,6 @@ router.delete(
     '/delete/:id',validateJWT,
     cancelReservation
 );
+
 
 export default router;

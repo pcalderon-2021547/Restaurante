@@ -270,3 +270,25 @@ export const getReservationsByDate = async (req, res) => {
         return handleReservationError(res, error, 'Error al buscar reservaciones por fecha');
     }
 };
+
+export const getMyReservations = async (req, res) => {
+    try {
+
+        const reservations = await Reservation.find({
+            user: req.user.id
+        })
+            .populate('table')
+            .sort({ date: -1 });
+
+        return res.status(200).json({
+            success: true,
+            total: reservations.length,
+            reservations
+        });
+
+
+
+    } catch (error) {
+        return handleReservationError(res, error, 'Error al obtener historial');
+    }
+};
