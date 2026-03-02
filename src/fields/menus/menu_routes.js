@@ -1,10 +1,9 @@
-'use strict';
 import { Router } from 'express';
-import { 
-    createMenu, 
-    getMenus, 
-    updateMenu, 
-    deleteMenu 
+import {
+    createMenu,
+    getMenus,
+    updateMenu,
+    deleteMenu
 } from './menu_controller.js';
 
 import { validateJWT } from '../../../middlewares/validate_jwt.js';
