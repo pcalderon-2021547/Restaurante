@@ -1,6 +1,6 @@
 'use strict';
 
-import Order from './order.js';
+import Order from './order_model.js';
 
 // manejo centralizado de errores para las operaciones de orden
 const handleOrderError = (res, error, defaultMessage) => {
