@@ -94,9 +94,9 @@ export const createReservation = async (req, res) => {
             ...req.body,
             user: req.user.id
         });
-         await reservation.save();
-         foundTable.status = 'reserved';
-await foundTable.save();
+        await reservation.save();
+        foundTable.status = 'occupied';
+        await foundTable.save();
 
         return res.status(201).json({
             success: true,
