@@ -1,18 +1,5 @@
 'use strict';
 
-/**
- * FALLO #6 — productController.js llama `User.findAll(...)` (método de Sequelize)
- * pero User es un modelo de Sequelize correcto; sin embargo, la función
- * `sendLowStockAlert` mezcla la búsqueda de admins con un modelo de PostgreSQL
- * desde un controller de MongoDB, lo cual funcionará solo si la conexión está activa.
- * El problema más grave: si `User.findAll` falla silenciosamente, el producto
- * igual se crea sin notificación y sin feedback al usuario.
- *
- * FALLO #7 — No hay validación de campos al crear/actualizar producto.
- * name, stock, cost y category son required en el modelo pero no se validan
- * antes de llegar al controller, causando errores 500 en vez de 400.
- */
-
 export const validateCreateProduct = (req, res, next) => {
     const { name, stock, cost, category } = req.body;
 

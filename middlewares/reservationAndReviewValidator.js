@@ -2,17 +2,6 @@
 
 import mongoose from 'mongoose';
 
-/**
- * FALLO #3 — reservation.js usa `user: { type: Number }` pero en el controller
- * se asigna req.user.id que viene de PostgreSQL como integer. Sin embargo,
- * no hay validación de que numberOfPeople, customerName, customerPhone y table
- * lleguen completos en el create. Se valida aquí.
- *
- * FALLO #4 — review.controller.js: la comparación `review.user !== req.user.id`
- * siempre falla porque review.user es Number y req.user.id puede ser string.
- * Se agrega un middleware de ownership que normaliza los tipos.
- */
-
 // ─── RESERVACIÓN ───────────────────────────────────────────────────
 
 export const validateCreateReservation = (req, res, next) => {
@@ -101,14 +90,6 @@ export const validateCreateReview = (req, res, next) => {
 
     next();
 };
-
-/**
- * FALLO #4 — review.controller.js compara `review.user !== req.user.id`
- * donde review.user es Number (PostgreSQL) y req.user.id puede ser string.
- * Este middleware normaliza el ownership check de forma correcta.
- * Úsalo ANTES de updateReview y deleteReview para agregar req.isOwner.
- * El controller debe ser actualizado para usar Number(review.user) === Number(req.user.id).
- */
 export const normalizeReviewOwnership = (req, res, next) => {
     // Adjuntar función de comparación segura al request
     req.isReviewOwner = (reviewUserId) => {

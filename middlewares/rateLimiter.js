@@ -1,13 +1,5 @@
 'use strict';
 
-/**
- * FALLO #2 — Sin rate limiting en login y register
- * El sistema permite ataques de fuerza bruta sin restricción.
- * Este middleware implementa rate limiting en memoria sin dependencias externas.
- * NOTA: Para producción se recomienda usar express-rate-limit + Redis.
- */
-
-// Mapa: ip -> { count, firstAttempt }
 const attempts = new Map();
 
 const WINDOW_MS = 15 * 60 * 1000; // 15 minutos

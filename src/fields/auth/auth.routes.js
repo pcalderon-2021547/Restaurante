@@ -10,19 +10,21 @@ import {
   listUsers,resendVerification
 } from './auth.controller.js';
 
+import { validateRegister, validateLogin, validateResetPassword } from '../../../middlewares/authValidator.js';
+import { rateLimitAuth } from '../../../middlewares/rateLimiter.js';
 import { validateJWT } from '../../../middlewares/validate_jwt.js';
 import { requireRole } from '../../../middlewares/validate_role.js';
 
 const router = Router();
 
-router.post('/register', register);
-router.post('/login', login);
+router.post('/register', rateLimitAuth, validateRegister,register);
+router.post('/login', rateLimitAuth, validateLogin,login);
 
 router.post('/verify-email', verifyEmail);
 router.get('/verify-email', verifyEmail);
 
 router.post('/request-reset', requestPasswordReset);
-router.post('/reset-password', resetPassword);
+router.post('/reset-password', validateResetPassword,resetPassword);
 
 router.get('/users', validateJWT, requireRole('ADMIN_ROLE'), listUsers);
 

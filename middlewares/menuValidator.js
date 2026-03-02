@@ -2,16 +2,6 @@
 
 import mongoose from 'mongoose';
 
-/**
- * FALLO #5 — menu_controller.js usa `Restaurant` (mayúscula) y `Menu` (mayúscula)
- * pero el import dice `import menus from './menu_model.js'` y
- * `import restaurant from '../restaurant/restaurant.model.js'` (minúsculas).
- * Eso hace que `Restaurant.findById` y `new Menu(req.body)` fallen en runtime
- * con ReferenceError.
- *
- * Este middleware valida los datos del menú ANTES de que el controller
- * intente acceder a esas variables, cortocircuitando el crash.
- */
 
 export const validateCreateMenu = (req, res, next) => {
     const { name, restaurant, type, validFrom, validUntil } = req.body;
