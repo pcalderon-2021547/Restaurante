@@ -18,7 +18,7 @@ import orderDetailRoutes from '../src/fields/orderDetail/orderDetailRoutes.js';
 import reservationRoutes from '../src/fields/reservation/reservationRoutes.js';
 import authRoutes from '../src/fields/auth/auth.routes.js';
 import restaurantRoutes from '../src/fields/restaurant/restaurant.routes.js';
-
+import reviewRoutes from '../src/fields/review/review.routes.js'
 
 const BASE_PATH = '/restaurantManagement/v1';
 
@@ -44,6 +44,7 @@ const routes = (app) => {
     app.use(`${BASE_PATH}/reservation`, reservationRoutes);
     app.use(`${BASE_PATH}/auth`, authRoutes);
     app.use(`${BASE_PATH}/restaurant`, restaurantRoutes);
+    app.use(`${BASE_PATH}/review`, reviewRoutes);
 
 
     app.get(`${BASE_PATH}/Health`, (request, response) => {
