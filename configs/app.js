@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 import express from 'express';
 import cors from 'cors';
@@ -19,7 +19,8 @@ import reservationRoutes from '../src/fields/reservation/reservationRoutes.js';
 import authRoutes from '../src/fields/auth/auth.routes.js';
 import restaurantRoutes from '../src/fields/restaurant/restaurant.routes.js';
 import reviewRoutes from '../src/fields/review/review.routes.js'
-import menu_routes from '../src/fields/menus/menu_routes.js';   
+import menu_routes from '../src/fields/menus/menu_routes.js';
+import eventRoutes from '../src/fields/evento/event.routes.js';
 
 const BASE_PATH = '/restaurantManagement/v1';
 
@@ -30,7 +31,7 @@ const middlewares = (app) => {
     app.use(helmet(helmetConfiguration));
     app.use(morgan('dev'));
 
-    // Configuración para ver las fotos que están sueltas en la raíz
+    // ConfiguraciÃ³n para ver las fotos que estÃ¡n sueltas en la raÃ­z
     app.use('/uploads', express.static('./')); 
 }
 
@@ -47,6 +48,7 @@ const routes = (app) => {
     app.use(`${BASE_PATH}/restaurant`, restaurantRoutes);
     app.use(`${BASE_PATH}/review`, reviewRoutes);
     app.use(`${BASE_PATH}/menu`, menu_routes);
+    app.use(`${BASE_PATH}/event`, eventRoutes);
 
 
     app.get(`${BASE_PATH}/Health`, (request, response) => {
@@ -90,3 +92,4 @@ export const initServer = async () => {
         process.exit(1);
     }
 };
+
