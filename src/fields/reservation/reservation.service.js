@@ -1,7 +1,9 @@
 'use strict';
 import Reservation from './reservation.js';
+import User from '../user/user.js';
 import Table from '../table/table.js';
 import mongoose from 'mongoose';
+import { sendEmail } from '../../../utils/send-email.js';
 
 const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
 
@@ -36,7 +38,7 @@ export const createReservationService = async (data, userId) => {
 
     const foundTable = await Table.findById(table);
     if (!foundTable) {
-        return null; 
+        return null;
     }
 
     if (numberOfPeople > foundTable.capacity) {
@@ -85,13 +87,30 @@ export const getReservationByIdService = async (id) => {
 
 
 export const updateReservationService = async (id, data) => {
+
     if (!isValidId(id)) return false;
 
-    return await Reservation.findByIdAndUpdate(
-        id,
-        data,
-        { new: true, runValidators: true }
-    );
+    const reservation = await Reservation.findById(id);
+    if (!reservation) return null;
+
+    reservation.set(data);
+    await reservation.save();
+
+    if (reservation.status === 'confirmed') {
+
+        const user = await User.findByPk(reservation.user);
+
+        if (user) {
+            await sendEmail(
+                user.email,
+                'Reservación Confirmada',
+                `<h1>Tu reservación fue confirmada</h1>
+                 <p>Fecha: ${reservation.date}</p>`
+            );
+        }
+    }
+
+    return reservation;
 };
 
 

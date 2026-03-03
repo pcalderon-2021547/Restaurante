@@ -1,6 +1,8 @@
 'use strict';
 
 import Order from './order_model.js';
+import User from '../user/user.js'; 
+import { sendEmail } from '../../../utils/send-email.js';
 
 // manejo centralizado de errores para las operaciones de orden
 const handleOrderError = (res, error, defaultMessage) => {
@@ -59,6 +61,14 @@ export const updateOrder = async (req, res) => {
     try {
         const { id } = req.params;
 
+        const existingOrder = await Order.findById(id);
+        if (!existingOrder) {
+            return res.status(404).json({
+                success: false,
+                message: 'Orden no encontrada'
+            });
+        }
+
         const order = await Order.findByIdAndUpdate(
             id,
             req.body,
@@ -68,11 +78,17 @@ export const updateOrder = async (req, res) => {
             }
         );
 
-        if (!order) {
-            return res.status(404).json({
-                success: false,
-                message: 'Orden no encontrada'
-            });
+        if (req.body.status && req.body.status !== existingOrder.status) {
+
+            const user = await User.findByPk(order.user);
+
+            if (user) {
+                await sendEmail(
+                    user.email,
+                    'Actualización de tu orden',
+                    `<h2>El estado de tu orden ahora es: ${order.status}</h2>`
+                );
+            }
         }
 
         return res.status(200).json({
