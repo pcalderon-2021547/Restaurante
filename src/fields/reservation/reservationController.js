@@ -1,142 +1,65 @@
 'use strict';
+import {
+    createReservationService,
+    getReservationsService,
+    getReservationByIdService,
+    updateReservationService,
+    cancelReservationService,
+    getReservationsByDateService,
+    getMyReservationsService
+} from './reservation.service.js';
 
-import Reservation from './reservation.js';
-import Table from '../table/table.js';
-import mongoose from 'mongoose';
+import { handleError } from '../../../utils/handle-error.js';
 
-const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
-
-//respuesta de errores segun el tipo
-const handleReservationError = (res, error, defaultMessage) => {
-    if (error?.name === 'ValidationError') {
-        return res.status(400).json({
-            success: false,
-            message: 'Datos de reservación inválidos',
-            error: error.message
-        });
-    }
-
-    return res.status(500).json({
-        success: false,
-        message: defaultMessage,
-        error: error.message
-    });
-};
 
 export const createReservation = async (req, res) => {
     try {
-        const { table, numberOfPeople, date, notes, customerPhone } = req.body;
+        const reservation = await createReservationService(req.body, req.user.id);
 
-        //validar que todos los campos requeridos esten presentes
-        if (!table || !numberOfPeople || !date) {
-            return res.status(400).json({
-                success: false,
-                message: 'table, numberOfPeople y date son obligatorios'
-            });
-        }
-
-        //asegurar que la cantidad de personas no sea decimal
-        if (!Number.isInteger(Number(numberOfPeople))) {
-            return res.status(400).json({
-                success: false,
-                message: 'El número de personas debe ser un entero'
-            });
-        }
-
-        //evitar reservaciones en dias o horas ya pasadas
-        const reservationDate = new Date(date);
-        if (reservationDate < new Date()) {
-            return res.status(400).json({
-                success: false,
-                message: 'No se puede reservar en una fecha pasada'
-            });
-        }
-
-        if (!isValidId(table)) {
-            return res.status(400).json({
-                success: false,
-                message: 'ID de mesa inválido'
-            });
-        }
-
-        //confirmar existencia de la mesa antes de asignar
-        const foundTable = await Table.findById(table);
-        if (!foundTable) {
+        if (!reservation) {
             return res.status(404).json({
                 success: false,
                 message: 'Mesa no encontrada'
             });
         }
 
-        //validar que la mesa tenga capacidad
-        if (numberOfPeople > foundTable.capacity) {
-            return res.status(400).json({
-                success: false,
-                message: 'La cantidad de personas supera la capacidad de la mesa'
-            });
-        }
-
-        //verificar que la mesa no este ocupada en esa fecha
-        const existingReservation = await Reservation.findOne({
-            table,
-            date,
-            status: { $ne: 'cancelled' }
-        });
-
-        if (existingReservation) {
-            return res.status(400).json({
-                success: false,
-                message: 'La mesa ya está reservada en esa fecha'
-            });
-        }
-
-        const reservation = new Reservation({
-            ...req.body,
-            user: req.user.id
-        });
-        await reservation.save();
-        foundTable.status = 'occupied';
-        await foundTable.save();
-
         return res.status(201).json({
             success: true,
-            message: 'Reservación creada',
             reservation
         });
 
     } catch (error) {
-        return handleReservationError(res, error, 'Error al crear reservación');
+        return handleError(res, error, {
+            validationMessage: 'Datos inválidos de la reservación',
+            defaultMessage: 'Error al crear reservación'
+        });
     }
 };
 
+
 export const getReservations = async (req, res) => {
     try {
-        //obtener todas las reservas con datos de mesa y orden de fehca mas cercana
-        const reservations = await Reservation.find()
-            .populate('table')
-            .sort({ date: 1 });
-
+        const reservations = await getReservationsService();
         return res.status(200).json({
             success: true,
             reservations
         });
     } catch (error) {
-        return handleReservationError(res, error, 'Error al listar reservaciones');
+        return handleError(res, error, 'Error al obtener reservaciones');
     }
 };
+
 
 export const getReservationById = async (req, res) => {
     try {
-        const { id } = req.params;
+        const reservation = await getReservationByIdService(req.params.id);
 
-        if (!isValidId(id)) {
+        if (reservation === false) {
             return res.status(400).json({
                 success: false,
                 message: 'ID de reservación inválido'
             });
         }
-
-        const reservation = await Reservation.findById(id).populate('table');
 
         if (!reservation) {
             return res.status(404).json({
@@ -149,28 +72,23 @@ export const getReservationById = async (req, res) => {
             success: true,
             reservation
         });
+
     } catch (error) {
-        return handleReservationError(res, error, 'Error al buscar reservación');
+        return handleError(res, error, 'Error al buscar reservación');
     }
 };
+
 
 export const updateReservation = async (req, res) => {
     try {
-        const { id } = req.params;
+        const reservation = await updateReservationService(req.params.id, req.body);
 
-        if (!isValidId(id)) {
+        if (reservation === false) {
             return res.status(400).json({
                 success: false,
                 message: 'ID de reservación inválido'
             });
         }
-
-        //actualizar y revisar que los nuevos datos sigan las reglas
-        const reservation = await Reservation.findByIdAndUpdate(
-            id,
-            req.body,
-            { new: true, runValidators: true }
-        );
 
         if (!reservation) {
             return res.status(404).json({
@@ -181,42 +99,31 @@ export const updateReservation = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            message: 'Reservación actualizada',
             reservation
         });
+
     } catch (error) {
-        return handleReservationError(res, error, 'Error al actualizar reservación');
+        return handleError(res, error, 'Error al actualizar reservación');
     }
 };
 
+
 export const cancelReservation = async (req, res) => {
     try {
-        const { id } = req.params;
+        const reservation = await cancelReservationService(req.params.id);
 
-        if (!isValidId(id)) {
+        if (reservation === false) {
             return res.status(400).json({
                 success: false,
                 message: 'ID de reservación inválido'
             });
         }
 
-        const reservation = await Reservation.findById(id);
-
         if (!reservation) {
             return res.status(404).json({
                 success: false,
                 message: 'Reservación no encontrada'
             });
-        }
-
-        reservation.status = 'cancelled';
-        await reservation.save();
-
-        // liberar mesa
-        const table = await Table.findById(reservation.table);
-        if (table) {
-            table.status = 'available';
-            await table.save();
         }
 
         return res.status(200).json({
@@ -225,60 +132,33 @@ export const cancelReservation = async (req, res) => {
         });
 
     } catch (error) {
-        return handleReservationError(res, error, 'Error al cancelar reservación');
+        return handleError(res, error, 'Error al cancelar reservación');
     }
 };
+
+
 export const getReservationsByDate = async (req, res) => {
     try {
-        const { date } = req.query;
-
-        if (!date) {
-            return res.status(400).json({
-                success: false,
-                message: 'El parámetro date es obligatorio (formato: YYYY-MM-DD)'
-            });
-        }
-
-        //definir el inicio y el fin del dia
-        const startOfDay = new Date(date);
-        startOfDay.setUTCHours(0, 0, 0, 0);
-
-        const endOfDay = new Date(date);
-        endOfDay.setUTCHours(23, 59, 59, 999);
-
-        //ver que el string recibido sea una fecha real
-        if (isNaN(startOfDay.getTime())) {
-            return res.status(400).json({
-                success: false,
-                message: 'Formato de fecha inválido. Use YYYY-MM-DD'
-            });
-        }
-
-        //buscar reservas dentro del rango de 24 horas
-        const reservations = await Reservation.find({
-            date: { $gte: startOfDay, $lte: endOfDay }
-        }).populate('table');
+        const reservations = await getReservationsByDateService(req.query.date);
 
         return res.status(200).json({
             success: true,
-            date,
             total: reservations.length,
             reservations
         });
 
     } catch (error) {
-        return handleReservationError(res, error, 'Error al buscar reservaciones por fecha');
+        return handleError(res, error, {
+            validationMessage: error.message,
+            defaultMessage: 'Error al buscar reservaciones por fecha'
+        });
     }
 };
+
 
 export const getMyReservations = async (req, res) => {
     try {
-
-        const reservations = await Reservation.find({
-            user: req.user.id
-        })
-            .populate('table')
-            .sort({ date: -1 });
+        const reservations = await getMyReservationsService(req.user.id);
 
         return res.status(200).json({
             success: true,
@@ -286,9 +166,7 @@ export const getMyReservations = async (req, res) => {
             reservations
         });
 
-
-
     } catch (error) {
-        return handleReservationError(res, error, 'Error al obtener historial');
+        return handleError(res, error, 'Error al obtener historial');
     }
 };

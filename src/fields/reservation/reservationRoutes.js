@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {createReservation,getReservations,getReservationById,updateReservation,cancelReservation,getReservationsByDate, getMyReservations } from './reservationController.js';
 import { validateJWT } from '../../../middlewares/validate_jwt.js';
 import { validateCreateReview, normalizeReviewOwnership } from '../../../middlewares/reservationAndReviewValidator.js';
+import { validateObjectId } from '../../../middlewares/validate-object-id.js';
 
 
 
@@ -25,18 +26,18 @@ router.get(
 );
 //listar por Id
 router.get(
-    '/:id', getReservationById
+    '/:id', validateObjectId,getReservationById
 );
 //actualizar
 router.put(
     '/update/:id',validateJWT,
-    normalizeReviewOwnership,
+    normalizeReviewOwnership,validateObjectId,
      updateReservation
 );
 //eliminar
 router.delete(
     '/delete/:id',validateJWT,
-    normalizeReviewOwnership,
+    normalizeReviewOwnership,validateObjectId,
     cancelReservation
 );
 
