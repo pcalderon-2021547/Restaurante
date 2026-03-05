@@ -194,3 +194,110 @@ export const deleteEvent = async (req, res) => {
         return handleEventError(res, error, 'Error al eliminar evento');
     }
 };
+
+// ── PDF: TODOS LOS EVENTOS ────────────────────────────────────────────────────
+// GET /event/send-pdf/all/:email
+export const sendAllEventsPDF = async (req, res) => {
+    try {
+        const { email } = req.params;
+        if (!email || !email.includes('@')) {
+            return res.status(400).json({ success: false, message: 'El correo proporcionado no es válido' });
+        }
+        const events = await Event.find().populate('restaurant').sort({ date: 1 });
+        if (!events.length) {
+            return res.status(404).json({ success: false, message: 'No hay eventos registrados' });
+        }
+        const service = new EmailPDFService();
+        const result = await service.sendEntityPDF({
+            toEmail: email,
+            subject: 'Reporte Completo – Eventos Gastronómicos',
+            title: 'Listado Completo de Eventos Gastronómicos',
+            entityName: 'Evento',
+            data: events,
+            fields: EVENT_FIELDS,
+            filename: 'eventos_reporte.pdf'
+        });
+        return res.status(200).json({
+            success: true,
+            message: `PDF enviado correctamente a ${result.toEmail}`,
+            data: { correoDestino: result.toEmail, archivoEnviado: result.filename, totalRegistros: result.records }
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Error al enviar el PDF', error: error.message });
+    }
+};
+
+// ── PDF: EVENTOS POR RESTAURANTE ──────────────────────────────────────────────
+// GET /event/send-pdf/restaurant/:restaurantId/:email
+export const sendEventsByRestaurantPDF = async (req, res) => {
+    try {
+        const { restaurantId, email } = req.params;
+        if (!email || !email.includes('@')) {
+            return res.status(400).json({ success: false, message: 'El correo proporcionado no es válido' });
+        }
+        if (!isValidId(restaurantId)) {
+            return res.status(400).json({ success: false, message: 'ID de restaurante inválido' });
+        }
+        const restaurant = await Restaurant.findById(restaurantId);
+        if (!restaurant) {
+            return res.status(404).json({ success: false, message: 'Restaurante no encontrado' });
+        }
+        const events = await Event.find({ restaurant: restaurantId }).sort({ date: 1 });
+        if (!events.length) {
+            return res.status(404).json({ success: false, message: 'No hay eventos para este restaurante' });
+        }
+        const service = new EmailPDFService();
+        const result = await service.sendEntityPDF({
+            toEmail: email,
+            subject: `Eventos del Restaurante – ${restaurant.name}`,
+            title: `Eventos del Restaurante: ${restaurant.name}`,
+            entityName: 'Evento',
+            data: events,
+            fields: EVENT_FIELDS,
+            filename: `eventos_${restaurant.name.replace(/\s+/g, '_')}.pdf`
+        });
+        return res.status(200).json({
+            success: true,
+            message: `PDF enviado correctamente a ${result.toEmail}`,
+            data: { correoDestino: result.toEmail, archivoEnviado: result.filename, restaurante: restaurant.name, totalRegistros: result.records }
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Error al enviar el PDF', error: error.message });
+    }
+};
+
+// ── PDF: UN EVENTO ESPECÍFICO ─────────────────────────────────────────────────
+// GET /event/send-pdf/:id/:email
+export const sendEventByIdPDF = async (req, res) => {
+    try {
+        const { id, email } = req.params;
+        if (!email || !email.includes('@')) {
+            return res.status(400).json({ success: false, message: 'El correo proporcionado no es válido' });
+        }
+        if (!isValidId(id)) {
+            return res.status(400).json({ success: false, message: 'ID de evento inválido' });
+        }
+        const event = await Event.findById(id).populate('restaurant');
+        if (!event) {
+            return res.status(404).json({ success: false, message: 'Evento no encontrado' });
+        }
+        const service = new EmailPDFService();
+        const result = await service.sendEntityPDF({
+            toEmail: email,
+            subject: `Detalle de Evento – ${event.name}`,
+            title: `Detalle del Evento: ${event.name}`,
+            entityName: 'Evento',
+            data: event,
+            fields: EVENT_FIELDS,
+            filename: `evento_${event._id}.pdf`
+        });
+        return res.status(200).json({
+            success: true,
+            message: `PDF enviado correctamente a ${result.toEmail}`,
+            data: { correoDestino: result.toEmail, archivoEnviado: result.filename, eventoEnviado: event.name }
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Error al enviar el PDF', error: error.message });
+    }
+};
+
