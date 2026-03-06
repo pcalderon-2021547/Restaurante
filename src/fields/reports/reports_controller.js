@@ -676,7 +676,7 @@ export const sendRestaurantStatsExcel = async (req, res) => {
         // Enviar por correo
         const transporter = nodemailer.createTransport({
             service: 'gmail',
-            auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
+            auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }, tls: { rejectUnauthorized: false }
         });
 
         await transporter.sendMail({
@@ -685,7 +685,7 @@ export const sendRestaurantStatsExcel = async (req, res) => {
             subject: `Reporte Excel – ${restaurant.name}`,
             html: `<p>Adjunto encontrará el reporte Excel del restaurante <strong>${restaurant.name}</strong> con ${ordersPerDay.length} días de datos y top ${topDishesRaw.length} platillos.</p>`,
             attachments: [{ filename, content: excelBuffer, contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }]
-        });
+        }); 
 
         return res.status(200).json({
             success: true,

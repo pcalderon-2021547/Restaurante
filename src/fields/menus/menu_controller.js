@@ -1,6 +1,6 @@
 'use strict';
-import menus from './menu_model.js';
-import restaurant from '../restaurant/restaurant.model.js';
+import Menu from './menu_model.js';
+import Restaurant from '../restaurant/restaurant.model.js';
 import mongoose from 'mongoose';
 
 const handleMenuError = (res, error, defaultMessage) => {
