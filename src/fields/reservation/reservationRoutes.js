@@ -12,11 +12,8 @@ import {
     sendReservationByIdPDF
 } from './reservationController.js';
 import { validateJWT } from '../../../middlewares/validate_jwt.js';
-<<<<<<< HEAD
-=======
 import { validateObjectId } from '../../../middlewares/validate-object-id.js';
 import { requireRole } from '../../../middlewares/validate_role.js';
->>>>>>> origin/Development
 
 
 
@@ -44,19 +41,13 @@ router.get(
 //actualizar
 router.put(
     '/update/:id',validateJWT,
-<<<<<<< HEAD
-=======
     validateObjectId,
->>>>>>> origin/Development
      updateReservation
 );
 //eliminar
 router.delete(
     '/delete/:id',validateJWT,
-<<<<<<< HEAD
-=======
     validateObjectId,
->>>>>>> origin/Development
     cancelReservation
 );
 
