@@ -5,12 +5,11 @@ import mongoose from 'mongoose';
 const orderSchema = mongoose.Schema(
     {
         user: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'User',
+            type: Number,
             required: true
         },
 
-     
+
         restaurant: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Restaurant',

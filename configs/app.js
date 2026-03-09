@@ -21,7 +21,7 @@ import restaurantRoutes from '../src/fields/restaurant/restaurant.routes.js';
 import reviewRoutes from '../src/fields/review/review.routes.js'
 import menu_routes from '../src/fields/menus/menu_routes.js';
 import eventRoutes from '../src/fields/evento/event.routes.js';
-
+import reportsRoutes from '../src/fields/reports/reports_routes.js';    
 const BASE_PATH = '/restaurantManagement/v1';
 
 const middlewares = (app) => {
@@ -49,6 +49,7 @@ const routes = (app) => {
     app.use(`${BASE_PATH}/review`, reviewRoutes);
     app.use(`${BASE_PATH}/menu`, menu_routes);
     app.use(`${BASE_PATH}/event`, eventRoutes);
+    app.use(`${BASE_PATH}/reports`, reportsRoutes);
 
 
     app.get(`${BASE_PATH}/Health`, (request, response) => {

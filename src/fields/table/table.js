@@ -20,6 +20,10 @@ const tableSchema = mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Restaurant',
         required: true
+    },
+    location: {
+        type: String,
+        required: true
     }
 }, { timestamps: true });
 

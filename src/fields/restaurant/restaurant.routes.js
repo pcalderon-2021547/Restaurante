@@ -8,6 +8,7 @@ import {
 
 import { validateJWT } from '../../../middlewares/validate_jwt.js';
 import { requireRole } from '../../../middlewares/validate_role.js';
+import { validateObjectId } from '../../../middlewares/validate-object-id.js';
 
 const router = Router();
 
@@ -22,6 +23,7 @@ router.get('/', getRestaurants);
 router.put('/update/:id',
     validateJWT,
     requireRole('ADMIN_ROLE'),
+    validateObjectId,
     updateRestaurant
 );
 

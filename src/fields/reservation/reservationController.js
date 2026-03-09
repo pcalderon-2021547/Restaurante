@@ -1,294 +1,218 @@
 'use strict';
+import {
+    createReservationService,
+    getReservationsService,
+    getReservationByIdService,
+    updateReservationService,
+    cancelReservationService,
+    getReservationsByDateService,
+    getMyReservationsService
+} from './reservation.service.js';
 
+import { handleError } from '../../../utils/handle-error.js';
+import { EmailPDFService } from '../services/EmailPDFService.js';
 import Reservation from './reservation.js';
-import Table from '../table/table.js';
-import mongoose from 'mongoose';
 
-const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
+// ── CAMPOS PARA PDF ───────────────────────────────────────────────────────────
+const RESERVATION_FIELDS = [
+    { label: 'ID',               key: '_id' },
+    { label: 'Usuario ID',       key: 'user' },
+    { label: 'Nombre Cliente',   key: 'customerName' },
+    { label: 'Teléfono',         key: 'customerPhone' },
+    { label: 'Mesa',             key: 'table' },
+    { label: 'Fecha',            key: 'date' },
+    { label: 'Personas',         key: 'numberOfPeople' },
+    { label: 'Estado',           key: 'status' },
+    { label: 'Notas',            key: 'notes' },
+    { label: 'Creado en',        key: 'createdAt' },
+    { label: 'Actualizado en',   key: 'updatedAt' },
+];
 
-//respuesta de errores segun el tipo
-const handleReservationError = (res, error, defaultMessage) => {
-    if (error?.name === 'ValidationError') {
-        return res.status(400).json({
-            success: false,
-            message: 'Datos de reservación inválidos',
-            error: error.message
-        });
-    }
-
-    return res.status(500).json({
-        success: false,
-        message: defaultMessage,
-        error: error.message
-    });
-};
-
+// ── CRUD ──────────────────────────────────────────────────────────────────────
 export const createReservation = async (req, res) => {
     try {
-        const { table, numberOfPeople, date, notes, customerPhone } = req.body;
-
-        //validar que todos los campos requeridos esten presentes
-        if (!table || !numberOfPeople || !date) {
-            return res.status(400).json({
-                success: false,
-                message: 'table, numberOfPeople y date son obligatorios'
-            });
+        const reservation = await createReservationService(req.body, req.user.id);
+        if (!reservation) {
+            return res.status(404).json({ success: false, message: 'Mesa no encontrada' });
         }
-
-        //asegurar que la cantidad de personas no sea decimal
-        if (!Number.isInteger(Number(numberOfPeople))) {
-            return res.status(400).json({
-                success: false,
-                message: 'El número de personas debe ser un entero'
-            });
-        }
-
-        //evitar reservaciones en dias o horas ya pasadas
-        const reservationDate = new Date(date);
-        if (reservationDate < new Date()) {
-            return res.status(400).json({
-                success: false,
-                message: 'No se puede reservar en una fecha pasada'
-            });
-        }
-
-        if (!isValidId(table)) {
-            return res.status(400).json({
-                success: false,
-                message: 'ID de mesa inválido'
-            });
-        }
-
-        //confirmar existencia de la mesa antes de asignar
-        const foundTable = await Table.findById(table);
-        if (!foundTable) {
-            return res.status(404).json({
-                success: false,
-                message: 'Mesa no encontrada'
-            });
-        }
-
-        //validar que la mesa tenga capacidad
-        if (numberOfPeople > foundTable.capacity) {
-            return res.status(400).json({
-                success: false,
-                message: 'La cantidad de personas supera la capacidad de la mesa'
-            });
-        }
-
-        //verificar que la mesa no este ocupada en esa fecha
-        const existingReservation = await Reservation.findOne({
-            table,
-            date,
-            status: { $ne: 'cancelled' }
-        });
-
-        if (existingReservation) {
-            return res.status(400).json({
-                success: false,
-                message: 'La mesa ya está reservada en esa fecha'
-            });
-        }
-
-        const reservation = new Reservation({
-            ...req.body,
-            user: req.user.id
-        });
-        await reservation.save();
-        foundTable.status = 'occupied';
-        await foundTable.save();
-
-        return res.status(201).json({
-            success: true,
-            message: 'Reservación creada',
-            reservation
-        });
-
+        return res.status(201).json({ success: true, reservation });
     } catch (error) {
-        return handleReservationError(res, error, 'Error al crear reservación');
+        return handleError(res, error, { validationMessage: 'Datos inválidos de la reservación', defaultMessage: 'Error al crear reservación' });
     }
 };
 
 export const getReservations = async (req, res) => {
     try {
-        //obtener todas las reservas con datos de mesa y orden de fehca mas cercana
-        const reservations = await Reservation.find()
-            .populate('table')
-            .sort({ date: 1 });
-
-        return res.status(200).json({
-            success: true,
-            reservations
-        });
+        const reservations = await getReservationsService();
+        return res.status(200).json({ success: true, reservations });
     } catch (error) {
-        return handleReservationError(res, error, 'Error al listar reservaciones');
+        return handleError(res, error, 'Error al obtener reservaciones');
     }
 };
 
 export const getReservationById = async (req, res) => {
     try {
-        const { id } = req.params;
-
-        if (!isValidId(id)) {
-            return res.status(400).json({
-                success: false,
-                message: 'ID de reservación inválido'
-            });
+        const reservation = await getReservationByIdService(req.params.id);
+        if (reservation === false) {
+            return res.status(400).json({ success: false, message: 'ID de reservación inválido' });
         }
-
-        const reservation = await Reservation.findById(id).populate('table');
-
         if (!reservation) {
-            return res.status(404).json({
-                success: false,
-                message: 'Reservación no encontrada'
-            });
+            return res.status(404).json({ success: false, message: 'Reservación no encontrada' });
         }
-
-        return res.status(200).json({
-            success: true,
-            reservation
-        });
+        return res.status(200).json({ success: true, reservation });
     } catch (error) {
-        return handleReservationError(res, error, 'Error al buscar reservación');
+        return handleError(res, error, 'Error al buscar reservación');
     }
 };
 
 export const updateReservation = async (req, res) => {
     try {
-        const { id } = req.params;
-
-        if (!isValidId(id)) {
-            return res.status(400).json({
-                success: false,
-                message: 'ID de reservación inválido'
-            });
+        const reservation = await updateReservationService(req.params.id, req.body);
+        if (reservation === false) {
+            return res.status(400).json({ success: false, message: 'ID de reservación inválido' });
         }
-
-        //actualizar y revisar que los nuevos datos sigan las reglas
-        const reservation = await Reservation.findByIdAndUpdate(
-            id,
-            req.body,
-            { new: true, runValidators: true }
-        );
-
         if (!reservation) {
-            return res.status(404).json({
-                success: false,
-                message: 'Reservación no encontrada'
-            });
+            return res.status(404).json({ success: false, message: 'Reservación no encontrada' });
         }
-
-        return res.status(200).json({
-            success: true,
-            message: 'Reservación actualizada',
-            reservation
-        });
+        return res.status(200).json({ success: true, reservation });
     } catch (error) {
-        return handleReservationError(res, error, 'Error al actualizar reservación');
+        return handleError(res, error, 'Error al actualizar reservación');
     }
 };
 
 export const cancelReservation = async (req, res) => {
     try {
-        const { id } = req.params;
-
-        if (!isValidId(id)) {
-            return res.status(400).json({
-                success: false,
-                message: 'ID de reservación inválido'
-            });
+        const reservation = await cancelReservationService(req.params.id);
+        if (reservation === false) {
+            return res.status(400).json({ success: false, message: 'ID de reservación inválido' });
         }
-
-        const reservation = await Reservation.findById(id);
-
         if (!reservation) {
-            return res.status(404).json({
-                success: false,
-                message: 'Reservación no encontrada'
-            });
+            return res.status(404).json({ success: false, message: 'Reservación no encontrada' });
         }
-
-        reservation.status = 'cancelled';
-        await reservation.save();
-
-        // liberar mesa
-        const table = await Table.findById(reservation.table);
-        if (table) {
-            table.status = 'available';
-            await table.save();
-        }
-
-        return res.status(200).json({
-            success: true,
-            message: 'Reservación cancelada'
-        });
-
+        return res.status(200).json({ success: true, message: 'Reservación cancelada' });
     } catch (error) {
-        return handleReservationError(res, error, 'Error al cancelar reservación');
+        return handleError(res, error, 'Error al cancelar reservación');
     }
 };
+
 export const getReservationsByDate = async (req, res) => {
     try {
-        const { date } = req.query;
-
-        if (!date) {
-            return res.status(400).json({
-                success: false,
-                message: 'El parámetro date es obligatorio (formato: YYYY-MM-DD)'
-            });
-        }
-
-        //definir el inicio y el fin del dia
-        const startOfDay = new Date(date);
-        startOfDay.setUTCHours(0, 0, 0, 0);
-
-        const endOfDay = new Date(date);
-        endOfDay.setUTCHours(23, 59, 59, 999);
-
-        //ver que el string recibido sea una fecha real
-        if (isNaN(startOfDay.getTime())) {
-            return res.status(400).json({
-                success: false,
-                message: 'Formato de fecha inválido. Use YYYY-MM-DD'
-            });
-        }
-
-        //buscar reservas dentro del rango de 24 horas
-        const reservations = await Reservation.find({
-            date: { $gte: startOfDay, $lte: endOfDay }
-        }).populate('table');
-
-        return res.status(200).json({
-            success: true,
-            date,
-            total: reservations.length,
-            reservations
-        });
-
+        const reservations = await getReservationsByDateService(req.query.date);
+        return res.status(200).json({ success: true, total: reservations.length, reservations });
     } catch (error) {
-        return handleReservationError(res, error, 'Error al buscar reservaciones por fecha');
+        return handleError(res, error, { validationMessage: error.message, defaultMessage: 'Error al buscar reservaciones por fecha' });
     }
 };
 
 export const getMyReservations = async (req, res) => {
     try {
+        const reservations = await getMyReservationsService(req.user.id);
+        return res.status(200).json({ success: true, total: reservations.length, reservations });
+    } catch (error) {
+        return handleError(res, error, 'Error al obtener historial');
+    }
+};
 
-        const reservations = await Reservation.find({
-            user: req.user.id
-        })
-            .populate('table')
-            .sort({ date: -1 });
-
+// ── PDF: TODAS LAS RESERVACIONES ──────────────────────────────────────────────
+// GET /reservation/send-pdf/all/:email
+export const sendAllReservationsPDF = async (req, res) => {
+    try {
+        const { email } = req.params;
+        if (!email || !email.includes('@')) {
+            return res.status(400).json({ success: false, message: 'El correo proporcionado no es válido' });
+        }
+        const reservations = await Reservation.find().populate('table').sort({ date: -1 });
+        if (!reservations.length) {
+            return res.status(404).json({ success: false, message: 'No hay reservaciones registradas' });
+        }
+        const service = new EmailPDFService();
+        const result = await service.sendEntityPDF({
+            toEmail: email,
+            subject: 'Reporte Completo – Reservaciones',
+            title: 'Listado Completo de Reservaciones',
+            entityName: 'Reservación',
+            data: reservations,
+            fields: RESERVATION_FIELDS,
+            filename: 'reservaciones_reporte.pdf'
+        });
         return res.status(200).json({
             success: true,
-            total: reservations.length,
-            reservations
+            message: `PDF enviado correctamente a ${result.toEmail}`,
+            data: { correoDestino: result.toEmail, archivoEnviado: result.filename, totalRegistros: result.records }
         });
-
-
-
     } catch (error) {
-        return handleReservationError(res, error, 'Error al obtener historial');
+        return res.status(500).json({ success: false, message: 'Error al enviar el PDF', error: error.message });
+    }
+};
+
+// ── PDF: RESERVACIONES POR FECHA ──────────────────────────────────────────────
+// GET /reservation/send-pdf/by-date/:date/:email
+export const sendReservationsByDatePDF = async (req, res) => {
+    try {
+        const { date, email } = req.params;
+        if (!email || !email.includes('@')) {
+            return res.status(400).json({ success: false, message: 'El correo proporcionado no es válido' });
+        }
+        const parsedDate = new Date(date);
+        if (isNaN(parsedDate)) {
+            return res.status(400).json({ success: false, message: 'Formato de fecha inválido. Use YYYY-MM-DD' });
+        }
+        const start = new Date(parsedDate); start.setHours(0, 0, 0, 0);
+        const end   = new Date(parsedDate); end.setHours(23, 59, 59, 999);
+
+        const reservations = await Reservation.find({ date: { $gte: start, $lte: end } })
+            .populate('table').sort({ date: 1 });
+        if (!reservations.length) {
+            return res.status(404).json({ success: false, message: `No hay reservaciones para la fecha: ${date}` });
+        }
+        const service = new EmailPDFService();
+        const result = await service.sendEntityPDF({
+            toEmail: email,
+            subject: `Reservaciones del día ${date}`,
+            title: `Reservaciones del día: ${date}`,
+            entityName: 'Reservación',
+            data: reservations,
+            fields: RESERVATION_FIELDS,
+            filename: `reservaciones_${date}.pdf`
+        });
+        return res.status(200).json({
+            success: true,
+            message: `PDF enviado correctamente a ${result.toEmail}`,
+            data: { correoDestino: result.toEmail, archivoEnviado: result.filename, fecha: date, totalRegistros: result.records }
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Error al enviar el PDF', error: error.message });
+    }
+};
+
+// ── PDF: UNA RESERVACIÓN ESPECÍFICA ──────────────────────────────────────────
+// GET /reservation/send-pdf/:id/:email
+export const sendReservationByIdPDF = async (req, res) => {
+    try {
+        const { id, email } = req.params;
+        if (!email || !email.includes('@')) {
+            return res.status(400).json({ success: false, message: 'El correo proporcionado no es válido' });
+        }
+        const reservation = await Reservation.findById(id).populate('table');
+        if (!reservation) {
+            return res.status(404).json({ success: false, message: 'Reservación no encontrada' });
+        }
+        const service = new EmailPDFService();
+        const result = await service.sendEntityPDF({
+            toEmail: email,
+            subject: `Detalle de Reservación – ${reservation.customerName}`,
+            title: `Detalle de Reservación: ${reservation.customerName}`,
+            entityName: 'Reservación',
+            data: reservation,
+            fields: RESERVATION_FIELDS,
+            filename: `reservacion_${reservation._id}.pdf`
+        });
+        return res.status(200).json({
+            success: true,
+            message: `PDF enviado correctamente a ${result.toEmail}`,
+            data: { correoDestino: result.toEmail, archivoEnviado: result.filename, cliente: reservation.customerName }
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Error al enviar el PDF', error: error.message });
     }
 };

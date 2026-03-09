@@ -2,70 +2,58 @@
 
 import Table from './table.js';
 import mongoose from 'mongoose';
+import {
+    createTableService,
+    getTablesService,
+    getTableByIdService,
+    updateTableService,
+    deleteTableService
+} from './table.service.js';
 
-const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
+import { handleError } from '../../../utils/handle-error.js';
 
-const handleTableError = (res, error, defaultMessage) => {
-    if (error?.code === 11000) {
-        return res.status(400).json({
-            success: false,
-            message: 'La mesa ya existe'
-        });
-    }
 
-    if (error?.name === 'ValidationError') {
-        return res.status(400).json({
-            success: false,
-            message: 'Datos de mesa inválidos',
-            error: error.message
-        });
-    }
 
-    return res.status(500).json({
-        success: false,
-        message: defaultMessage,
-        error: error.message
-    });
-};
 
 export const createTable = async (req, res) => {
     try {
-        const table = new Table(req.body);
-        await table.save();
+        const table = await createTableService(req.body);
         return res.status(201).json({
             success: true,
             message: 'Mesa creada',
             table
         });
     } catch (error) {
-        return handleTableError(res, error, 'Error al crear mesa');
+        return handleError(res, error, {
+            duplicateMessage: 'La mesa ya existe',
+            validationMessage: 'Datos inválidos de mesa',
+            defaultMessage: 'Error al crear mesa'
+        });
     }
 };
 
 export const getTables = async (req, res) => {
     try {
-        const tables = await Table.find();
+        const filters = {};
+
+        if (req.query.restaurant) {
+            filters.restaurant = req.query.restaurant;
+        }
+
+        const tables = await getTablesService(filters);
+
         return res.status(200).json({
             success: true,
             tables
         });
     } catch (error) {
-        return handleTableError(res, error, 'Error al listar mesas');
+        return handleError(res, error, 'Error al listar mesas');
     }
 };
 
 export const getTableById = async (req, res) => {
     try {
-        const { id } = req.params;
-
-        if (!isValidId(id)) {
-            return res.status(400).json({
-                success: false,
-                message: 'ID de mesa inválido'
-            });
-        }
-
-        const table = await Table.findById(id);
+        const table = await getTableByIdService(req.params.id);
 
         if (!table) {
             return res.status(404).json({
@@ -79,26 +67,13 @@ export const getTableById = async (req, res) => {
             table
         });
     } catch (error) {
-        return handleTableError(res, error, 'Error al buscar mesa');
+        return handleError(res, error, 'Error al buscar mesa');
     }
 };
 
 export const updateTable = async (req, res) => {
     try {
-        const { id } = req.params;
-
-        if (!isValidId(id)) {
-            return res.status(400).json({
-                success: false,
-                message: 'ID de mesa inválido'
-            });
-        }
-
-        const table = await Table.findByIdAndUpdate(
-            id,
-            req.body,
-            { new: true, runValidators: true }
-        );
+        const table = await updateTableService(req.params.id, req.body);
 
         if (!table) {
             return res.status(404).json({
@@ -113,22 +88,13 @@ export const updateTable = async (req, res) => {
             table
         });
     } catch (error) {
-        return handleTableError(res, error, 'Error al actualizar mesa');
+        return handleError(res, error, 'Error al actualizar mesa');
     }
 };
 
 export const deleteTable = async (req, res) => {
     try {
-        const { id } = req.params;
-
-        if (!isValidId(id)) {
-            return res.status(400).json({
-                success: false,
-                message: 'ID de mesa inválido'
-            });
-        }
-
-        const table = await Table.findByIdAndDelete(id);
+        const table = await deleteTableService(req.params.id);
 
         if (!table) {
             return res.status(404).json({
@@ -142,6 +108,6 @@ export const deleteTable = async (req, res) => {
             message: 'Mesa eliminada'
         });
     } catch (error) {
-        return handleTableError(res, error, 'Error al eliminar mesa');
+        return handleError(res, error, 'Error al eliminar mesa');
     }
 };

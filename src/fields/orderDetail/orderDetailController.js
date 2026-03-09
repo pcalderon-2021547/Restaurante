@@ -124,6 +124,7 @@ export const updateOrderDetail = async (req, res) => {
         await detail.save();
 
         await recalculateOrderTotal(detail.order);
+        
 
         return res.status(200).json({
             success: true,
