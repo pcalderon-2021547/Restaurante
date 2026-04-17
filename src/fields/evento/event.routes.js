@@ -15,6 +15,50 @@ import { requireRole } from '../../../middlewares/validate_role.js';
 
 const router = Router();
 
+/**
+ * @swagger
+ * /restaurantManagement/v1/event/create:
+ *   post:
+ *     summary: Crear un nuevo evento especial en el restaurante
+ *     tags: [Event]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [restaurant, name, date]
+ *             properties:
+ *               restaurant:
+ *                 type: string
+ *               name:
+ *                 type: string
+ *                 example: Noche Italiana
+ *               description:
+ *                 type: string
+ *               date:
+ *                 type: string
+ *                 format: date
+ *                 example: 2026-05-10
+ *               startTime:
+ *                 type: string
+ *                 example: 16:00
+ *               endTime:
+ *                 type: string
+ *                 example: 18:00
+ *               maxCapacity:
+ *                 type: integer
+ *                 example: 30
+ *               price:
+ *                 type: number
+ *                 example: 100
+ *     responses:
+ *       201:
+ *         description: Evento creado exitosamente
+ */
+
 // ── CRUD ──────────────────────────────────────────────────────────────────────
 router.post('/create', validateJWT, createEvent);
 router.get('/', validateJWT, getEvents);

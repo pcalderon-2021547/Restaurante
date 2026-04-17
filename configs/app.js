@@ -4,10 +4,15 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+
 import { dbConnection, connectPostgres, sequelize } from './db.js';
 import { corsOptions } from './cors-configuration.js';
 import { helmetConfiguration } from './helmet-configurations.js';
 
+// ── Importar Swagger ─────────────────────────────────────
+import { setupSwagger } from './swagger.js';
+
+// ── Importar Rutas ───────────────────────────────────────
 import userRoutes from '../src/fields/user/userRoutes.js'; 
 import categoryRoutes from '../src/fields/category/categoryRoutes.js';
 import productRoutes from '../src/fields/product/productRoutes.js';
@@ -18,24 +23,30 @@ import orderDetailRoutes from '../src/fields/orderDetail/orderDetailRoutes.js';
 import reservationRoutes from '../src/fields/reservation/reservationRoutes.js';
 import authRoutes from '../src/fields/auth/auth.routes.js';
 import restaurantRoutes from '../src/fields/restaurant/restaurant.routes.js';
-import reviewRoutes from '../src/fields/review/review.routes.js'
+import reviewRoutes from '../src/fields/review/review.routes.js';
 import menu_routes from '../src/fields/menus/menu_routes.js';
 import eventRoutes from '../src/fields/evento/event.routes.js';
 import reportsRoutes from '../src/fields/reports/reports_routes.js';    
+
 const BASE_PATH = '/restaurantManagement/v1';
 
 const middlewares = (app) => {
-    app.use(express.urlencoded({extended: false, limit: '10mb'}));
-    app.use(express.json({ limit: '10mb'}));
+    app.use(express.urlencoded({ extended: false, limit: '10mb' }));
+    app.use(express.json({ limit: '10mb' }));
     app.use(cors(corsOptions));
     app.use(helmet(helmetConfiguration));
     app.use(morgan('dev'));
 
-    // ConfiguraciÃ³n para ver las fotos que estÃ¡n sueltas en la raÃ­z
+    // Servir archivos estáticos (imágenes subidas)
     app.use('/uploads', express.static('./')); 
-}
+};
 
 const routes = (app) => {
+    // ── Swagger Documentation ─────────────────────
+    setupSwagger(app);
+
+    // ── Rutas principales de la API ───────────────────────────────────────────
+    app.use(`${BASE_PATH}/auth`, authRoutes);
     app.use(`${BASE_PATH}/users`, userRoutes);
     app.use(`${BASE_PATH}/category`, categoryRoutes);
     app.use(`${BASE_PATH}/product`, productRoutes);
@@ -44,53 +55,55 @@ const routes = (app) => {
     app.use(`${BASE_PATH}/order`, orderRoutes);
     app.use(`${BASE_PATH}/orderDetail`, orderDetailRoutes);
     app.use(`${BASE_PATH}/reservation`, reservationRoutes);
-    app.use(`${BASE_PATH}/auth`, authRoutes);
     app.use(`${BASE_PATH}/restaurant`, restaurantRoutes);
     app.use(`${BASE_PATH}/review`, reviewRoutes);
     app.use(`${BASE_PATH}/menu`, menu_routes);
     app.use(`${BASE_PATH}/event`, eventRoutes);
     app.use(`${BASE_PATH}/reports`, reportsRoutes);
 
-
-    app.get(`${BASE_PATH}/Health`, (request, response) => {
-        response.status(200).json({
+    // Health Check
+    app.get(`${BASE_PATH}/Health`, (req, res) => {
+        res.status(200).json({
             status: 'Healthy',
             timestamp: new Date().toISOString(),
             service: 'Restaurant Management Server'
-        })
-    })
+        });
+    });
 
-    // Manejo de errores 404
+    // Manejo de rutas no encontradas (404)
     app.use((req, res) => {
         res.status(404).json({
             success: false,
             message: 'Endpoint no encontrado en Restaurant API'
-        })
-    })
-}
+        });
+    });
+};
 
 export const initServer = async () => {
     const app = express();
-    const PORT = process.env.PORT || 3000;
+    const PORT = process.env.PORT || 3006;
 
     app.set('trust proxy', 1);
 
     try {
-        await dbConnection();
-        await connectPostgres();
+        // Conexiones a bases de datos
+        await dbConnection();        // MongoDB
+        await connectPostgres();     // PostgreSQL
         await sequelize.sync({ alter: true });
 
+        // Middlewares y rutas
         middlewares(app);
         routes(app);
 
+        // Iniciar servidor
         app.listen(PORT, () => {
-            console.log(`Restaurant Server running on port ${PORT}`);
-            console.log(`Health check: http://localhost:${PORT}${BASE_PATH}/Health`);
+            console.log(`🚀 Restaurant Server running on port ${PORT}`);
+            console.log(`📘 Swagger UI: http://localhost:${PORT}/api-docs`);
+            console.log(`❤️  Health check: http://localhost:${PORT}${BASE_PATH}/Health`);
         });
 
     } catch (error) {
-        console.error(`Error starting Server: ${error.message}`);
+        console.error(`❌ Error starting Server: ${error.message}`);
         process.exit(1);
     }
 };
-

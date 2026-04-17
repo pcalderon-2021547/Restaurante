@@ -19,6 +19,38 @@ import { requireRole } from '../../../middlewares/validate_role.js';
 
 const router = Router();
 
+/**
+ * @swagger
+ * /restaurantManagement/v1/reports/stats/general:
+ *   get:
+ *     summary: Obtener estadísticas generales del sistema
+ *     tags: [Reports]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Estadísticas generales
+ */
+
+/**
+ * @swagger
+ * /restaurantManagement/v1/reports/send-pdf/general/{email}:
+ *   get:
+ *     summary: Enviar reporte general por PDF al correo
+ *     tags: [Reports]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: email
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: PDF enviado correctamente
+ */
+
 // ── ESTADÍSTICAS JSON (para gráficos en frontend) ─────────────────────────────
 
 /**

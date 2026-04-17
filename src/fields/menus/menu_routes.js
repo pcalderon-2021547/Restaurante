@@ -11,6 +11,45 @@ import { requireRole } from '../../../middlewares/validate_role.js';
 
 const router = Router();
 
+/**
+ * @swagger
+ * /restaurantManagement/v1/menu/create:
+ *   post:
+ *     summary: Crear un nuevo menú (diario, especial, etc.)
+ *     tags: [Menu]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, restaurant, dishes]
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Menú del Día
+ *               description:
+ *                 type: string
+ *               restaurant:
+ *                 type: string
+ *               dishes:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               type:
+ *                 type: string
+ *                 enum: [DAILY, NORMAL, SPECIAL]
+ *                 example: DAILY
+ *               isActive:
+ *                 type: boolean
+ *                 default: true
+ *     responses:
+ *       201:
+ *         description: Menú creado correctamente
+ */
+
 router.post(
     '/create',
     validateJWT,

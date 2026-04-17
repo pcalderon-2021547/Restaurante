@@ -15,7 +15,120 @@ import { validateJWT } from '../../../middlewares/validate_jwt.js';
 import { validateObjectId } from '../../../middlewares/validate-object-id.js';
 import { requireRole } from '../../../middlewares/validate_role.js';
 
+/**
+ * @swagger
+ * /restaurantManagement/v1/reservation/create:
+ *   post:
+ *     summary: Crear nueva reservación
+ *     tags: [Reservation]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Reserva'
+ *     responses:
+ *       201:
+ *         description: Reservación creada
+ *       400:
+ *         description: Mesa no disponible o datos inválidos
+ */
 
+/**
+ * @swagger
+ * /restaurantManagement/v1/reservation:
+ *   get:
+ *     summary: Listar todas las reservaciones
+ *     tags: [Reservation]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de reservaciones
+ */
+
+/**
+ * @swagger
+ * /restaurantManagement/v1/reservation/{id}:
+ *   get:
+ *     summary: Obtener reservación por ID
+ *     tags: [Reservation]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Reservación encontrada
+ */
+
+/**
+ * @swagger
+ * /restaurantManagement/v1/reservation/update/{id}:
+ *   put:
+ *     summary: Actualizar reservación
+ *     tags: [Reservation]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Reserva'
+ *     responses:
+ *       200:
+ *         description: Reservación actualizada
+ */
+
+/**
+ * @swagger
+ * /restaurantManagement/v1/reservation/delete/{id}:
+ *   delete:
+ *     summary: Cancelar reservación
+ *     tags: [Reservation]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Reservación cancelada
+ */
+
+/**
+ * @swagger
+ * /restaurantManagement/v1/reservation/by-date:
+ *   get:
+ *     summary: Obtener reservaciones por fecha
+ *     tags: [Reservation]
+ *     parameters:
+ *       - in: query
+ *         name: date
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *     responses:
+ *       200:
+ *         description: Reservaciones del día
+ */
 
 const router = Router();
 
