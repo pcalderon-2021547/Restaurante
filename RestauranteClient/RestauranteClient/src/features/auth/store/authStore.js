@@ -1,8 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import {
-    login as loginRequest
-} from "../../../shared/api"
+import { login as loginRequest } from "../../../shared/api";
 import { showError } from "../../../shared/utils/toast";
 
 export const useAuthStore = create(
@@ -17,46 +15,42 @@ export const useAuthStore = create(
             isAuthenticated: false,
 
             checkAuth: () => {
-                const token = get().token;
-                const role = get().user?.role;
-                const isAdmin = role === "ADMIN_ROLE";
+                const { token, user } = get();
+                const isAdmin = user?.role === "ADMIN_ROLE";
 
-                if (token && !isAdmin) {
+                if (!token || !isAdmin) {
                     set({
                         user: null,
                         token: null,
                         expiresAt: null,
                         isAuthenticated: false,
-                        isLoadingAuth: false,
-                        error: "No tienes permisos para acceder como administrador."
+                        isLoadingAuth: false
                     });
                     return;
                 }
 
                 set({
-                    isLoadingAuth: false,
-                    isAuthenticated: Boolean(token) && isAdmin
+                    isAuthenticated: true,
+                    isLoadingAuth: false
                 });
             },
 
             login: async ({ email, password }) => {
                 try {
                     set({ loading: true, error: null });
-                    const { data } = await loginRequest({ email, password });
 
-                    // El backend del restaurante devuelve { success, token }
-                    let role = null;
-                    let userId = null;
-                    if (data?.token) {
-                        try {
-                            const payload = JSON.parse(atob(data.token.split(".")[1]));
-                            role = payload.role;
-                            userId = payload.sub;
-                        } catch (_) {}
-                    }
+                    const { data } = await loginRequest({
+                        emailOrUsername: email, // 🔥 IMPORTANTE
+                        password
+                    });
 
-                    if (role !== "ADMIN_ROLE") {
+                    const token = data.accessToken;
+                    const role = data.userDetails?.role;
+                    const userId = data.userDetails?.id;
+
+                    if (!token || role !== "ADMIN_ROLE") {
                         const message = "No tienes permisos para acceder como administrador";
+
                         set({
                             user: null,
                             token: null,
@@ -66,13 +60,22 @@ export const useAuthStore = create(
                             loading: false,
                             error: message
                         });
+
                         showError(message);
                         return { success: false, error: message };
                     }
 
+                    // opcional: calcular expiración
+                    let expiresAt = null;
+                    try {
+                        const payload = JSON.parse(atob(token.split(".")[1]));
+                        expiresAt = payload.exp * 1000;
+                    } catch (_) {}
+
                     set({
                         user: { id: userId, email, role },
-                        token: data.token,
+                        token,
+                        expiresAt,
                         loading: false,
                         isAuthenticated: true,
                         isLoadingAuth: false
@@ -82,9 +85,15 @@ export const useAuthStore = create(
 
                 } catch (err) {
                     console.error("Login error:", err);
+
                     const message =
                         err.response?.data?.message || "Error de autenticación";
-                    set({ error: message, loading: false });
+
+                    set({
+                        error: message,
+                        loading: false
+                    });
+
                     showError(message);
                     return { success: false, error: message };
                 }
@@ -100,6 +109,8 @@ export const useAuthStore = create(
                 });
             }
         }),
-        { name: "restaurante-auth-storage" }
+        {
+            name: "restaurante-auth-storage"
+        }
     )
 );

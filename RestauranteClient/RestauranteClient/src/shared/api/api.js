@@ -2,7 +2,7 @@ import axios from "axios";
 import { useAuthStore } from "../../features/auth/store/authStore";
 
 const axiosAuth = axios.create({
-    baseURL: import.meta.env.VITE_AUTH_URL || "http://localhost:3000/restaurantManagement/v1",
+    baseURL: import.meta.env.VITE_AUTH_URL || "http://localhost:5156/api/v1",
     timeout: 8000,
     headers: {
         "Content-Type": "application/json"

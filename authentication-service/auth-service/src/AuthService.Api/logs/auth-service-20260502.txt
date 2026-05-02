@@ -1,0 +1,19 @@
+[2026-05-02 16:09:40 INF] Checking database connection... {"SourceContext":"Program"}
+[2026-05-02 16:09:43 INF] Database ready. Running seed data... {"SourceContext":"Program"}
+[2026-05-02 16:09:44 INF] Database initialization completed successfully {"SourceContext":"Program"}
+[2026-05-02 16:09:44 INF] AuthService API is running at http://localhost:5156. Health endpoint: http://localhost:5156/health {"SourceContext":"Program"}
+[2026-05-02 16:26:28 INF] Checking database connection... {"SourceContext":"Program"}
+[2026-05-02 16:26:30 INF] Database ready. Running seed data... {"SourceContext":"Program"}
+[2026-05-02 16:26:31 INF] Database initialization completed successfully {"SourceContext":"Program"}
+[2026-05-02 16:26:32 INF] AuthService API is running at http://localhost:5156. Health endpoint: http://localhost:5156/health {"SourceContext":"Program"}
+[2026-05-02 16:27:44 INF] HTTP OPTIONS /restaurantManagement/v1/auth/login responded 204 in 9.6838 ms {"SourceContext":"Serilog.AspNetCore.RequestLoggingMiddleware","RequestId":"0HNL8J83R25AC:00000001","ConnectionId":"0HNL8J83R25AC"}
+[2026-05-02 16:27:44 INF] HTTP POST /restaurantManagement/v1/auth/login responded 404 in 61.7760 ms {"SourceContext":"Serilog.AspNetCore.RequestLoggingMiddleware","RequestId":"0HNL8J83R25AC:00000002","ConnectionId":"0HNL8J83R25AC"}
+[2026-05-02 16:30:11 INF] HTTP OPTIONS /restaurantManagement/v1/restaurantManagment/v1/auth/login responded 204 in 2.0584 ms {"SourceContext":"Serilog.AspNetCore.RequestLoggingMiddleware","RequestId":"0HNL8J83R25AD:00000001","ConnectionId":"0HNL8J83R25AD"}
+[2026-05-02 16:30:11 INF] HTTP POST /restaurantManagement/v1/restaurantManagment/v1/auth/login responded 404 in 19.0236 ms {"SourceContext":"Serilog.AspNetCore.RequestLoggingMiddleware","RequestId":"0HNL8J83R25AD:00000002","ConnectionId":"0HNL8J83R25AD"}
+[2026-05-02 16:30:52 INF] HTTP OPTIONS /restaurantManagement/v1/restaurantManagement/v1/auth/login responded 204 in 0.1891 ms {"SourceContext":"Serilog.AspNetCore.RequestLoggingMiddleware","RequestId":"0HNL8J83R25AD:00000003","ConnectionId":"0HNL8J83R25AD"}
+[2026-05-02 16:30:53 INF] HTTP POST /restaurantManagement/v1/restaurantManagement/v1/auth/login responded 404 in 15.5704 ms {"SourceContext":"Serilog.AspNetCore.RequestLoggingMiddleware","RequestId":"0HNL8J83R25AD:00000004","ConnectionId":"0HNL8J83R25AD"}
+[2026-05-02 16:32:14 INF] HTTP POST /restaurantManagement/v1/restaurantManagement/v1/auth/login responded 404 in 2.7543 ms {"SourceContext":"Serilog.AspNetCore.RequestLoggingMiddleware","RequestId":"0HNL8J83R25AD:00000005","ConnectionId":"0HNL8J83R25AD"}
+[2026-05-02 16:32:46 INF] HTTP GET /restaurantManagement/v1/auth/login responded 404 in 0.3578 ms {"SourceContext":"Serilog.AspNetCore.RequestLoggingMiddleware","RequestId":"0HNL8J83R25AF:00000001","ConnectionId":"0HNL8J83R25AF"}
+[2026-05-02 16:32:49 INF] HTTP GET /restaurantManagement/v1/auth/login responded 404 in 0.2578 ms {"SourceContext":"Serilog.AspNetCore.RequestLoggingMiddleware","RequestId":"0HNL8J83R25AF:00000002","ConnectionId":"0HNL8J83R25AF"}
+[2026-05-02 16:36:16 INF] HTTP OPTIONS /api/v1/restaurantManagement/v1/auth/login responded 204 in 0.2665 ms {"SourceContext":"Serilog.AspNetCore.RequestLoggingMiddleware","RequestId":"0HNL8J83R25AG:00000001","ConnectionId":"0HNL8J83R25AG"}
+[2026-05-02 16:36:16 INF] HTTP POST /api/v1/restaurantManagement/v1/auth/login responded 404 in 0.3518 ms {"SourceContext":"Serilog.AspNetCore.RequestLoggingMiddleware","RequestId":"0HNL8J83R25AG:00000002","ConnectionId":"0HNL8J83R25AG"}
