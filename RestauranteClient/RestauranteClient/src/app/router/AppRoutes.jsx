@@ -5,6 +5,7 @@ import { RoleGuard } from "./RoleGuard.jsx";
 import { ProtectedRoute } from "./ProtectedRoute.jsx";
 import { VerifyEmailPage } from "../../features/auth/pages/VerifyEmailPage.jsx";
 import { UnauthorizedPage } from "../../features/auth/pages/UnauthorizedPage.jsx";
+import { Categories } from "../../features/categories/components/Categories.jsx";
 
 // Placeholder para secciones del dashboard
 const ComingSoon = ({ section }) => (
@@ -36,7 +37,7 @@ export const AppRoutes = () => {
                 <Route index element={<ComingSoon section="Dashboard" />} />
                 <Route path="users" element={<ComingSoon section="Usuarios" />} />
                 <Route path="products" element={<ComingSoon section="Productos" />} />
-                <Route path="categories" element={<ComingSoon section="Categorías" />} />
+                <Route path="categories" element={<Categories />} />
                 <Route path="menus" element={<ComingSoon section="Menús" />} />
                 <Route path="orders" element={<ComingSoon section="Pedidos" />} />
                 <Route path="reservations" element={<ComingSoon section="Reservaciones" />} />

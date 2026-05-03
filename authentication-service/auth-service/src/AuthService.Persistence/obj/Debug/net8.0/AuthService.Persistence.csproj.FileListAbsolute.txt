@@ -71,9 +71,9 @@ C:\Restaurante\authentication-service\auth-service\src\AuthService.Persistence\o
 C:\Restaurante\authentication-service\auth-service\src\AuthService.Persistence\obj\Debug\net8.0\AuthService.Persistence.AssemblyInfo.cs
 C:\Restaurante\authentication-service\auth-service\src\AuthService.Persistence\obj\Debug\net8.0\AuthService.Persistence.csproj.CoreCompileInputs.cache
 C:\Restaurante\authentication-service\auth-service\src\AuthService.Persistence\obj\Debug\net8.0\AuthService.Persistence.sourcelink.json
-C:\Restaurante\authentication-service\auth-service\src\AuthService.Persistence\obj\Debug\net8.0\AuthServ.5D1D95C4.Up2Date
 C:\Restaurante\authentication-service\auth-service\src\AuthService.Persistence\obj\Debug\net8.0\AuthService.Persistence.dll
 C:\Restaurante\authentication-service\auth-service\src\AuthService.Persistence\obj\Debug\net8.0\refint\AuthService.Persistence.dll
 C:\Restaurante\authentication-service\auth-service\src\AuthService.Persistence\obj\Debug\net8.0\AuthService.Persistence.pdb
 C:\Restaurante\authentication-service\auth-service\src\AuthService.Persistence\obj\Debug\net8.0\AuthService.Persistence.genruntimeconfig.cache
 C:\Restaurante\authentication-service\auth-service\src\AuthService.Persistence\obj\Debug\net8.0\ref\AuthService.Persistence.dll
+C:\Restaurante\authentication-service\auth-service\src\AuthService.Persistence\obj\Debug\net8.0\AuthService.Persistence.csproj.CopyComplete
