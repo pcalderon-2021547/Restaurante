@@ -29,6 +29,7 @@ export const getEvents = async () => {
     return axiosAuth.get("/evento");
 };
 
-export const getReviews = async () => {
-    return axiosAuth.get("/review");
-};
+export const getReviews   = async ()        => axiosAdmin.get("/review");
+export const createReview = async (data)    => axiosAdmin.post("/review/create", data);
+export const updateReview = async (id, data)=> axiosAdmin.put(`/review/update/${id}`, data);
+export const deleteReview = async (id)      => axiosAdmin.delete(`/review/delete/${id}`);

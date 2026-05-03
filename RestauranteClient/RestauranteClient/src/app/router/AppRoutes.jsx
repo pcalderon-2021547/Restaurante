@@ -6,6 +6,7 @@ import { ProtectedRoute } from "./ProtectedRoute.jsx";
 import { VerifyEmailPage } from "../../features/auth/pages/VerifyEmailPage.jsx";
 import { UnauthorizedPage } from "../../features/auth/pages/UnauthorizedPage.jsx";
 import { Categories } from "../../features/categories/components/Categories.jsx";
+import { Reviews } from "../../features/reviews/components/Reviews.jsx";
 
 // Placeholder para secciones del dashboard
 const ComingSoon = ({ section }) => (
@@ -42,7 +43,7 @@ export const AppRoutes = () => {
                 <Route path="orders" element={<ComingSoon section="Pedidos" />} />
                 <Route path="reservations" element={<ComingSoon section="Reservaciones" />} />
                 <Route path="events" element={<ComingSoon section="Eventos" />} />
-                <Route path="reviews" element={<ComingSoon section="Reseñas" />} />
+                <Route path="reviews" element={<Reviews />} />
                 <Route path="reports" element={<ComingSoon section="Reportes" />} />
             </Route>
         </Routes>
