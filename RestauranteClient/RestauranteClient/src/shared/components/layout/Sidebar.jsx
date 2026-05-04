@@ -14,6 +14,7 @@ export const Sidebar = () => {
         { label: "Eventos",       to: "/dashboard/events" },
         { label: "Reseñas",       to: "/dashboard/reviews" },
         { label: "Reportes",      to: "/dashboard/reports" },
+        { label: "Restaurantes",  to: "/dashboard/restaurants" },
     ];
 
     return (

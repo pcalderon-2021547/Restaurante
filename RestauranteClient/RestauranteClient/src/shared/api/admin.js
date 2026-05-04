@@ -26,11 +26,24 @@ export const getReservations = async () => {
     return axiosAuth.get("/reservation");
 };
 
-export const getEvents = async () => {
-    return axiosAuth.get("/evento");
-};
+
+export const getEvents = async () => axiosAdmin.get("/event");
+export const createEvent = async (data) => axiosAdmin.post("/event/create", data);
+export const updateEvent = async (id, data) => axiosAdmin.put(`/event/${id}`, data);
+export const deleteEvent = async (id) => axiosAdmin.delete(`/event/${id}`);
+export const sendAllEventsPDF = async (email) => axiosAdmin.get(`/event/send-pdf/all/${email}`);
+export const sendEventByIdPDF = async (id, email) => axiosAdmin.get(`/event/send-pdf/${id}/${email}`);
+
 
 export const getReviews   = async ()        => axiosAdmin.get("/review");
 export const createReview = async (data)    => axiosAdmin.post("/review/create", data);
 export const updateReview = async (id, data)=> axiosAdmin.put(`/review/update/${id}`, data);
 export const deleteReview = async (id)      => axiosAdmin.delete(`/review/delete/${id}`);
+
+export const getRestaurants = async () => axiosAdmin.get("/restaurant");
+export const createRestaurant = async (data) => axiosAdmin.post("/restaurant/create", data);
+export const updateRestaurant = async (id, data) => axiosAdmin.put(`/restaurant/update/${id}`, data);
+export const deleteRestaurant = async (id) => axiosAdmin.delete(`/restaurant/delete/${id}`);
+
+
+

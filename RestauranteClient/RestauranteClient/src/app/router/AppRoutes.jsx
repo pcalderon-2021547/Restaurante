@@ -8,6 +8,8 @@ import { UnauthorizedPage } from "../../features/auth/pages/UnauthorizedPage.jsx
 import { Categories } from "../../features/categories/components/Categories.jsx";
 import { Reviews } from "../../features/reviews/components/Reviews.jsx";
 import { Products } from "../../features/products/components/Products.jsx";
+import { Restaurants } from "../../features/restaurants/components/Restaurants.jsx";
+import { Events } from "../../features/events/components/Events.jsx";
 
 const ComingSoon = ({ section }) => (
     <div className="flex flex-col items-center justify-center h-64 text-gray-400">
@@ -42,9 +44,10 @@ export const AppRoutes = () => {
                 <Route path="menus" element={<ComingSoon section="Menús" />} />
                 <Route path="orders" element={<ComingSoon section="Pedidos" />} />
                 <Route path="reservations" element={<ComingSoon section="Reservaciones" />} />
-                <Route path="events" element={<ComingSoon section="Eventos" />} />
+                <Route path="events" element={<Events />} />
                 <Route path="reviews" element={<Reviews />} />
                 <Route path="reports" element={<ComingSoon section="Reportes" />} />
+                <Route path="restaurants" element={<Restaurants />} />
             </Route>
         </Routes>
     );

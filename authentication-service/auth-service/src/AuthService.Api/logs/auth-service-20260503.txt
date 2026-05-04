@@ -154,3 +154,90 @@ Npgsql.NpgsqlException (0x80004005): Failed to connect to 127.0.0.1:5435
 [2026-05-03 18:03:03 INF] HTTP OPTIONS /api/v1/auth/login responded 204 in 11.7210 ms {"SourceContext":"Serilog.AspNetCore.RequestLoggingMiddleware","RequestId":"0HNL9E21G61AK:00000001","ConnectionId":"0HNL9E21G61AK"}
 [2026-05-03 18:03:06 INF] User login succeeded {"EventId":{"Id":1002,"Name":"LogUserLoggedIn"},"SourceContext":"AuthService.Application.Services.AuthService","ActionId":"02d435fe-44c4-4afe-b6b7-ff30b3598f2b","ActionName":"AuthService.Api.Controllers.AuthController.Login (AuthService.Api)","RequestId":"0HNL9E21G61AK:00000002","RequestPath":"/api/v1/auth/login","ConnectionId":"0HNL9E21G61AK"}
 [2026-05-03 18:03:06 INF] HTTP POST /api/v1/auth/login responded 200 in 3201.8444 ms {"SourceContext":"Serilog.AspNetCore.RequestLoggingMiddleware","RequestId":"0HNL9E21G61AK:00000002","ConnectionId":"0HNL9E21G61AK"}
+[2026-05-03 19:04:16 INF] Checking database connection... {"SourceContext":"Program"}
+[2026-05-03 19:04:16 INF] Database ready. Running seed data... {"SourceContext":"Program"}
+[2026-05-03 19:04:16 INF] Database initialization completed successfully {"SourceContext":"Program"}
+[2026-05-03 19:04:17 ERR] An exception occurred while trying to decrypt the element. {"EventId":{"Id":43,"Name":"ExceptionOccurredTryingToDecryptElement"},"SourceContext":"Microsoft.AspNetCore.DataProtection.XmlEncryption.DpapiXmlDecryptor"}
+System.Security.Cryptography.CryptographicException: Error occurred during a cryptographic operation.
+   at Microsoft.AspNetCore.DataProtection.Cng.DpapiSecretSerializerHelper.UnprotectWithDpapiCore(Byte* pbProtectedData, UInt32 cbProtectedData, Byte* pbOptionalEntropy, UInt32 cbOptionalEntropy)
+   at Microsoft.AspNetCore.DataProtection.Cng.DpapiSecretSerializerHelper.UnprotectWithDpapi(Byte[] protectedSecret)
+   at Microsoft.AspNetCore.DataProtection.XmlEncryption.DpapiXmlDecryptor.Decrypt(XElement encryptedElement)
+[2026-05-03 19:04:17 ERR] An exception occurred while processing the key element '<key id="396fadd1-eb73-4eee-b2e0-6bac2967bec1" version="1" />'. {"EventId":{"Id":24,"Name":"ExceptionOccurredWhileProcessingTheKeyElement"},"SourceContext":"Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager"}
+System.Security.Cryptography.CryptographicException: Error occurred during a cryptographic operation.
+   at Microsoft.AspNetCore.DataProtection.Cng.DpapiSecretSerializerHelper.UnprotectWithDpapiCore(Byte* pbProtectedData, UInt32 cbProtectedData, Byte* pbOptionalEntropy, UInt32 cbOptionalEntropy)
+   at Microsoft.AspNetCore.DataProtection.Cng.DpapiSecretSerializerHelper.UnprotectWithDpapi(Byte[] protectedSecret)
+   at Microsoft.AspNetCore.DataProtection.XmlEncryption.DpapiXmlDecryptor.Decrypt(XElement encryptedElement)
+   at Microsoft.AspNetCore.DataProtection.XmlEncryption.XmlEncryptionExtensions.DecryptElement(XElement element, IActivator activator)
+   at Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager.Microsoft.AspNetCore.DataProtection.KeyManagement.Internal.IInternalXmlKeyManager.DeserializeDescriptorFromKeyElement(XElement keyElement)
+[2026-05-03 19:04:17 WRN] Key {396fadd1-eb73-4eee-b2e0-6bac2967bec1} is ineligible to be the default key because its CreateEncryptor method failed. {"EventId":{"Id":12,"Name":"KeyIsIneligibleToBeTheDefaultKeyBecauseItsMethodFailed"},"SourceContext":"Microsoft.AspNetCore.DataProtection.KeyManagement.DefaultKeyResolver"}
+System.Security.Cryptography.CryptographicException: Error occurred during a cryptographic operation.
+   at Microsoft.AspNetCore.DataProtection.Cng.DpapiSecretSerializerHelper.UnprotectWithDpapiCore(Byte* pbProtectedData, UInt32 cbProtectedData, Byte* pbOptionalEntropy, UInt32 cbOptionalEntropy)
+   at Microsoft.AspNetCore.DataProtection.Cng.DpapiSecretSerializerHelper.UnprotectWithDpapi(Byte[] protectedSecret)
+   at Microsoft.AspNetCore.DataProtection.XmlEncryption.DpapiXmlDecryptor.Decrypt(XElement encryptedElement)
+   at Microsoft.AspNetCore.DataProtection.XmlEncryption.XmlEncryptionExtensions.DecryptElement(XElement element, IActivator activator)
+   at Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager.Microsoft.AspNetCore.DataProtection.KeyManagement.Internal.IInternalXmlKeyManager.DeserializeDescriptorFromKeyElement(XElement keyElement)
+   at System.Lazy`1.ViaFactory(LazyThreadSafetyMode mode)
+   at System.Lazy`1.ExecutionAndPublication(LazyHelper executionAndPublication, Boolean useDefaultConstructor)
+   at System.Lazy`1.CreateValue()
+   at Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption.CngGcmAuthenticatedEncryptorFactory.CreateEncryptorInstance(IKey key)
+   at Microsoft.AspNetCore.DataProtection.KeyManagement.KeyBase.CreateEncryptor()
+   at Microsoft.AspNetCore.DataProtection.KeyManagement.DefaultKeyResolver.CanCreateAuthenticatedEncryptor(IKey key)
+[2026-05-03 19:04:17 ERR] An exception occurred while trying to decrypt the element. {"EventId":{"Id":43,"Name":"ExceptionOccurredTryingToDecryptElement"},"SourceContext":"Microsoft.AspNetCore.DataProtection.XmlEncryption.DpapiXmlDecryptor"}
+System.Security.Cryptography.CryptographicException: Error occurred during a cryptographic operation.
+   at Microsoft.AspNetCore.DataProtection.Cng.DpapiSecretSerializerHelper.UnprotectWithDpapiCore(Byte* pbProtectedData, UInt32 cbProtectedData, Byte* pbOptionalEntropy, UInt32 cbOptionalEntropy)
+   at Microsoft.AspNetCore.DataProtection.Cng.DpapiSecretSerializerHelper.UnprotectWithDpapi(Byte[] protectedSecret)
+   at Microsoft.AspNetCore.DataProtection.XmlEncryption.DpapiXmlDecryptor.Decrypt(XElement encryptedElement)
+[2026-05-03 19:04:17 ERR] An exception occurred while processing the key element '<key id="1153078f-3a88-4753-b1cb-fdc921406b7d" version="1" />'. {"EventId":{"Id":24,"Name":"ExceptionOccurredWhileProcessingTheKeyElement"},"SourceContext":"Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager"}
+System.Security.Cryptography.CryptographicException: Error occurred during a cryptographic operation.
+   at Microsoft.AspNetCore.DataProtection.Cng.DpapiSecretSerializerHelper.UnprotectWithDpapiCore(Byte* pbProtectedData, UInt32 cbProtectedData, Byte* pbOptionalEntropy, UInt32 cbOptionalEntropy)
+   at Microsoft.AspNetCore.DataProtection.Cng.DpapiSecretSerializerHelper.UnprotectWithDpapi(Byte[] protectedSecret)
+   at Microsoft.AspNetCore.DataProtection.XmlEncryption.DpapiXmlDecryptor.Decrypt(XElement encryptedElement)
+   at Microsoft.AspNetCore.DataProtection.XmlEncryption.XmlEncryptionExtensions.DecryptElement(XElement element, IActivator activator)
+   at Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager.Microsoft.AspNetCore.DataProtection.KeyManagement.Internal.IInternalXmlKeyManager.DeserializeDescriptorFromKeyElement(XElement keyElement)
+[2026-05-03 19:04:17 WRN] Key {1153078f-3a88-4753-b1cb-fdc921406b7d} is ineligible to be the default key because its CreateEncryptor method failed. {"EventId":{"Id":12,"Name":"KeyIsIneligibleToBeTheDefaultKeyBecauseItsMethodFailed"},"SourceContext":"Microsoft.AspNetCore.DataProtection.KeyManagement.DefaultKeyResolver"}
+System.Security.Cryptography.CryptographicException: Error occurred during a cryptographic operation.
+   at Microsoft.AspNetCore.DataProtection.Cng.DpapiSecretSerializerHelper.UnprotectWithDpapiCore(Byte* pbProtectedData, UInt32 cbProtectedData, Byte* pbOptionalEntropy, UInt32 cbOptionalEntropy)
+   at Microsoft.AspNetCore.DataProtection.Cng.DpapiSecretSerializerHelper.UnprotectWithDpapi(Byte[] protectedSecret)
+   at Microsoft.AspNetCore.DataProtection.XmlEncryption.DpapiXmlDecryptor.Decrypt(XElement encryptedElement)
+   at Microsoft.AspNetCore.DataProtection.XmlEncryption.XmlEncryptionExtensions.DecryptElement(XElement element, IActivator activator)
+   at Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager.Microsoft.AspNetCore.DataProtection.KeyManagement.Internal.IInternalXmlKeyManager.DeserializeDescriptorFromKeyElement(XElement keyElement)
+   at System.Lazy`1.ViaFactory(LazyThreadSafetyMode mode)
+   at System.Lazy`1.ExecutionAndPublication(LazyHelper executionAndPublication, Boolean useDefaultConstructor)
+   at System.Lazy`1.CreateValue()
+   at Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption.CngGcmAuthenticatedEncryptorFactory.CreateEncryptorInstance(IKey key)
+   at Microsoft.AspNetCore.DataProtection.KeyManagement.KeyBase.CreateEncryptor()
+   at Microsoft.AspNetCore.DataProtection.KeyManagement.DefaultKeyResolver.CanCreateAuthenticatedEncryptor(IKey key)
+[2026-05-03 19:04:17 ERR] An exception occurred while trying to decrypt the element. {"EventId":{"Id":43,"Name":"ExceptionOccurredTryingToDecryptElement"},"SourceContext":"Microsoft.AspNetCore.DataProtection.XmlEncryption.DpapiXmlDecryptor"}
+System.Security.Cryptography.CryptographicException: Error occurred during a cryptographic operation.
+   at Microsoft.AspNetCore.DataProtection.Cng.DpapiSecretSerializerHelper.UnprotectWithDpapiCore(Byte* pbProtectedData, UInt32 cbProtectedData, Byte* pbOptionalEntropy, UInt32 cbOptionalEntropy)
+   at Microsoft.AspNetCore.DataProtection.Cng.DpapiSecretSerializerHelper.UnprotectWithDpapi(Byte[] protectedSecret)
+   at Microsoft.AspNetCore.DataProtection.XmlEncryption.DpapiXmlDecryptor.Decrypt(XElement encryptedElement)
+[2026-05-03 19:04:17 ERR] An exception occurred while processing the key element '<key id="093d04ea-b93e-463c-9aa8-b4e5e81d554a" version="1" />'. {"EventId":{"Id":24,"Name":"ExceptionOccurredWhileProcessingTheKeyElement"},"SourceContext":"Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager"}
+System.Security.Cryptography.CryptographicException: Error occurred during a cryptographic operation.
+   at Microsoft.AspNetCore.DataProtection.Cng.DpapiSecretSerializerHelper.UnprotectWithDpapiCore(Byte* pbProtectedData, UInt32 cbProtectedData, Byte* pbOptionalEntropy, UInt32 cbOptionalEntropy)
+   at Microsoft.AspNetCore.DataProtection.Cng.DpapiSecretSerializerHelper.UnprotectWithDpapi(Byte[] protectedSecret)
+   at Microsoft.AspNetCore.DataProtection.XmlEncryption.DpapiXmlDecryptor.Decrypt(XElement encryptedElement)
+   at Microsoft.AspNetCore.DataProtection.XmlEncryption.XmlEncryptionExtensions.DecryptElement(XElement element, IActivator activator)
+   at Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager.Microsoft.AspNetCore.DataProtection.KeyManagement.Internal.IInternalXmlKeyManager.DeserializeDescriptorFromKeyElement(XElement keyElement)
+[2026-05-03 19:04:17 WRN] Key {093d04ea-b93e-463c-9aa8-b4e5e81d554a} is ineligible to be the default key because its CreateEncryptor method failed. {"EventId":{"Id":12,"Name":"KeyIsIneligibleToBeTheDefaultKeyBecauseItsMethodFailed"},"SourceContext":"Microsoft.AspNetCore.DataProtection.KeyManagement.DefaultKeyResolver"}
+System.Security.Cryptography.CryptographicException: Error occurred during a cryptographic operation.
+   at Microsoft.AspNetCore.DataProtection.Cng.DpapiSecretSerializerHelper.UnprotectWithDpapiCore(Byte* pbProtectedData, UInt32 cbProtectedData, Byte* pbOptionalEntropy, UInt32 cbOptionalEntropy)
+   at Microsoft.AspNetCore.DataProtection.Cng.DpapiSecretSerializerHelper.UnprotectWithDpapi(Byte[] protectedSecret)
+   at Microsoft.AspNetCore.DataProtection.XmlEncryption.DpapiXmlDecryptor.Decrypt(XElement encryptedElement)
+   at Microsoft.AspNetCore.DataProtection.XmlEncryption.XmlEncryptionExtensions.DecryptElement(XElement element, IActivator activator)
+   at Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager.Microsoft.AspNetCore.DataProtection.KeyManagement.Internal.IInternalXmlKeyManager.DeserializeDescriptorFromKeyElement(XElement keyElement)
+   at System.Lazy`1.ViaFactory(LazyThreadSafetyMode mode)
+   at System.Lazy`1.ExecutionAndPublication(LazyHelper executionAndPublication, Boolean useDefaultConstructor)
+   at System.Lazy`1.CreateValue()
+   at Microsoft.AspNetCore.DataProtection.AuthenticatedEncryption.CngGcmAuthenticatedEncryptorFactory.CreateEncryptorInstance(IKey key)
+   at Microsoft.AspNetCore.DataProtection.KeyManagement.KeyBase.CreateEncryptor()
+   at Microsoft.AspNetCore.DataProtection.KeyManagement.DefaultKeyResolver.CanCreateAuthenticatedEncryptor(IKey key)
+[2026-05-03 19:04:17 INF] AuthService API is running at http://localhost:5156. Health endpoint: http://localhost:5156/health {"SourceContext":"Program"}
+[2026-05-03 19:09:45 INF] HTTP OPTIONS /api/v1/auth/login responded 204 in 3.4645 ms {"SourceContext":"Serilog.AspNetCore.RequestLoggingMiddleware","RequestId":"0HNL9F7ABOP09:00000001","ConnectionId":"0HNL9F7ABOP09"}
+[2026-05-03 19:09:48 INF] User login succeeded {"EventId":{"Id":1002,"Name":"LogUserLoggedIn"},"SourceContext":"AuthService.Application.Services.AuthService","ActionId":"2fed8fbf-d671-4c88-8de8-24888659baa7","ActionName":"AuthService.Api.Controllers.AuthController.Login (AuthService.Api)","RequestId":"0HNL9F7ABOP09:00000002","RequestPath":"/api/v1/auth/login","ConnectionId":"0HNL9F7ABOP09"}
+[2026-05-03 19:09:48 INF] HTTP POST /api/v1/auth/login responded 200 in 2525.2661 ms {"SourceContext":"Serilog.AspNetCore.RequestLoggingMiddleware","RequestId":"0HNL9F7ABOP09:00000002","ConnectionId":"0HNL9F7ABOP09"}
+[2026-05-03 19:09:51 INF] User login succeeded {"EventId":{"Id":1002,"Name":"LogUserLoggedIn"},"SourceContext":"AuthService.Application.Services.AuthService","ActionId":"2fed8fbf-d671-4c88-8de8-24888659baa7","ActionName":"AuthService.Api.Controllers.AuthController.Login (AuthService.Api)","RequestId":"0HNL9F7ABOP09:00000003","RequestPath":"/api/v1/auth/login","ConnectionId":"0HNL9F7ABOP09"}
+[2026-05-03 19:09:51 INF] HTTP POST /api/v1/auth/login responded 200 in 366.1414 ms {"SourceContext":"Serilog.AspNetCore.RequestLoggingMiddleware","RequestId":"0HNL9F7ABOP09:00000003","ConnectionId":"0HNL9F7ABOP09"}
+[2026-05-03 19:25:18 INF] HTTP OPTIONS /api/v1/auth/login responded 204 in 0.1061 ms {"SourceContext":"Serilog.AspNetCore.RequestLoggingMiddleware","RequestId":"0HNL9F7ABOP0A:00000001","ConnectionId":"0HNL9F7ABOP0A"}
+[2026-05-03 19:25:18 INF] User login succeeded {"EventId":{"Id":1002,"Name":"LogUserLoggedIn"},"SourceContext":"AuthService.Application.Services.AuthService","ActionId":"2fed8fbf-d671-4c88-8de8-24888659baa7","ActionName":"AuthService.Api.Controllers.AuthController.Login (AuthService.Api)","RequestId":"0HNL9F7ABOP0A:00000002","RequestPath":"/api/v1/auth/login","ConnectionId":"0HNL9F7ABOP0A"}
+[2026-05-03 19:25:18 INF] HTTP POST /api/v1/auth/login responded 200 in 142.3835 ms {"SourceContext":"Serilog.AspNetCore.RequestLoggingMiddleware","RequestId":"0HNL9F7ABOP0A:00000002","ConnectionId":"0HNL9F7ABOP0A"}
