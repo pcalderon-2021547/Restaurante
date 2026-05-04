@@ -7,8 +7,8 @@ import { VerifyEmailPage } from "../../features/auth/pages/VerifyEmailPage.jsx";
 import { UnauthorizedPage } from "../../features/auth/pages/UnauthorizedPage.jsx";
 import { Categories } from "../../features/categories/components/Categories.jsx";
 import { Reviews } from "../../features/reviews/components/Reviews.jsx";
+import { Products } from "../../features/products/components/Products.jsx";
 
-// Placeholder para secciones del dashboard
 const ComingSoon = ({ section }) => (
     <div className="flex flex-col items-center justify-center h-64 text-gray-400">
         <p className="text-2xl font-bold mb-2">{section}</p>
@@ -37,7 +37,7 @@ export const AppRoutes = () => {
             >
                 <Route index element={<ComingSoon section="Dashboard" />} />
                 <Route path="users" element={<ComingSoon section="Usuarios" />} />
-                <Route path="products" element={<ComingSoon section="Productos" />} />
+               <Route path="products" element={<Products />} />
                 <Route path="categories" element={<Categories />} />
                 <Route path="menus" element={<ComingSoon section="Menús" />} />
                 <Route path="orders" element={<ComingSoon section="Pedidos" />} />

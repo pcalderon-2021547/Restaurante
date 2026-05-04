@@ -1,12 +1,13 @@
-// Este archivo puede usarse para endpoints adicionales del backend del restaurante
-// que requieran autenticación de administrador
+
 import { axiosAuth } from "./api";
 import { axiosAdmin } from "./api";
 
 
-export const getProducts = async () => {
-    return axiosAuth.get("/product");
-};
+export const getProducts    = async ()         => axiosAdmin.get("/product");
+export const createProduct  = async (data)     => axiosAdmin.post("/product/create", data);
+export const updateProduct  = async (id, data) => axiosAdmin.put(`/product/update/${id}`, data);
+export const deleteProduct  = async (id)       => axiosAdmin.delete(`/product/delete/${id}`);
+
 
 export const getCategories = async () => axiosAdmin.get("/category");
 export const createCategory = async (data) => axiosAdmin.post("/category/create", data);
