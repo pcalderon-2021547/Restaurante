@@ -14,9 +14,11 @@ export const createCategory = async (data) => axiosAdmin.post("/category/create"
 export const updateCategory = async (id, data) => axiosAdmin.put(`/category/update/${id}`, data);
 export const deleteCategory = async (id) => axiosAdmin.delete(`/category/delete/${id}`);
 
-export const getMenus = async () => {
-    return axiosAuth.get("/menus");
-};
+export const getMenus       = async ()         => axiosAdmin.get("/menu");
+export const createMenu     = async (data)     => axiosAdmin.post("/menu/create", data);
+export const updateMenu     = async (id, data) => axiosAdmin.put(`/menu/update/${id}`, data);
+export const deleteMenu     = async (id)       => axiosAdmin.delete(`/menu/delete/${id}`);
+
 
 export const getOrders = async () => {
     return axiosAuth.get("/order");
