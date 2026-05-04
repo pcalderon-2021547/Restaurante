@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import {
-    getReviews as getReviewsRequest,
+    getReviewsByRestaurant as getReviewsRequest,
     createReview as createReviewRequest,
     updateReview as updateReviewRequest,
     deleteReview as deleteReviewRequest,
@@ -11,10 +11,16 @@ export const useReviewStore = create((set, get) => ({
     loading: false,
     error: null,
 
-    getReviews: async () => {
+    // El backend no tiene GET /review global.
+    // Requiere GET /review/restaurant/:restaurantId
+    getReviews: async (restaurantId) => {
+        if (!restaurantId) {
+            set({ error: "Se necesita un ID de restaurante para cargar reseñas.", loading: false });
+            return;
+        }
         try {
             set({ loading: true, error: null });
-            const response = await getReviewsRequest();
+            const response = await getReviewsRequest(restaurantId);
             set({ reviews: response.data.reviews, loading: false });
         } catch (error) {
             set({ error: error.response?.data?.message || "Error al obtener reseñas.", loading: false });

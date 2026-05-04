@@ -51,7 +51,7 @@ export const createReview = async (req, res) => {
         }
 
         const review = new Review({
-            user: req.user.id,
+            user: req.user.id,   // string directo, sin Number()
             restaurant,
             rating,
             comment
@@ -144,7 +144,7 @@ export const updateReview = async (req, res) => {
             });
         }
 
-        // seguridad: solo el dueño puede editar
+        // comparación string vs string — ahora sí funciona
         if (review.user !== req.user.id) {
             return res.status(403).json({
                 success: false,

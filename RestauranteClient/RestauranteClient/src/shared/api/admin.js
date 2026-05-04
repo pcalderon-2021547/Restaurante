@@ -35,10 +35,10 @@ export const sendAllEventsPDF = async (email) => axiosAdmin.get(`/event/send-pdf
 export const sendEventByIdPDF = async (id, email) => axiosAdmin.get(`/event/send-pdf/${id}/${email}`);
 
 
-export const getReviews   = async ()        => axiosAdmin.get("/review");
-export const createReview = async (data)    => axiosAdmin.post("/review/create", data);
-export const updateReview = async (id, data)=> axiosAdmin.put(`/review/update/${id}`, data);
-export const deleteReview = async (id)      => axiosAdmin.delete(`/review/delete/${id}`);
+export const getReviewsByRestaurant = async (restaurantId) => axiosAdmin.get(`/review/restaurant/${restaurantId}`);
+export const createReview           = async (data)         => axiosAdmin.post("/review/create", data);
+export const updateReview           = async (id, data)     => axiosAdmin.put(`/review/update/${id}`, data);
+export const deleteReview           = async (id)           => axiosAdmin.delete(`/review/delete/${id}`);
 
 export const getRestaurants = async () => axiosAdmin.get("/restaurant");
 export const createRestaurant = async (data) => axiosAdmin.post("/restaurant/create", data);

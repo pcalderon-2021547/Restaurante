@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 
 const reviewSchema = mongoose.Schema({
     user: {
-        type: Number, // viene de PostgreSQL
+        type: String,   // viene de PostgreSQL como string (ej: "usr_abc123xyz456")
         required: true
     },
     restaurant: {
