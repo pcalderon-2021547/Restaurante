@@ -4,6 +4,8 @@ using MailKit.Net.Smtp;
 using MailKit.Security;
 using MimeKit;
 using AuthService.Application.Interfaces;
+using System.Text.RegularExpressions;
+using System.Text;
 
 namespace AuthService.Application.Services;
 
@@ -77,6 +79,14 @@ public class EmailService(IConfiguration configuration, ILogger<EmailService> lo
             if (!enabled)
             {
                 logger.LogInformation("Email disabled in configuration. Skipping send");
+                return;
+            }
+
+            var useFileSink = bool.Parse(smtpSettings["UseFileSink"] ?? "false");
+            if (useFileSink)
+            {
+                await WriteEmailToFileAsync(to, subject, body);
+                logger.LogInformation("Email written to local outbox for {Recipient}", to);
                 return;
             }
 
@@ -164,12 +174,45 @@ public class EmailService(IConfiguration configuration, ILogger<EmailService> lo
             var useFallback = bool.Parse(smtpSettings["UseFallback"] ?? "false");
             if (useFallback)
             {
-                logger.LogWarning("Using email fallback");
+                logger.LogWarning("Using email fallback. SMTP failed for {Recipient} ({Subject})", to, subject);
+
+                var match = Regex.Match(body, "https?://[^\\s\"']+");
+                if (match.Success)
+                {
+                    logger.LogWarning("Verification/Reset link (fallback): {Url}", match.Value);
+                }
+                else
+                {
+                    logger.LogWarning("Email body (fallback): {Body}", body);
+                }
+
+                await WriteEmailToFileAsync(to, subject, body);
                 return; // No fallar, solo logear
             }
 
             throw new InvalidOperationException($"Failed to send email: {ex.Message}", ex);
         }
+    }
+
+    private async Task WriteEmailToFileAsync(string to, string subject, string body)
+    {
+        var smtpSettings = configuration.GetSection("SmtpSettings");
+        var outboxPath = smtpSettings["OutboxPath"] ?? "logs/email-outbox";
+
+        Directory.CreateDirectory(outboxPath);
+
+        var timestamp = DateTime.UtcNow.ToString("yyyyMMdd-HHmmss-fff");
+        var safeTo = Regex.Replace(to, "[^a-zA-Z0-9_.@-]", "_");
+        var filePath = Path.Combine(outboxPath, $"email-{timestamp}-{safeTo}.txt");
+
+        var builder = new StringBuilder();
+        builder.AppendLine($"To: {to}");
+        builder.AppendLine($"Subject: {subject}");
+        builder.AppendLine($"Timestamp (UTC): {DateTime.UtcNow:O}");
+        builder.AppendLine("---");
+        builder.AppendLine(body);
+
+        await File.WriteAllTextAsync(filePath, builder.ToString());
     }
 }
 

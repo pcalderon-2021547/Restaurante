@@ -12,7 +12,7 @@ export const LoginForm = ({ onForgot, onRegister }) => {
     const onSubmit = async (data) => {
         const res = await login(data);
         if (res.success) {
-            navigate("/dashboard");
+            navigate(res.redirectTo || "/user");
             toast.success("¡Bienvenido de nuevo!", { duration: 4000 });
         }
     };

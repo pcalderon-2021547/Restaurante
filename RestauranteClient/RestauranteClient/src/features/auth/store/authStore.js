@@ -16,9 +16,9 @@ export const useAuthStore = create(
 
             checkAuth: () => {
                 const { token, user } = get();
-                const isAdmin = user?.role === "ADMIN_ROLE";
+                const hasRole = Boolean(user?.role);
 
-                if (!token || !isAdmin) {
+                if (!token || !hasRole) {
                     set({
                         user: null,
                         token: null,
@@ -48,8 +48,8 @@ export const useAuthStore = create(
                     const role = data.userDetails?.role;
                     const userId = data.userDetails?.id;
 
-                    if (!token || role !== "ADMIN_ROLE") {
-                        const message = "No tienes permisos para acceder como administrador";
+                    if (!token || !role) {
+                        const message = "No se pudo obtener el rol del usuario";
 
                         set({
                             user: null,
@@ -70,7 +70,9 @@ export const useAuthStore = create(
                     try {
                         const payload = JSON.parse(atob(token.split(".")[1]));
                         expiresAt = payload.exp * 1000;
-                    } catch (_) {}
+                    } catch {
+                        // noop: payload inválido
+                    }
 
                     set({
                         user: { id: userId, email, role },
@@ -81,7 +83,9 @@ export const useAuthStore = create(
                         isLoadingAuth: false
                     });
 
-                    return { success: true };
+                    const redirectTo = role === "ADMIN_ROLE" ? "/dashboard" : "/user";
+
+                    return { success: true, role, redirectTo };
 
                 } catch (err) {
                     console.error("Login error:", err);

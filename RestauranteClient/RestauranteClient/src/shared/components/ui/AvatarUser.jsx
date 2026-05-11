@@ -22,7 +22,9 @@ export const AvatarUser = () => {
 
     const initials = user?.email
         ? user.email.slice(0, 2).toUpperCase()
-        : "AD";
+        : "US";
+
+    const isAdmin = user?.role === "ADMIN_ROLE";
 
     const handleLogout = () => {
         logout();
@@ -44,20 +46,41 @@ export const AvatarUser = () => {
                         </p>
                     </div>
                     <div style={{ padding: '0.4rem 0' }}>
-                        <Link
-                            to="/dashboard"
-                            className="avatar-dropdown-item"
-                            onClick={() => setOpen(false)}
-                        >
-                            Dashboard
-                        </Link>
-                        <Link
-                            to="/dashboard/users"
-                            className="avatar-dropdown-item"
-                            onClick={() => setOpen(false)}
-                        >
-                            Usuarios
-                        </Link>
+                        {isAdmin ? (
+                            <>
+                                <Link
+                                    to="/dashboard"
+                                    className="avatar-dropdown-item"
+                                    onClick={() => setOpen(false)}
+                                >
+                                    Dashboard
+                                </Link>
+                                <Link
+                                    to="/dashboard/users"
+                                    className="avatar-dropdown-item"
+                                    onClick={() => setOpen(false)}
+                                >
+                                    Usuarios
+                                </Link>
+                            </>
+                        ) : (
+                            <>
+                                <Link
+                                    to="/user"
+                                    className="avatar-dropdown-item"
+                                    onClick={() => setOpen(false)}
+                                >
+                                    Mi espacio
+                                </Link>
+                                <Link
+                                    to="/user/profile"
+                                    className="avatar-dropdown-item"
+                                    onClick={() => setOpen(false)}
+                                >
+                                    Mi perfil
+                                </Link>
+                            </>
+                        )}
                         <button
                             onClick={handleLogout}
                             className="avatar-dropdown-item danger"

@@ -11,6 +11,10 @@ import { Products } from "../../features/products/components/Products.jsx";
 import { Restaurants } from "../../features/restaurants/components/Restaurants.jsx";
 import { Events } from "../../features/events/components/Events.jsx";
 import { Menus } from "../../features/menus/components/Menus.jsx";
+import { UserDashboardPage } from "../layouts/UserDashboardPage.jsx";
+import { UserHomePage } from "../../features/user/pages/UserHomePage.jsx";
+import { UserPlaceholderPage } from "../../features/user/pages/UserPlaceholderPage.jsx";
+import { UserProfilePage } from "../../features/user/pages/UserProfilePage.jsx";
 
 
 const ComingSoon = ({ section }) => (
@@ -50,6 +54,39 @@ export const AppRoutes = () => {
                 <Route path="reviews" element={<Reviews />} />
                 <Route path="reports" element={<ComingSoon section="Reportes" />} />
                 <Route path="restaurants" element={<Restaurants />} />
+            </Route>
+
+            <Route
+                path="/user"
+                element={
+                    <ProtectedRoute>
+                        <RoleGuard allowedRoles={["USER_ROLE"]}>
+                            <UserDashboardPage />
+                        </RoleGuard>
+                    </ProtectedRoute>
+                }
+            >
+                <Route index element={<UserHomePage />} />
+                <Route
+                    path="restaurants"
+                    element={<UserPlaceholderPage title="Restaurantes" description="Explora restaurantes disponibles." />}
+                />
+                <Route
+                    path="menus"
+                    element={<UserPlaceholderPage title="Menús" description="Consulta menús destacados." />}
+                />
+                <Route
+                    path="events"
+                    element={<UserPlaceholderPage title="Eventos" description="Entérate de eventos cercanos." />}
+                />
+                <Route
+                    path="reviews"
+                    element={<UserPlaceholderPage title="Reseñas" description="Revisa tus reseñas y opiniones." />}
+                />
+                <Route
+                    path="profile"
+                    element={<UserProfilePage />}
+                />
             </Route>
         </Routes>
     );

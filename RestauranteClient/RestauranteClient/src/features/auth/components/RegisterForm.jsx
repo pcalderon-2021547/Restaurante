@@ -15,8 +15,15 @@ export const RegisterForm = ({ onSwitch }) => {
 
     const onSubmit = async (data) => {
         try {
-            const { confirmPassword, ...payload } = data;
-            const res = await registerRequest(payload);
+            const { confirmPassword: _confirmPassword, ...payload } = data;
+            const formData = new FormData();
+            Object.entries(payload).forEach(([key, value]) => {
+                if (value !== undefined && value !== null) {
+                    formData.append(key, value);
+                }
+            });
+
+            const res = await registerRequest(formData);
             if (res.data?.success) {
                 showSuccess("Cuenta creada. Revisa tu correo para verificarla.");
                 reset();
@@ -87,6 +94,23 @@ export const RegisterForm = ({ onSwitch }) => {
                 {errors.email && <p className="auth-error">{errors.email.message}</p>}
             </div>
 
+            <div className="auth-input-group">
+                <label className="auth-label">Teléfono</label>
+                <input
+                    type="tel"
+                    placeholder="12345678"
+                    className="auth-input"
+                    {...register("phone", {
+                        required: "El teléfono es requerido",
+                        pattern: {
+                            value: /^\d{8}$/,
+                            message: "Debe tener 8 dígitos"
+                        }
+                    })}
+                />
+                {errors.phone && <p className="auth-error">{errors.phone.message}</p>}
+            </div>
+
             {/* Fila: Contraseña + Confirmar */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
                 <div className="auth-input-group">
@@ -97,7 +121,7 @@ export const RegisterForm = ({ onSwitch }) => {
                         className="auth-input"
                         {...register("password", {
                             required: "La contraseña es requerida",
-                            minLength: { value: 6, message: "Mínimo 6 caracteres" }
+                            minLength: { value: 8, message: "Mínimo 8 caracteres" }
                         })}
                     />
                     {errors.password && <p className="auth-error">{errors.password.message}</p>}

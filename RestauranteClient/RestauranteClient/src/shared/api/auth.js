@@ -5,7 +5,11 @@ export const login = async (data) => {
 };
 
 export const register = async (data) => {
-    return await axiosAuth.post("/auth/register", data);
+    const isFormData = typeof FormData !== "undefined" && data instanceof FormData;
+    return await axiosAuth.post("/auth/register", data, isFormData
+        ? { headers: { "Content-Type": "multipart/form-data" } }
+        : undefined
+    );
 };
 
 export const verifyEmail = async (token) => {
