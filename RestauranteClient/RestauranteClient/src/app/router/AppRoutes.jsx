@@ -15,6 +15,7 @@ import { UserDashboardPage } from "../layouts/UserDashboardPage.jsx";
 import { UserHomePage } from "../../features/user/pages/UserHomePage.jsx";
 import { UserPlaceholderPage } from "../../features/user/pages/UserPlaceholderPage.jsx";
 import { UserProfilePage } from "../../features/user/pages/UserProfilePage.jsx";
+import { Tables } from "../../features/table/components/Tables.jsx";
 
 
 const ComingSoon = ({ section }) => (
@@ -54,6 +55,7 @@ export const AppRoutes = () => {
                 <Route path="reviews" element={<Reviews />} />
                 <Route path="reports" element={<ComingSoon section="Reportes" />} />
                 <Route path="restaurants" element={<Restaurants />} />
+                <Route path="tables" element={<Tables />} />
             </Route>
 
             <Route

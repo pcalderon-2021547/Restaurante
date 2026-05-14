@@ -48,5 +48,9 @@ export const createRestaurant = async (data) => axiosAdmin.post("/restaurant/cre
 export const updateRestaurant = async (id, data) => axiosAdmin.put(`/restaurant/update/${id}`, data);
 export const deleteRestaurant = async (id) => axiosAdmin.delete(`/restaurant/delete/${id}`);
 
-
+export const getTables        = async ()         => axiosAdmin.get("/table");
+export const createTable      = async (data)     => axiosAdmin.post("/table/create", data);
+export const updateTable      = async (id, data) => axiosAdmin.put(`/table/update/${id}`, data);
+export const deleteTable      = async (id)       => axiosAdmin.delete(`/table/delete/${id}`);
+ 
 
