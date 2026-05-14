@@ -35,6 +35,7 @@ export const updateEvent = async (id, data) => axiosAdmin.put(`/event/${id}`, da
 export const deleteEvent = async (id) => axiosAdmin.delete(`/event/${id}`);
 export const sendAllEventsPDF = async (email) => axiosAdmin.get(`/event/send-pdf/all/${email}`);
 export const sendEventByIdPDF = async (id, email) => axiosAdmin.get(`/event/send-pdf/${id}/${email}`);
+export const sendEventsByRestaurantPDF = async (restaurantId, email) => axiosAdmin.get(`/event/send-pdf/restaurant/${restaurantId}/${email}`);
 
 
 export const getReviewsByRestaurant = async (restaurantId) => axiosAdmin.get(`/review/restaurant/${restaurantId}`);

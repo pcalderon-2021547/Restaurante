@@ -6,6 +6,7 @@ import {
     deleteEvent as deleteEventRequest,
     sendAllEventsPDF as sendAllPDFRequest,
     sendEventByIdPDF as sendEventPDFRequest,
+    sendEventsByRestaurantPDF as sendRestaurantPDFRequest,
 } from "../../../shared/api";
 
 export const useEventStore = create((set, get) => ({
@@ -57,6 +58,7 @@ export const useEventStore = create((set, get) => ({
         }
     },
 
+    // Reporte PDF — todos los eventos
     sendAllPDF: async (email) => {
         try {
             set({ pdfLoading: true, error: null });
@@ -69,10 +71,24 @@ export const useEventStore = create((set, get) => ({
         }
     },
 
+    // Reporte PDF — un evento específico
     sendEventPDF: async (id, email) => {
         try {
             set({ pdfLoading: true, error: null });
             await sendEventPDFRequest(id, email);
+            set({ pdfLoading: false });
+            return { success: true };
+        } catch (error) {
+            set({ error: error.response?.data?.message || "Error al enviar PDF.", pdfLoading: false });
+            return { success: false };
+        }
+    },
+
+    // Reporte PDF — eventos de un restaurante específico
+    sendRestaurantPDF: async (restaurantId, email) => {
+        try {
+            set({ pdfLoading: true, error: null });
+            await sendRestaurantPDFRequest(restaurantId, email);
             set({ pdfLoading: false });
             return { success: true };
         } catch (error) {

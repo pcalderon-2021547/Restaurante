@@ -3,6 +3,16 @@
 import Event from './event.model.js';
 import Restaurant from '../restaurant/restaurant.model.js';
 import mongoose from 'mongoose';
+import { EmailPDFService } from '../services/EmailPDFService.js';
+
+// ── Campos visibles en el PDF (solo los del formulario) ───────────────────────
+const EVENT_FIELDS = [
+    { label: 'Restaurante', key: 'restaurant.name' },
+    { label: 'Nombre',      key: 'name'             },
+    { label: 'Descripción', key: 'description'      },
+    { label: 'Fecha',       key: 'date'             },
+    { label: 'Estado',      key: 'status'           },
+];
 
 const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
 
@@ -209,13 +219,13 @@ export const sendAllEventsPDF = async (req, res) => {
         }
         const service = new EmailPDFService();
         const result = await service.sendEntityPDF({
-            toEmail: email,
-            subject: 'Reporte Completo – Eventos Gastronómicos',
-            title: 'Listado Completo de Eventos Gastronómicos',
+            toEmail:    email,
+            subject:    'Reporte Completo – Eventos Gastronómicos',
+            title:      'Listado Completo de Eventos',
             entityName: 'Evento',
-            data: events,
-            fields: EVENT_FIELDS,
-            filename: 'eventos_reporte.pdf'
+            data:       events,
+            fields:     EVENT_FIELDS,
+            filename:   'eventos_reporte.pdf'
         });
         return res.status(200).json({
             success: true,
@@ -242,19 +252,19 @@ export const sendEventsByRestaurantPDF = async (req, res) => {
         if (!restaurant) {
             return res.status(404).json({ success: false, message: 'Restaurante no encontrado' });
         }
-        const events = await Event.find({ restaurant: restaurantId }).sort({ date: 1 });
+        const events = await Event.find({ restaurant: restaurantId }).populate('restaurant').sort({ date: 1 });
         if (!events.length) {
             return res.status(404).json({ success: false, message: 'No hay eventos para este restaurante' });
         }
         const service = new EmailPDFService();
         const result = await service.sendEntityPDF({
-            toEmail: email,
-            subject: `Eventos del Restaurante – ${restaurant.name}`,
-            title: `Eventos del Restaurante: ${restaurant.name}`,
+            toEmail:    email,
+            subject:    `Eventos del Restaurante – ${restaurant.name}`,
+            title:      `Eventos: ${restaurant.name}`,
             entityName: 'Evento',
-            data: events,
-            fields: EVENT_FIELDS,
-            filename: `eventos_${restaurant.name.replace(/\s+/g, '_')}.pdf`
+            data:       events,
+            fields:     EVENT_FIELDS,
+            filename:   `eventos_${restaurant.name.replace(/\s+/g, '_')}.pdf`
         });
         return res.status(200).json({
             success: true,
@@ -283,13 +293,13 @@ export const sendEventByIdPDF = async (req, res) => {
         }
         const service = new EmailPDFService();
         const result = await service.sendEntityPDF({
-            toEmail: email,
-            subject: `Detalle de Evento – ${event.name}`,
-            title: `Detalle del Evento: ${event.name}`,
+            toEmail:    email,
+            subject:    `Detalle de Evento – ${event.name}`,
+            title:      `Detalle del Evento: ${event.name}`,
             entityName: 'Evento',
-            data: event,
-            fields: EVENT_FIELDS,
-            filename: `evento_${event._id}.pdf`
+            data:       event,
+            fields:     EVENT_FIELDS,
+            filename:   `evento_${event._id}.pdf`
         });
         return res.status(200).json({
             success: true,
@@ -300,4 +310,3 @@ export const sendEventByIdPDF = async (req, res) => {
         return res.status(500).json({ success: false, message: 'Error al enviar el PDF', error: error.message });
     }
 };
-

@@ -14,8 +14,8 @@ const statusLabel = {
 
 export const Events = () => {
     const { events, loading, error, getEvents, deleteEvent } = useEventStore();
-    const [openModal, setOpenModal]       = useState(false);
-    const [openPDFModal, setOpenPDFModal] = useState(false);
+    const [openModal, setOpenModal]         = useState(false);
+    const [openPDFModal, setOpenPDFModal]   = useState(false);
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [pdfEvent, setPdfEvent]           = useState(null);
     const { openConfirm } = useUIStore();
@@ -38,7 +38,7 @@ export const Events = () => {
                 </div>
                 <div className="flex gap-3">
                     <button
-                        onClick={() => { setPdfEvent(null); setOpenPDFModal(true); }}
+                        onClick={() => setOpenPDFModal(true)}
                         className="px-4 py-2 rounded-lg text-sm font-medium"
                         style={{ background: "#1c1a16", color: "#c9a84c", border: "1px solid rgba(201,168,76,0.3)" }}>
                         📄 Reporte PDF
@@ -94,10 +94,13 @@ export const Events = () => {
                                         {status.label}
                                     </span>
                                 </span>
-                                <div className="col-span-2 flex justify-end gap-1">
+
+                                {/* Acciones */}
+                                <div className="col-span-2 flex justify-end gap-2">
                                     <button
                                         onClick={() => { setPdfEvent(ev); setOpenPDFModal(true); }}
                                         className="px-2 py-1 rounded text-xs"
+                                        title="PDF de este evento"
                                         style={{ background: "rgba(201,168,76,0.05)", color: "#5a5040", border: "1px solid rgba(201,168,76,0.1)" }}>
                                         PDF
                                     </button>
@@ -132,6 +135,7 @@ export const Events = () => {
             <PDFModal
                 isOpen={openPDFModal}
                 onClose={() => { setOpenPDFModal(false); setPdfEvent(null); }}
+                events={events}
                 event={pdfEvent}
             />
         </div>

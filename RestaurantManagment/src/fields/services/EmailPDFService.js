@@ -21,6 +21,14 @@ import PDFDocument from 'pdfkit';
  *       ]
  *   });
  */
+// ── Paleta oscura/dorada del restaurante ─────────────────────────────────────
+const PDF_GOLD  = '#c9a84c';
+const PDF_DARK  = '#0a0906';
+const PDF_DARK2 = '#141210';
+const PDF_DARK3 = '#1c1a16';
+const PDF_CREAM = '#f0e8d5';
+const PDF_MUTED = '#9a8e74';
+
 export class EmailPDFService {
 
     constructor() {
@@ -35,120 +43,115 @@ export class EmailPDFService {
     }
 
     /**
-     * Genera el PDF en memoria como Buffer
+     * Genera el PDF en memoria como Buffer — estilo oscuro/dorado del restaurante
      */
     generatePDF({ title, entityName, data, fields }) {
         return new Promise((resolve, reject) => {
-            const doc = new PDFDocument({ margin: 50, bufferPages: true });
-            const buffers = [];
+            const doc      = new PDFDocument({ margin: 0, size: 'A4', bufferPages: true });
+            const buffers  = [];
 
             doc.on('data', chunk => buffers.push(chunk));
-            doc.on('end', () => resolve(Buffer.concat(buffers)));
+            doc.on('end',  () => resolve(Buffer.concat(buffers)));
             doc.on('error', reject);
 
-            const records = Array.isArray(data) ? data : [data];
+            const records     = Array.isArray(data) ? data : [data];
             const generatedAt = new Date().toLocaleString('es-GT', { timeZone: 'America/Guatemala' });
+            const W           = doc.page.width;  // 595
+            const MARGIN      = 40;
+            const INNER       = W - MARGIN * 2;
 
-            /* ── HEADER CORPORATIVO ─────────────────────────── */
-            doc.rect(0, 0, doc.page.width, 80).fill('#1B4332');
+            /* ── FONDO ── */
+            doc.rect(0, 0, W, doc.page.height).fill(PDF_DARK2);
 
-            doc.fillColor('#FFFFFF')
-                .fontSize(22)
-                .font('Helvetica-Bold')
-                .text('🍽  GESTIÓN RESTAURANTE', 50, 25);
+            /* ── HEADER ── */
+            doc.rect(0, 0, W, 90).fill(PDF_DARK);
+            doc.rect(0, 0, W, 3).fill(PDF_GOLD);          // línea dorada superior
 
-            doc.fontSize(11)
-                .font('Helvetica')
-                .fillColor('#B7E4C7')
-                .text('Sistema de Reportes Gastronómicos', 50, 52);
+            doc.fillColor(PDF_GOLD).font('Helvetica-Bold').fontSize(20)
+                .text('GESTIÓN RESTAURANTE', MARGIN, 22);
+            doc.fillColor(PDF_MUTED).font('Helvetica').fontSize(10)
+                .text('Sistema de Reportes Gastronómicos', MARGIN, 48);
 
-            doc.moveDown(3);
+            doc.rect(0, 88, W, 1).fillOpacity(0.3).fill(PDF_GOLD); // línea dorada inferior
 
-            /* ── TÍTULO DEL REPORTE ──────────────────────────── */
-            doc.fillColor('#1B4332')
-                .fontSize(18)
-                .font('Helvetica-Bold')
-                .text(title, { align: 'center' });
+            /* ── TÍTULO DEL REPORTE ── */
+            doc.fillOpacity(1);
+            doc.fillColor(PDF_CREAM).font('Helvetica-Bold').fontSize(16)
+                .text(title, MARGIN, 110, { width: INNER, align: 'center' });
 
-            doc.moveDown(0.5);
+            doc.fillColor(PDF_MUTED).font('Helvetica').fontSize(9)
+                .text(`Generado el ${generatedAt}`, MARGIN, 133, { width: INNER, align: 'center' });
 
-            doc.fillColor('#6C757D')
-                .fontSize(10)
-                .font('Helvetica')
-                .text(`Generado el ${generatedAt}`, { align: 'center' });
+            // separador decorativo
+            doc.rect(MARGIN, 152, INNER, 1).fillOpacity(0.25).fill(PDF_GOLD);
 
-            doc.moveDown(1.5);
+            /* ── TARJETA RESUMEN ── */
+            doc.fillOpacity(1);
+            doc.roundedRect(MARGIN, 162, INNER, 44, 6).fill(PDF_DARK3);
+            doc.rect(MARGIN, 162, 3, 44).fill(PDF_GOLD);  // borde izq dorado
 
-            /* ── TARJETA RESUMEN ─────────────────────────────── */
-            const summaryTop = doc.y;
-            doc.roundedRect(50, summaryTop, 495, 60, 8).fill('#F1F8F4');
+            doc.fillColor(PDF_GOLD).font('Helvetica-Bold').fontSize(9)
+                .text('ENTIDAD', MARGIN + 14, 173);
+            doc.fillColor(PDF_CREAM).font('Helvetica').fontSize(9)
+                .text(entityName, MARGIN + 80, 173);
 
-            doc.fillColor('#1B4332')
-                .fontSize(11)
-                .font('Helvetica-Bold')
-                .text('Entidad:', 70, summaryTop + 12);
-            doc.font('Helvetica').fillColor('#333333')
-                .text(entityName, 155, summaryTop + 12);
+            doc.fillColor(PDF_GOLD).font('Helvetica-Bold').fontSize(9)
+                .text('TOTAL REGISTROS', MARGIN + 14, 188);
+            doc.fillColor(PDF_CREAM).font('Helvetica').fontSize(9)
+                .text(String(records.length), MARGIN + 110, 188);
 
-            doc.font('Helvetica-Bold').fillColor('#1B4332')
-                .text('Total de registros:', 70, summaryTop + 35);
-            doc.font('Helvetica').fillColor('#333333')
-                .text(String(records.length), 200, summaryTop + 35);
+            let y = 220;
 
-            doc.moveDown(4);
-
-            /* ── REGISTROS ───────────────────────────────────── */
+            /* ── REGISTROS ── */
             records.forEach((record, index) => {
                 const obj = record.toObject ? record.toObject() : record;
 
-                // Encabezado del registro
-                const boxTop = doc.y;
-                doc.roundedRect(50, boxTop, 495, 25, 6).fill('#1B4332');
-                doc.fillColor('#FFFFFF')
-                    .fontSize(11)
-                    .font('Helvetica-Bold')
-                    .text(`Registro #${index + 1}`, 65, boxTop + 7);
+                // Nueva página si no hay espacio
+                if (y > 680) {
+                    doc.addPage();
+                    doc.rect(0, 0, W, doc.page.height).fill(PDF_DARK2);
+                    doc.rect(0, 0, W, 3).fill(PDF_GOLD);
+                    y = 30;
+                }
 
-                doc.moveDown(1.5);
+                // Encabezado del registro
+                doc.roundedRect(MARGIN, y, INNER, 26, 5).fill(PDF_DARK);
+                doc.rect(MARGIN, y, 3, 26).fill(PDF_GOLD);
+                doc.fillColor(PDF_GOLD).font('Helvetica-Bold').fontSize(10)
+                    .text(`Registro  #${index + 1}`, MARGIN + 14, y + 8);
+                y += 34;
 
                 // Filas de campos
                 fields.forEach((field, fi) => {
-                    const value = this._resolveValue(obj, field.key);
-                    const rowY = doc.y;
-                    const bgColor = fi % 2 === 0 ? '#F9FBF9' : '#FFFFFF';
+                    const value  = this._resolveValue(obj, field.key);
+                    const rowH   = 24;
+                    const bgFill = fi % 2 === 0 ? PDF_DARK3 : PDF_DARK2;
 
-                    doc.rect(50, rowY, 495, 22).fill(bgColor);
+                    doc.rect(MARGIN, y, INNER, rowH).fill(bgFill);
 
-                    doc.fillColor('#1B4332')
-                        .fontSize(10)
-                        .font('Helvetica-Bold')
-                        .text(field.label, 65, rowY + 6, { width: 180 });
+                    doc.fillColor(PDF_GOLD).font('Helvetica-Bold').fontSize(9)
+                        .text(field.label.toUpperCase(), MARGIN + 12, y + 7, { width: 120 });
 
-                    doc.fillColor('#212529')
-                        .font('Helvetica')
-                        .text(String(value ?? 'N/A'), 250, rowY + 6, { width: 285 });
+                    doc.fillColor(PDF_CREAM).font('Helvetica').fontSize(9)
+                        .text(String(value ?? 'N/A'), MARGIN + 140, y + 7, { width: INNER - 145, lineBreak: false });
 
-                    doc.moveDown(0.55);
+                    y += rowH;
                 });
 
-                doc.moveDown(1.2);
-
-                if (doc.y > 700 && index < records.length - 1) {
-                    doc.addPage();
-                }
+                y += 18; // espacio entre registros
             });
 
-            /* ── FOOTER ──────────────────────────────────────── */
+            /* ── FOOTER ── */
             const pageCount = doc.bufferedPageRange().count;
             for (let i = 0; i < pageCount; i++) {
                 doc.switchToPage(i);
-                doc.fontSize(8)
-                    .fillColor('#ADB5BD')
+                doc.rect(0, doc.page.height - 32, W, 32).fill(PDF_DARK);
+                doc.rect(0, doc.page.height - 32, W, 1).fillOpacity(0.3).fill(PDF_GOLD);
+                doc.fillOpacity(1).fillColor(PDF_MUTED).font('Helvetica').fontSize(8)
                     .text(
-                        `Documento generado automáticamente por Gestión Restaurante | Página ${i + 1} de ${pageCount}`,
-                        50,
-                        doc.page.height - 40,
-                        { align: 'center' }
+                        `Documento generado automáticamente por Gestión Restaurante  |  Página ${i + 1} de ${pageCount}`,
+                        MARGIN, doc.page.height - 20,
+                        { width: INNER, align: 'center' }
                     );
             }
 
@@ -160,38 +163,45 @@ export class EmailPDFService {
      * Genera el PDF y lo envía por correo como adjunto
      */
     async sendEntityPDF({ toEmail, subject, title, entityName, data, fields, filename }) {
-        const pdfBuffer = await this.generatePDF({ title, entityName, data, fields });
+        const pdfBuffer   = await this.generatePDF({ title, entityName, data, fields });
         const pdfFilename = filename || `${entityName.toLowerCase()}_reporte.pdf`;
 
         await this.transporter.sendMail({
             from: `"Gestión Restaurante" <${process.env.EMAIL_USER}>`,
-            to: toEmail,
+            to:   toEmail,
             subject,
             html: `
-<div style="background-color:#f4f6f9; padding:40px 0; font-family:'Segoe UI',Arial,sans-serif;">
-  <div style="max-width:600px; margin:0 auto; background:#fff; border-radius:8px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.08);">
+<div style="background:#0a0906;padding:40px 0;font-family:'Segoe UI',Arial,sans-serif;">
+  <div style="max-width:580px;margin:0 auto;background:#141210;border:1px solid rgba(201,168,76,0.25);border-radius:10px;overflow:hidden;">
 
-    <div style="background-color:#1B4332; padding:20px 30px;">
-      <h1 style="margin:0; color:#fff; font-size:20px;">🍽 Gestión Restaurante</h1>
-      <p style="margin:5px 0 0; color:#B7E4C7; font-size:13px;">Sistema de Reportes Gastronómicos</p>
+    <div style="background:#0a0906;border-top:3px solid #c9a84c;padding:24px 30px;">
+      <h1 style="margin:0;color:#c9a84c;font-size:18px;letter-spacing:2px;">GESTIÓN RESTAURANTE</h1>
+      <p style="margin:6px 0 0;color:#5a5040;font-size:12px;">Sistema de Reportes Gastronómicos</p>
     </div>
 
-    <div style="padding:30px; color:#333;">
-      <h2 style="margin-top:0; font-size:18px; color:#1B4332;">${subject}</h2>
-      <p style="font-size:14px; line-height:1.6;">Estimado usuario,</p>
-      <p style="font-size:14px; line-height:1.6;">
-        Se ha generado el reporte correspondiente a la entidad <strong>${entityName}</strong>.
+    <div style="padding:30px;color:#f0e8d5;">
+      <h2 style="margin-top:0;font-size:16px;color:#c9a84c;">${subject}</h2>
+      <p style="font-size:13px;line-height:1.7;color:#9a8e74;">
+        Se ha generado el reporte correspondiente a la entidad
+        <strong style="color:#f0e8d5;">${entityName}</strong>.
+        El documento PDF se encuentra adjunto a este correo.
       </p>
-      <div style="background:#f1f8f4; padding:15px; border-left:4px solid #1B4332; margin:20px 0;">
-        <p style="margin:0; font-size:13px;"><strong>Fecha de generación:</strong><br>${new Date().toLocaleString('es-GT')}</p>
-        <p style="margin:8px 0 0; font-size:13px;"><strong>Total de registros incluidos:</strong><br>${Array.isArray(data) ? data.length : 1}</p>
+      <div style="background:#1c1a16;border-left:3px solid #c9a84c;padding:14px 18px;margin:20px 0;border-radius:4px;">
+        <p style="margin:0;font-size:12px;color:#9a8e74;">
+          <strong style="color:#c9a84c;">Fecha de generación:</strong><br>
+          ${new Date().toLocaleString('es-GT')}
+        </p>
+        <p style="margin:8px 0 0;font-size:12px;color:#9a8e74;">
+          <strong style="color:#c9a84c;">Total de registros incluidos:</strong><br>
+          ${Array.isArray(data) ? data.length : 1}
+        </p>
       </div>
-      <p style="font-size:14px; line-height:1.6;">El documento PDF se encuentra adjunto a este correo.</p>
     </div>
 
-    <div style="background:#f1f1f1; padding:15px 30px; text-align:center;">
-      <p style="margin:0; font-size:12px; color:#777;">Mensaje generado automáticamente por Gestión Restaurante.</p>
-      <p style="margin:5px 0 0; font-size:11px; color:#999;">© ${new Date().getFullYear()} Gestión Restaurante. Todos los derechos reservados.</p>
+    <div style="background:#0a0906;padding:14px 30px;text-align:center;border-top:1px solid rgba(201,168,76,0.15);">
+      <p style="margin:0;font-size:11px;color:#3a3328;">
+        © ${new Date().getFullYear()} Gestión Restaurante. Todos los derechos reservados.
+      </p>
     </div>
   </div>
 </div>`,
@@ -201,7 +211,7 @@ export class EmailPDFService {
         return { toEmail, filename: pdfFilename, records: Array.isArray(data) ? data.length : 1 };
     }
 
-    /** Resuelve valores con dot-notation: "additionalServices.music" */
+    /** Resuelve valores con dot-notation: "restaurant.name", "additionalServices.music" */
     _resolveValue(obj, key) {
         return key.split('.').reduce((acc, k) => (acc != null ? acc[k] : null), obj);
     }
