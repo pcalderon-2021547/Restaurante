@@ -40,13 +40,13 @@ export const useAuthStore = create(
                     set({ loading: true, error: null });
 
                     const { data } = await loginRequest({
-                        emailOrUsername: email, // 🔥 IMPORTANTE
+                        emailOrUsername: email, 
                         password
                     });
 
                     const token = data.accessToken;
-                    const role = data.userDetails?.role;
-                    const userId = data.userDetails?.id;
+                    const role = data.userDetails?.role || data.userDetails?.rol || data.userDetails?.Role;
+                    const userId = data.userDetails?.id ?? data.userDetails?._id ?? data.userDetails?.Id ?? data.userDetails?.userId;
 
                     if (!token || !role) {
                         const message = "No se pudo obtener el rol del usuario";

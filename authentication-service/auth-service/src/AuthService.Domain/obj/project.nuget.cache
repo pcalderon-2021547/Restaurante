@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "/PGtWukvkN2NOFE0fZv5z88N5gCyvfpnwD1IaCqBc9bQp3DtTXCv3micnHy6MCDXGf6srKNzX2drYZis1mnNFg==",
+  "dgSpecHash": "9hS2RBCWgcI=",
   "success": true,
-  "projectFilePath": "C:\\Restaurante\\authentication-service\\auth-service\\src\\AuthService.Domain\\AuthService.Domain.csproj",
+  "projectFilePath": "C:\\Users\\pcc\\desktop\\Restaurante\\authentication-service\\auth-service\\src\\AuthService.Domain\\AuthService.Domain.csproj",
   "expectedPackageFiles": [],
   "logs": []
 }

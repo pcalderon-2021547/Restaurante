@@ -19,14 +19,39 @@ export const createMenu     = async (data)     => axiosAdmin.post("/menu/create"
 export const updateMenu     = async (id, data) => axiosAdmin.put(`/menu/update/${id}`, data);
 export const deleteMenu     = async (id)       => axiosAdmin.delete(`/menu/delete/${id}`);
 
+export const getDishes      = async ()         => axiosAdmin.get("/dish");
+export const createDish     = async (data)     => axiosAdmin.post("/dish/create", data);
+export const updateDish     = async (id, data) => axiosAdmin.put(`/dish/update/${id}`, data);
+export const deleteDish     = async (id)       => axiosAdmin.delete(`/dish/delete/${id}`);
+
+export const getOrderDetails      = async ()         => axiosAdmin.get("/orderDetail");
+export const createOrderDetail    = async (data)     => axiosAdmin.post("/orderDetail/create", data);
+export const updateOrderDetail    = async (id, data) => axiosAdmin.put(`/orderDetail/update/${id}`, data);
+export const deleteOrderDetail    = async (id)       => axiosAdmin.delete(`/orderDetail/delete/${id}`);
+
+export const getGeneralStats      = async ()         => axiosAdmin.get("/reports/stats/general");
+export const getTopDishes         = async (params)   => axiosAdmin.get("/reports/stats/top-dishes", { params });
+export const getPeakHours         = async (params)   => axiosAdmin.get("/reports/stats/peak-hours", { params });
+export const getRestaurantStats   = async (restaurantId) => axiosAdmin.get(`/reports/stats/restaurant/${restaurantId}`);
+export const getDemandReport      = async (params)   => axiosAdmin.get("/reports/stats/demand", { params });
 
 export const getOrders = async () => {
-    return axiosAuth.get("/order");
+    return axiosAdmin.get("/order");
 };
+export const getMyOrders = async () => {
+    return axiosAdmin.get("/order/my-orders");
+};
+export const createOrder = async (data) => axiosAdmin.post("/order/create", data);
+export const updateOrder = async (id, data) => axiosAdmin.put(`/order/update/${id}`, data);
+export const deleteOrder = async (id) => axiosAdmin.delete(`/order/delete/${id}`);
 
 export const getReservations = async () => {
-    return axiosAuth.get("/reservation");
+    return axiosAdmin.get("/reservation");
 };
+export const getMyReservations = async () => axiosAdmin.get("/reservation/my-reservations");
+export const createReservation = async (data) => axiosAdmin.post("/reservation/create", data);
+export const updateReservation = async (id, data) => axiosAdmin.put(`/reservation/update/${id}`, data);
+export const deleteReservation = async (id) => axiosAdmin.delete(`/reservation/delete/${id}`);
 
 
 export const getEvents = async () => axiosAdmin.get("/event");

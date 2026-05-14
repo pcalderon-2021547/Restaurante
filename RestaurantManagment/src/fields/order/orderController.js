@@ -40,6 +40,7 @@ const handleOrderError = (res, error, defaultMessage) => {
 
 export const createOrder = async (req, res) => {
     try {
+        req.body.user = req.user.id;
         const order = new Order(req.body);
         await order.save();
 
@@ -58,7 +59,6 @@ export const createOrder = async (req, res) => {
 export const getOrders = async (req, res) => {
     try {
         const orders = await Order.find()
-            .populate('user')
             .populate('restaurant')
             .populate('table');
 
@@ -72,6 +72,20 @@ export const getOrders = async (req, res) => {
     }
 };
 
+export const getMyOrders = async (req, res) => {
+    try {
+        const orders = await Order.find({ user: req.user.id })
+            .populate('restaurant')
+            .populate('table');
+
+        return res.status(200).json({
+            success: true,
+            orders
+        });
+    } catch (error) {
+        return handleOrderError(res, error, 'Error al listar tus órdenes');
+    }
+};
 
 export const updateOrder = async (req, res) => {
     try {

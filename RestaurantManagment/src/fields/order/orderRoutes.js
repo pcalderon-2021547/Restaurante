@@ -4,6 +4,7 @@ import {
     getOrders,
     updateOrder,
     deleteOrder,
+    getMyOrders,
     sendAllOrdersPDF,
     sendOrdersByRestaurantPDF,
     sendOrdersByStatusPDF,
@@ -123,13 +124,18 @@ const router = Router();
 router.post(
     '/create',
     validateJWT,
-    requireRole('ADMIN_ROLE'),
+    requireRole('ADMIN_ROLE', 'USER_ROLE'),
+    (req, res, next) => {
+        req.body.user = req.user.id;
+        next();
+    },
     validateCreateOrder,
     createOrder
 );
 
+router.get('/', validateJWT, requireRole('ADMIN_ROLE'), getOrders);
 
-router.get('/', getOrders);
+router.get('/my-orders', validateJWT, requireRole('ADMIN_ROLE', 'USER_ROLE'), getMyOrders);
 
 
 router.put(

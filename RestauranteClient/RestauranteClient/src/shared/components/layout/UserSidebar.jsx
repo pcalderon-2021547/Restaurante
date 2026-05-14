@@ -9,7 +9,9 @@ export const UserSidebar = () => {
         { label: "Menús", to: "/user/menus" },
         { label: "Eventos", to: "/user/events" },
         { label: "Reseñas", to: "/user/reviews" },
-        { label: "Perfil", to: "/user/profile" }
+        { label: "Perfil", to: "/user/profile" },
+        {label: "Mis pedidos", to: "/user/orders" },
+        {label: "Mis reservaciones", to: "/user/reservations" },
     ];
 
     return (

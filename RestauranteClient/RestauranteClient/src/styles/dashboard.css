@@ -1,0 +1,145 @@
+:root {
+    --dashboard-bg: #0a0906;
+    --dashboard-panel: #141210;
+    --dashboard-border: #2a2218;
+    --dashboard-text: #d8c8b3;
+    --dashboard-subtext: #7a6e54;
+    --dashboard-gold: #c9a84c;
+    --dashboard-gold-soft: #e8c96e;
+    --dashboard-surface: rgba(255, 255, 255, 0.04);
+}
+
+.dashboard-welcome {
+    min-height: calc(100vh - 60px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.dashboard-welcome-card {
+    position: relative;
+    width: 100%;
+    max-width: 1080px;
+    background: linear-gradient(180deg, rgba(27, 23, 18, 0.95), rgba(20, 18, 16, 0.98));
+    border: 1px solid rgba(201, 168, 76, 0.14);
+    box-shadow: 0 30px 70px rgba(0, 0, 0, 0.3);
+    border-radius: 28px;
+    padding: 2.5rem;
+    display: grid;
+    gap: 2.5rem;
+}
+
+.dashboard-welcome-header {
+    display: grid;
+    gap: 1rem;
+}
+
+.dashboard-welcome-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.65rem 1rem;
+    border-radius: 999px;
+    background: rgba(201, 168, 76, 0.12);
+    color: var(--dashboard-gold);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.dashboard-welcome-header h1 {
+    margin: 0;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: clamp(2.8rem, 3.8vw, 4.4rem);
+    line-height: 1.05;
+    color: #f8f1dc;
+}
+
+.dashboard-welcome-header h1 span {
+    color: var(--dashboard-gold);
+}
+
+.dashboard-welcome-header p {
+    margin: 0;
+    max-width: 700px;
+    color: var(--dashboard-subtext);
+    font-size: 1rem;
+    line-height: 1.8;
+}
+
+.dashboard-welcome-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.dashboard-welcome-stat {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 20px;
+    padding: 1.5rem;
+    min-height: 140px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+.dashboard-welcome-stat strong {
+    font-size: 2rem;
+    color: #f6f0de;
+}
+
+.stat-label {
+    margin: 0;
+    color: var(--dashboard-subtext);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+}
+
+.dashboard-welcome-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 28px;
+    pointer-events: none;
+    background: radial-gradient(circle at top left, rgba(201,168,76,0.12), transparent 30%),
+                radial-gradient(circle at bottom right, rgba(255,255,255,0.08), transparent 35%);
+}
+
+.dash-main {
+    background: transparent;
+}
+
+@media (max-width: 1024px) {
+    .dashboard-welcome-card {
+        padding: 2rem;
+    }
+
+    .dashboard-welcome-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 680px) {
+    .dashboard-welcome {
+        padding: 1rem;
+    }
+
+    .dashboard-welcome-card {
+        padding: 1.5rem;
+    }
+
+    .dashboard-welcome-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-welcome-header h1 {
+        font-size: 2.4rem;
+    }
+}

@@ -5,7 +5,7 @@ import mongoose from 'mongoose';
 const orderSchema = mongoose.Schema(
     {
         user: {
-            type: Number,
+            type: String,
             required: true
         },
 

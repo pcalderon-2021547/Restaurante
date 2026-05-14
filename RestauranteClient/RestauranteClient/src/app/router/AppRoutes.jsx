@@ -11,11 +11,20 @@ import { Products } from "../../features/products/components/Products.jsx";
 import { Restaurants } from "../../features/restaurants/components/Restaurants.jsx";
 import { Events } from "../../features/events/components/Events.jsx";
 import { Menus } from "../../features/menus/components/Menus.jsx";
+import { Dish } from "../../features/dish/components/Dish.jsx";
+import { Orders } from "../../features/order/components/Orders.jsx";
+import { OrderDetails } from "../../features/orderDetail/components/OrderDetails.jsx";
+import { Reports } from "../../features/reports/components/Reports.jsx";
+import { Reservations } from "../../features/reservation/components/Reservations.jsx";
 import { UserDashboardPage } from "../layouts/UserDashboardPage.jsx";
 import { UserHomePage } from "../../features/user/pages/UserHomePage.jsx";
 import { UserPlaceholderPage } from "../../features/user/pages/UserPlaceholderPage.jsx";
 import { UserProfilePage } from "../../features/user/pages/UserProfilePage.jsx";
 import { Tables } from "../../features/table/components/Tables.jsx";
+import { UserOrdersPage } from "../../features/user/pages/UserOrdersPage.jsx";
+import { UserReservationsPage } from "../../features/user/pages/UserReservationsPage.jsx";
+import { UserRestaurantsPage } from "../../features/user/pages/UserRestaurantsPage.jsx";
+import { UserMenusPage } from "../../features/user/pages/UserMenusPage.jsx";
 
 
 const ComingSoon = ({ section }) => (
@@ -46,14 +55,16 @@ export const AppRoutes = () => {
             >
                 <Route index element={<ComingSoon section="Dashboard" />} />
                 <Route path="users" element={<ComingSoon section="Usuarios" />} />
-               <Route path="products" element={<Products />} />
+                <Route path="products" element={<Products />} />
                 <Route path="categories" element={<Categories />} />
                 <Route path="menus" element={<Menus />} />
-                <Route path="orders" element={<ComingSoon section="Pedidos" />} />
-                <Route path="reservations" element={<ComingSoon section="Reservaciones" />} />
+                <Route path="dishes" element={<Dish />} />
+                <Route path="orders" element={<Orders />} />
+                <Route path="order-details" element={<OrderDetails />} />
+                <Route path="reservations" element={<Reservations />} />
                 <Route path="events" element={<Events />} />
                 <Route path="reviews" element={<Reviews />} />
-                <Route path="reports" element={<ComingSoon section="Reportes" />} />
+                <Route path="reports" element={<Reports />} />
                 <Route path="restaurants" element={<Restaurants />} />
                 <Route path="tables" element={<Tables />} />
             </Route>
@@ -69,22 +80,11 @@ export const AppRoutes = () => {
                 }
             >
                 <Route index element={<UserHomePage />} />
-                <Route
-                    path="restaurants"
-                    element={<UserPlaceholderPage title="Restaurantes" description="Explora restaurantes disponibles." />}
-                />
-                <Route
-                    path="menus"
-                    element={<UserPlaceholderPage title="Menús" description="Consulta menús destacados." />}
-                />
-                <Route
-                    path="events"
-                    element={<UserPlaceholderPage title="Eventos" description="Entérate de eventos cercanos." />}
-                />
-                <Route
-                    path="reviews"
-                    element={<UserPlaceholderPage title="Reseñas" description="Revisa tus reseñas y opiniones." />}
-                />
+                <Route path="placeholder" element={<UserPlaceholderPage />} />
+                <Route path="menus" element={<UserMenusPage />} />
+                <Route path="orders" element={<UserOrdersPage />} />
+                <Route path="reservations" element={<UserReservationsPage />} />
+                <Route path="restaurants" element={<UserRestaurantsPage />} />
                 <Route
                     path="profile"
                     element={<UserProfilePage />}
