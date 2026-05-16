@@ -1,236 +1,241 @@
-import { useEffect, useMemo, useState } from "react"
-import { useUserManagementStore } from "../store/useUserManagmentStore.js"
-import { Spinner } from "../../../shared/components/layout/Spinner.jsx"
-import { showError, showSuccess } from "../../../shared/utils/toast.js"
-import { CreateUserModal } from "./CreateUserModal.jsx"
-import { useAuthStore } from "../../auth/store/authStore.js"
-import { UserDetailModal } from "./UserDetailModal.jsx"
-import { updateUserRole } from "../../../shared/api/index.js"
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useUserManagementStore } from "../store/useUserManagmentStore.js";
+import { Spinner } from "../../../shared/components/layout/Spinner.jsx";
+import { showError, showSuccess } from "../../../shared/utils/toast.js";
+import { CreateUserModal } from "./CreateUserModal.jsx";
+import { useAuthStore } from "../../auth/store/authStore.js";
+import { UserDetailModal } from "./UserDetailModal.jsx";
+import { register as registerApi } from "../../../shared/api/auth.js";
 
 const PAGE_SIZE = 8;
 
+const ROLE_STYLE = {
+    ADMIN_ROLE: { label: "Admin",   color: "#c9a84c", bg: "rgba(201,168,76,0.1)",  border: "rgba(201,168,76,0.3)" },
+    USER_ROLE:  { label: "Usuario", color: "#7eb8f7", bg: "rgba(126,184,247,0.1)", border: "rgba(126,184,247,0.3)" },
+};
+
 export const Users = () => {
+    const users          = useUserManagementStore((s) => s.users);
+    const loading        = useUserManagementStore((s) => s.loading);
+    const error          = useUserManagementStore((s) => s.error);
+    const fetchUsers     = useUserManagementStore((s) => s.fetchUsers);
+    const updateUserRole = useUserManagementStore((s) => s.updateUserRole);
 
-    const { users, loading, error, fetchUsers, updateUserRole } = useUserManagementStore();
-    const registerUser = useAuthStore((state) => state.register);
-    const currentUser = useAuthStore((state) => state.user)
+    const safeUsers   = Array.isArray(users) ? users : [];
+    const currentUser = useAuthStore((s) => s.user);
 
-    const [search, setSearch] = useState("");
-    const [roleFilter, setRoleFilter] = useState("ALL");
-    const [page, setPage] = useState(1);
+    const [search, setSearch]                   = useState("");
+    const [roleFilter, setRoleFilter]           = useState("ALL");
+    const [page, setPage]                       = useState(1);
     const [openCreateModal, setOpenCreateModal] = useState(false);
     const [openDetailModal, setOpenDetailModal] = useState(false);
-    const [selectedUser, setSelectedUser] = useState(null);
+    const [selectedUser, setSelectedUser]       = useState(null);
 
+    const hasFetched = useRef(false);
     useEffect(() => {
+        if (hasFetched.current) return;
+        hasFetched.current = true;
         fetchUsers();
-    }, [fetchUsers])
+    }, [fetchUsers]);
 
-    useEffect(() => {
-        if (error) {
-            showError(error);
-        }
-    }, [error])
+    useEffect(() => { if (error) showError(error); }, [error]);
 
     const filteredUsers = useMemo(() => {
-        const normalizedSearch = search.trim().toLowerCase();
-
-        return users.filter((u) => {
-            const fullName = `${u.name || ""} ${u.surname || ""}`
-                .trim()
-                .toLowerCase();
-
+        const q = search.trim().toLowerCase();
+        return safeUsers.filter((u) => {
+            const fullName = `${u.name || ""} ${u.surname || ""}`.trim().toLowerCase();
             const username = (u.username || "").toLowerCase();
-            const role = (u.role || "").toUpperCase();
+            const matchesSearch = !q || fullName.includes(q) || username.includes(q);
+            const matchesRole   = roleFilter === "ALL" || (u.role || "").toUpperCase() === roleFilter;
+            return matchesSearch && matchesRole;
+        });
+    }, [safeUsers, search, roleFilter]);
 
-            const matchesSearch =
-                !normalizedSearch ||
-                fullName.includes(normalizedSearch) ||
-                username.includes(normalizedSearch);
-
-            const matchesRole =
-                roleFilter === "ALL" ? true : role === roleFilter.toUpperCase();
-
-            return matchesRole && matchesSearch
-        })
-    }, [users, search, roleFilter])
-
-    const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE))
-    const currentPage = Math.min(page, totalPages);
-
+    const totalPages     = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
+    const currentPage    = Math.min(page, totalPages);
     const paginatedUsers = useMemo(() => {
-        const start = (currentPage - 1) * PAGE_SIZE
-        return filteredUsers.slice(start, start + PAGE_SIZE)
-    })
+        const start = (currentPage - 1) * PAGE_SIZE;
+        return filteredUsers.slice(start, start + PAGE_SIZE);
+    }, [filteredUsers, currentPage]);
 
     const handleSaveRole = async (user, newRole) => {
         const res = await updateUserRole(user.id, newRole);
         if (res.success) {
-            showSuccess("Rol actualizado correctamente")
+            showSuccess("Rol actualizado correctamente");
             setOpenDetailModal(false);
             setSelectedUser(null);
         } else {
-            showError(res.error || "No se pudo actualizar el rol.")
+            showError(res.error || "No se pudo actualizar el rol.");
         }
-    }
-
-    const handleOpenDetail = (user) => {
-        setSelectedUser(user)
-        setOpenDetailModal(true)
-    }
+    };
 
     const handleCreate = async (formData) => {
-        const res = await registerUser(formData)
-        console.log(res)
-        if (res.success) {
+        try {
+            await registerApi(formData);
             showSuccess("Usuario creado. Se envió correo de verificación.");
             await fetchUsers(undefined, { force: true });
             return true;
+        } catch (err) {
+            showError(err.response?.data?.message || "No se pudo crear el usuario");
+            return false;
         }
-        showError(res.error || "No se pudo crear el usuario");
-        return false;
-    }
+    };
 
-    if (loading && users.length === 0) return <Spinner />
+    if (loading && safeUsers.length === 0) return <Spinner />;
 
     return (
-        <div className="p-4">
+        <div className="p-6">
 
-            {/* Header */}
-            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6">
+            {/* HEADER */}
+            <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 mb-8">
                 <div>
-                    <h1 className="text-3xl font-bold text-main-blue">Usuarios</h1>
-                    <p className="text-gray-500 text-sm">
-                        Administra usuarios, consulta su información y cambia su rol
+                    <p className="text-xs uppercase tracking-widest mb-1" style={{ color: "#5a5040" }}>
+                        Panel de administración
                     </p>
+                    <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "2rem", fontWeight: 300, color: "#f0e8d5", lineHeight: 1.2 }}>
+                        Gestión de <em style={{ color: "#c9a84c", fontStyle: "italic" }}>Usuarios</em>
+                    </h1>
                 </div>
-
                 <button
-                    className="bg-main-blue px-4 py-2 rounded text-white hover:opacity-90 transition"
                     onClick={() => setOpenCreateModal(true)}
+                    className="px-5 py-2 rounded-lg text-sm font-medium whitespace-nowrap"
+                    style={{ background: "linear-gradient(90deg, #c9a84c, #e8c96e)", color: "#0a0906" }}
                 >
-                    + Agregar Usuario
+                    + Nuevo Usuario
                 </button>
             </div>
 
-            {/* Filtros */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <input
-                        value={search}
-                        onChange={(e) => {
-                            setSearch(e.target.value)
-                            setPage(1)
-                        }}
-                        placeholder="Buscar por nombre o username..."
-                        className="md:col-span-2 w-full px-3 py-2 border rounded-lg"
-                    />
-                    <select
-                        value={roleFilter}
-                        onChange={(e) => {
-                            setRoleFilter(e.target.value)
-                            setPage(1)
-                        }}
-                        className="w-full px-3 py-2 border rounded-lg"
-                    >
-                        <option value="ALL">Todos los roles</option>
-                        <option value="ADMIN_ROLE">ADMIN_ROLE</option>
-                        <option value="USER_ROLE">USER_ROLE</option>
-                    </select>
-                </div>
+            {/* FILTROS */}
+            <div className="flex gap-3 mb-4 flex-wrap">
+                <input
+                    value={search}
+                    onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                    placeholder="Buscar por nombre o username..."
+                    className="flex-1 px-4 py-2 text-sm rounded-lg"
+                    style={{
+                        background: "#1c1a16",
+                        border: "1px solid rgba(201,168,76,0.15)",
+                        color: "#f0e8d5",
+                        outline: "none",
+                        minWidth: 200,
+                    }}
+                />
+                <select
+                    value={roleFilter}
+                    onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }}
+                    className="px-4 py-2 text-sm rounded-lg"
+                    style={{
+                        background: "#1c1a16",
+                        border: "1px solid rgba(201,168,76,0.15)",
+                        color: "#f0e8d5",
+                        outline: "none",
+                    }}
+                >
+                    <option value="ALL">Todos los roles</option>
+                    <option value="ADMIN_ROLE">Admin</option>
+                    <option value="USER_ROLE">Usuario</option>
+                </select>
             </div>
 
-            {/* Tabla */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="min-w-full text-sm">
+            {/* TABLA */}
+            <div style={{ background: "#141210", border: "1px solid rgba(201,168,76,0.15)", borderRadius: 12, overflow: "hidden" }}>
 
-                        {/* Head */}
-                        <thead className="bg-gray-50 text-gray-700">
-                            <tr>
-                                <th className="text-left px-4 py-3">Nombre</th>
-                                <th className="text-left px-4 py-3">Username</th>
-                                <th className="text-left px-4 py-3">Rol</th>
-                                <th className="text-right px-4 py-3">Acciones</th>
-                            </tr>
-                        </thead>
-
-                        {/* Body (datos de ejemplo) */}
-                        <tbody>
-                            {paginatedUsers.length === 0 ? (
-                                <tr>
-                                    <td
-                                        className="px-4 py-6 text-center text-gray-500"
-                                        colSpan={4}
-                                    >
-                                        No hay usuarios para mostrar.
-                                    </td>
-                                </tr>
-                            ) : (
-                                paginatedUsers.map((u) => (
-                                    <tr key={u.id} className="border-t hover:bg-gray-50">
-                                        <td className="px-4 py-3 font-medium text-gray-800">
-                                            {[u.name, u.surname].filter(Boolean).join(" ") || "-"}
-                                        </td>
-                                        <td className="px-4 py-3 text-gray-700">
-                                            @{u.username}
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${u.role === "ADMIN_ROLE"
-                                                ? "bg-blue-100 text-blue-700"
-                                                : "bg-gray-100 text-gray-700"
-                                                }`}>
-                                                {u.role}
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-3 text-right">
-                                            <button
-                                                className="px-3 py-1.5 rounded-lg bg-main-blue text-white text-xs font-semibold hover:opacity-90"
-                                                onClick={() => handleOpenDetail(u)}
-                                            >
-                                                Ver / Editar
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
+                {/* Cabecera */}
+                <div className="grid grid-cols-12 px-6 py-3 text-xs uppercase tracking-widest"
+                    style={{ background: "#1c1a16", color: "#5a5040", borderBottom: "1px solid rgba(201,168,76,0.1)" }}>
+                    <span className="col-span-1">#</span>
+                    <span className="col-span-3">Nombre</span>
+                    <span className="col-span-3">Username</span>
+                    <span className="col-span-2">Email</span>
+                    <span className="col-span-2">Rol</span>
+                    <span className="col-span-1 text-right">Acc.</span>
                 </div>
 
-                {/* Paginación */}
-                <div className="flex items-center justify-between px-4 py-3 border-t bg-gray-50">
-                    <p className="text-xs text-gray-600">
-                        Mostando {" "}
-                        {(currentPage - 1) * PAGE_SIZE + (paginatedUsers.length ? 1 : 0)}
-                        {" - "}
-                        {(currentPage - 1) * PAGE_SIZE + paginatedUsers.length} de{" "}
-                        {filteredUsers.length}
-                    </p>
+                {paginatedUsers.length === 0 ? (
+                    <div className="text-center py-16" style={{ color: "#3a3328" }}>
+                        <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "1.3rem" }}>Sin usuarios registrados</p>
+                        <p className="text-xs mt-1">Crea el primero para comenzar</p>
+                    </div>
+                ) : (
+                    paginatedUsers.map((u, index) => {
+                        const roleInfo = ROLE_STYLE[u.role] || ROLE_STYLE.USER_ROLE;
+                        return (
+                            <div
+                                key={u.id}
+                                className="grid grid-cols-12 px-6 py-4 items-center transition-all"
+                                style={{ borderBottom: "1px solid rgba(201,168,76,0.07)", color: "#f0e8d5" }}
+                                onMouseEnter={(e) => (e.currentTarget.style.background = "#1c1a16")}
+                                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                            >
+                                <span className="col-span-1 text-xs" style={{ color: "#5a5040" }}>
+                                    {(currentPage - 1) * PAGE_SIZE + index + 1}
+                                </span>
 
-                    <div className="flex gap-2">
+                                <div className="col-span-3 pr-2">
+                                    <p className="text-sm font-medium truncate" style={{ color: "#c9a84c" }}>
+                                        {[u.name, u.surname].filter(Boolean).join(" ") || "—"}
+                                    </p>
+                                </div>
+
+                                <span className="col-span-3 text-sm truncate pr-2" style={{ color: "#9a8e74" }}>
+                                    @{u.username}
+                                </span>
+
+                                <span className="col-span-2 text-xs truncate pr-2" style={{ color: "#9a8e74" }}>
+                                    {u.email || "—"}
+                                </span>
+
+                                <span className="col-span-2">
+                                    <span className="px-2 py-1 rounded text-xs"
+                                        style={{ background: roleInfo.bg, color: roleInfo.color, border: `1px solid ${roleInfo.border}` }}>
+                                        {roleInfo.label}
+                                    </span>
+                                </span>
+
+                                <div className="col-span-1 flex justify-end">
+                                    <button
+                                        onClick={() => { setSelectedUser(u); setOpenDetailModal(true); }}
+                                        className="px-2 py-1 rounded text-xs"
+                                        style={{ background: "rgba(201,168,76,0.1)", color: "#c9a84c", border: "1px solid rgba(201,168,76,0.2)" }}
+                                    >
+                                        Editar
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                    })
+                )}
+            </div>
+
+            {/* PAGINACIÓN */}
+            {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-4 px-1">
+                    <p className="text-xs" style={{ color: "#5a5040" }}>
+                        Mostrando {(currentPage - 1) * PAGE_SIZE + (paginatedUsers.length ? 1 : 0)}
+                        {" – "}
+                        {(currentPage - 1) * PAGE_SIZE + paginatedUsers.length} de {filteredUsers.length}
+                    </p>
+                    <div className="flex gap-2 items-center">
                         <button
                             onClick={() => setPage((p) => Math.max(1, p - 1))}
                             disabled={currentPage === 1}
-                            className="px-3 py-1.5 rounded border bg-white text-sm"
+                            className="px-3 py-1 rounded text-xs disabled:opacity-30"
+                            style={{ background: "#1c1a16", color: "#9a8e74", border: "1px solid rgba(201,168,76,0.15)" }}
                         >
                             Anterior
                         </button>
-
-                        <span className="px-2 py-1.5 text-sm text-gray-700">
-                            {currentPage} / {totalPages}
-                        </span>
-
+                        <span className="text-xs" style={{ color: "#5a5040" }}>{currentPage} / {totalPages}</span>
                         <button
                             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                             disabled={currentPage === totalPages}
-                            className="px-3 py-1.5 rounded border bg-white text-sm"
+                            className="px-3 py-1 rounded text-xs disabled:opacity-30"
+                            style={{ background: "#1c1a16", color: "#9a8e74", border: "1px solid rgba(201,168,76,0.15)" }}
                         >
                             Siguiente
                         </button>
                     </div>
                 </div>
-            </div>
+            )}
 
             <CreateUserModal
                 isOpen={openCreateModal}
@@ -239,14 +244,10 @@ export const Users = () => {
                 loading={loading}
                 error={error}
             />
-
             <UserDetailModal
                 key={selectedUser?.id || "no-user"}
                 isOpen={openDetailModal}
-                onClose={() => {
-                    setOpenDetailModal(false)
-                    setSelectedUser(null);
-                }}
+                onClose={() => { setOpenDetailModal(false); setSelectedUser(null); }}
                 user={selectedUser}
                 loading={loading}
                 onSaveRole={handleSaveRole}
@@ -254,4 +255,4 @@ export const Users = () => {
             />
         </div>
     );
-}
+};

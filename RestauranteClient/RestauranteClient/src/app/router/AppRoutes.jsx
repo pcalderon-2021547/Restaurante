@@ -25,7 +25,7 @@ import { UserOrdersPage } from "../../features/user/pages/UserOrdersPage.jsx";
 import { UserReservationsPage } from "../../features/user/pages/UserReservationsPage.jsx";
 import { UserRestaurantsPage } from "../../features/user/pages/UserRestaurantsPage.jsx";
 import { UserMenusPage } from "../../features/user/pages/UserMenusPage.jsx";
-
+import { Users } from "../../features/users/components/Users.jsx";
 
 const ComingSoon = ({ section }) => (
     <div className="flex flex-col items-center justify-center h-64 text-gray-400">
@@ -54,7 +54,7 @@ export const AppRoutes = () => {
                 }
             >
                 <Route index element={<ComingSoon section="Dashboard" />} />
-                <Route path="users" element={<ComingSoon section="Usuarios" />} />
+                <Route path="users" element={<Users />} />
                 <Route path="products" element={<Products />} />
                 <Route path="categories" element={<Categories />} />
                 <Route path="menus" element={<Menus />} />

@@ -1,145 +1,129 @@
+import { useState } from "react";
 import { Spinner } from "../../../shared/components/layout/Spinner.jsx";
 import defaultAvatarImg from "../../../assets/img/avatarDefault.png";
-import { useState } from "react";
 
-export const UserDetailModal = ({
-    isOpen,
-    onClose,
-    user,
-    loading,
-    currentUserId,
-    onSaveRole
-}) => {
+export const UserDetailModal = ({ isOpen, onClose, user, loading, currentUserId, onSaveRole }) => {
     if (!isOpen || !user) return null;
 
-    const [ role, setRole ] = useState(user?.role || "USER_ROLE");
+    const [role, setRole] = useState(user?.role || "USER_ROLE");
 
     const avatarSrc = (() => {
-
         const value = user?.profilePicture?.trim();
-        if( !value ) return defaultAvatarImg;
-
-        if( value.startsWith("http://" ) || value.startsWith("https://")){
-            return value;
-        }
-
-        const cloudinaryBase =
-            import.meta.env.VITE_CLOUDINARY_BASE_URL ||
-            "https://res.cloudinary.com/dqx1m6nxh/image/upload/";
-
-        return `${cloudinaryBase}${value.replace(/^\+/, "")}`;
+        if (!value) return defaultAvatarImg;
+        if (value.startsWith("http://") || value.startsWith("https://")) return value;
+        const base = import.meta.env.VITE_CLOUDINARY_BASE_URL || "https://res.cloudinary.com/dqx1m6nxh/image/upload/";
+        return `${base}${value.replace(/^\+/, "")}`;
     })();
 
     const isCurrentUser = currentUserId === user.id;
-    const hasChanges = role !== user.role;
+    const hasChanges    = role !== user.role;
 
     const handleSave = async () => {
-        if(!hasChanges || isCurrentUser) {
-            onClose();
-            return;
-        }
-        await onSaveRole(user, role)
-    }
+        if (!hasChanges || isCurrentUser) { onClose(); return; }
+        await onSaveRole(user, role);
+    };
+
+    const InfoCard = ({ label, value }) => (
+        <div className="rounded-lg p-3" style={{ background: "#0f0d0b", border: "1px solid rgba(201,168,76,0.1)" }}>
+            <p className="text-xs uppercase tracking-widest mb-1" style={{ color: "#5a5040" }}>{label}</p>
+            <p className="text-sm break-all" style={{ color: "#f0e8d5" }}>{value || "—"}</p>
+        </div>
+    );
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50 px-3 sm:px-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4"
+            style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)" }}>
+            <div className="w-full max-w-lg flex flex-col max-h-[90vh] rounded-xl overflow-hidden"
+                style={{ background: "#141210", border: "1px solid rgba(201,168,76,0.2)" }}>
 
-                <div
-                    className="p-4 sm:p-5 text-white sticky top-0 z-10"
-                    style={{
-                        background:
-                            "linear-gradient(90deg, var(--main-blue) 0%, #1956a3 100%)",
-                    }}
-                >
-                    <h2 className="text-xl sm:text-2xl font-bold">Detalle de Usuario</h2>
-                    <p className="text-xs sm:text-sm opacity-80">
-                        Consulta información y cambia el rol del usuario
-                    </p>
+                {/* HEADER */}
+                <div className="px-6 py-5 flex justify-between items-start"
+                    style={{ borderBottom: "1px solid rgba(201,168,76,0.1)", background: "#1c1a16" }}>
+                    <div>
+                        <p className="text-xs uppercase tracking-widest mb-1" style={{ color: "#5a5040" }}>
+                            Panel de administración
+                        </p>
+                        <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "1.6rem", fontWeight: 300, color: "#f0e8d5", margin: 0 }}>
+                            Detalle de <em style={{ color: "#c9a84c", fontStyle: "italic" }}>Usuario</em>
+                        </h2>
+                    </div>
+                    <button onClick={onClose} className="text-sm mt-1" style={{ color: "#5a5040" }}>✕</button>
                 </div>
 
-                <div className="p-5 space-y-4 overflow-y-auto">
+                {/* BODY */}
+                <div className="p-6 overflow-y-auto flex flex-col gap-5">
+
+                    {/* Avatar + nombre */}
                     <div className="flex items-center gap-4">
                         <img
                             src={avatarSrc}
                             alt={user.username}
-                            className="w-16 h-16 rounded-full object-cover border"
-                            onError={(e) => {
-                                e.currentTarget.onError = null;
-                                e.currentTarget.src = defaultAvatarImg
-                            }}
+                            className="rounded-full object-cover"
+                            style={{ width: 60, height: 60, border: "2px solid rgba(201,168,76,0.25)" }}
+                            onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = defaultAvatarImg; }}
                         />
                         <div>
-                            <p className="font-bold text-gray-900 text-lg">
-                                {[user.name, user.surname].filter(Boolean).join(" ")}
+                            <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "1.2rem", color: "#c9a84c", margin: "0 0 2px" }}>
+                                {[user.name, user.surname].filter(Boolean).join(" ") || "—"}
                             </p>
-                            <p className="text-sm text-gray-600">@{user.username}</p>
+                            <p className="text-xs" style={{ color: "#5a5040" }}>@{user.username}</p>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div className="bg-gray-50 rounded-lg p-3">
-                            <p className="text-xs text-gray-500">ID</p>
-                            <p className="text-sm font-medium break-all">{user.id}</p>
-                        </div>
-                        <div className="bg-gray-50 rounded-lg p-3">
-                            <p className="text-xs text-gray-500">Email</p>
-                            <p className="text-sm font-medium">{user.email}</p>
-                        </div>
-                        <div className="bg-gray-50 rounded-lg p-3">
-                            <p className="text-xs text-gray-500">Nombre</p>
-                            <p className="text-sm font-medium">{user.name || "-"}</p>
-                        </div>
-                        <div className="bg-gray-50 rounded-lg p-3">
-                            <p className="text-xs text-gray-500">Apellido</p>
-                            <p className="text-sm font-medium">{user.surname || "-"}</p>
-                        </div>
+                    {/* Info grid */}
+                    <div className="grid grid-cols-2 gap-3">
+                        <InfoCard label="ID"       value={user.id} />
+                        <InfoCard label="Email"    value={user.email} />
+                        <InfoCard label="Nombre"   value={user.name} />
+                        <InfoCard label="Apellido" value={user.surname} />
                     </div>
 
+                    {/* Rol */}
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1">
-                            Rol
-                        </label>
+                        <p className="text-xs uppercase tracking-widest mb-2" style={{ color: "#5a5040" }}>Rol</p>
                         <select
                             value={role}
                             onChange={(e) => setRole(e.target.value)}
                             disabled={isCurrentUser}
-                            className="w-full px-3 py-2 rounded-lg border-2 border-gray-300 bg-gray-50 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
+                            className="w-full px-4 py-2 rounded-lg text-sm"
+                            style={{
+                                background: "#1c1a16",
+                                border: "1px solid rgba(201,168,76,0.2)",
+                                color: "#f0e8d5",
+                                outline: "none",
+                                opacity: isCurrentUser ? 0.4 : 1,
+                            }}
                         >
                             <option value="USER_ROLE">USER_ROLE</option>
                             <option value="ADMIN_ROLE">ADMIN_ROLE</option>
                         </select>
                         {isCurrentUser && (
-                            <p className="text-xs text-gray-500 mt-1">
-                                No pudes cambiar tu propio rol.
+                            <p className="text-xs mt-1" style={{ color: "#5a5040" }}>
+                                No puedes cambiar tu propio rol.
                             </p>
                         )}
                     </div>
                 </div>
 
-                <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 p-4 border-t">
+                {/* FOOTER */}
+                <div className="px-6 py-4 flex justify-end gap-3"
+                    style={{ borderTop: "1px solid rgba(201,168,76,0.1)", background: "#1c1a16" }}>
                     <button
-                        type="button"
                         onClick={onClose}
-                        className="w-full sm:w-auto px-4 py-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition"
+                        className="px-4 py-2 rounded-lg text-sm"
+                        style={{ background: "transparent", border: "1px solid rgba(201,168,76,0.15)", color: "#9a8e74" }}
                     >
                         Cerrar
                     </button>
                     <button
-                        type="button"
                         onClick={handleSave}
                         disabled={loading || !hasChanges || isCurrentUser}
-                        className="w-full sm:w-auto px-5 py-2 rounded-lg text-white font-medium transition shadow"
-                        style={{
-                            background:
-                                "linear-gradient(90deg, var(--main-blue) 0%, #1956a3 100%)",
-                            border: "none",
-                        }}
+                        className="px-5 py-2 rounded-lg text-sm font-medium disabled:opacity-40"
+                        style={{ background: "linear-gradient(90deg, #c9a84c, #e8c96e)", color: "#0a0906" }}
                     >
                         {loading ? <Spinner small /> : "Guardar cambios"}
                     </button>
                 </div>
-
             </div>
         </div>
     );
