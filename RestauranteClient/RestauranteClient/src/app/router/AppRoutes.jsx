@@ -5,6 +5,7 @@ import { RoleGuard } from "./RoleGuard.jsx";
 import { ProtectedRoute } from "./ProtectedRoute.jsx";
 import { VerifyEmailPage } from "../../features/auth/pages/VerifyEmailPage.jsx";
 import { UnauthorizedPage } from "../../features/auth/pages/UnauthorizedPage.jsx";
+import { ResetPasswordPage } from "../../features/auth/pages/ResetPasswordPage.jsx";
 import { Categories } from "../../features/categories/components/Categories.jsx";
 import { Reviews } from "../../features/reviews/components/Reviews.jsx";
 import { Products } from "../../features/products/components/Products.jsx";
@@ -40,6 +41,7 @@ export const AppRoutes = () => {
             {/* RUTAS PÚBLICAS */}
             <Route path="/" element={<AuthPage />} />
             <Route path="/verify-email" element={<VerifyEmailPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
             {/* RUTAS PROTEGIDAS */}

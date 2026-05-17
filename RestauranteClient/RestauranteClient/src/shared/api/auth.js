@@ -17,7 +17,7 @@ export const verifyEmail = async (token) => {
 };
 
 export const requestPasswordReset = async (data) => {
-    return await axiosAuth.post("/auth/request-reset", data);
+    return await axiosAuth.post("/auth/forgot-password", data);
 };
 
 export const resetPassword = async (data) => {
