@@ -1,11 +1,19 @@
 import { useState } from "react";
+import { useForm } from "react-hook-form";
 import { Spinner } from "../../../shared/components/layout/Spinner.jsx";
+import { showSuccess, showError } from "../../../shared/utils/toast.js";
+import { updateUserRole } from "../../../shared/api/auth.js";
 import defaultAvatarImg from "../../../assets/img/avatarDefault.png";
 
-export const UserDetailModal = ({ isOpen, onClose, user, loading, currentUserId, onSaveRole }) => {
+export const UserDetailModal = ({ isOpen, onClose, user, currentUserId, onSaveRole }) => {
     if (!isOpen || !user) return null;
 
-    const [role, setRole] = useState(user?.role || "USER_ROLE");
+    const [loading, setLoading] = useState(false);
+    const isCurrentUser = currentUserId === user.id;
+
+    const { register, handleSubmit } = useForm({
+        defaultValues: { role: user.role || "USER_ROLE" },
+    });
 
     const avatarSrc = (() => {
         const value = user?.profilePicture?.trim();
@@ -15,12 +23,19 @@ export const UserDetailModal = ({ isOpen, onClose, user, loading, currentUserId,
         return `${base}${value.replace(/^\+/, "")}`;
     })();
 
-    const isCurrentUser = currentUserId === user.id;
-    const hasChanges    = role !== user.role;
-
-    const handleSave = async () => {
-        if (!hasChanges || isCurrentUser) { onClose(); return; }
-        await onSaveRole(user, role);
+    const onSubmit = async (data) => {
+        if (isCurrentUser) return;
+        setLoading(true);
+        try {
+            await updateUserRole(user.id, data.role);
+            showSuccess("Rol actualizado correctamente");
+            if (onSaveRole) onSaveRole(user, data.role);
+            onClose();
+        } catch (err) {
+            showError(err.response?.data?.message || "No se pudo actualizar el rol");
+        } finally {
+            setLoading(false);
+        }
     };
 
     const InfoCard = ({ label, value }) => (
@@ -33,7 +48,8 @@ export const UserDetailModal = ({ isOpen, onClose, user, loading, currentUserId,
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4"
             style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)" }}>
-            <div className="w-full max-w-lg flex flex-col max-h-[90vh] rounded-xl overflow-hidden"
+            <form onSubmit={handleSubmit(onSubmit)}
+                className="w-full max-w-lg flex flex-col max-h-[90vh] rounded-xl overflow-hidden"
                 style={{ background: "#141210", border: "1px solid rgba(201,168,76,0.2)" }}>
 
                 {/* HEADER */}
@@ -47,7 +63,7 @@ export const UserDetailModal = ({ isOpen, onClose, user, loading, currentUserId,
                             Detalle de <em style={{ color: "#c9a84c", fontStyle: "italic" }}>Usuario</em>
                         </h2>
                     </div>
-                    <button onClick={onClose} className="text-sm mt-1" style={{ color: "#5a5040" }}>✕</button>
+                    <button type="button" onClick={onClose} className="text-sm mt-1" style={{ color: "#5a5040" }}>✕</button>
                 </div>
 
                 {/* BODY */}
@@ -82,8 +98,7 @@ export const UserDetailModal = ({ isOpen, onClose, user, loading, currentUserId,
                     <div>
                         <p className="text-xs uppercase tracking-widest mb-2" style={{ color: "#5a5040" }}>Rol</p>
                         <select
-                            value={role}
-                            onChange={(e) => setRole(e.target.value)}
+                            {...register("role")}
                             disabled={isCurrentUser}
                             className="w-full px-4 py-2 rounded-lg text-sm"
                             style={{
@@ -108,23 +123,19 @@ export const UserDetailModal = ({ isOpen, onClose, user, loading, currentUserId,
                 {/* FOOTER */}
                 <div className="px-6 py-4 flex justify-end gap-3"
                     style={{ borderTop: "1px solid rgba(201,168,76,0.1)", background: "#1c1a16" }}>
-                    <button
-                        onClick={onClose}
+                    <button type="button" onClick={onClose}
                         className="px-4 py-2 rounded-lg text-sm"
-                        style={{ background: "transparent", border: "1px solid rgba(201,168,76,0.15)", color: "#9a8e74" }}
-                    >
+                        style={{ background: "transparent", border: "1px solid rgba(201,168,76,0.15)", color: "#9a8e74" }}>
                         Cerrar
                     </button>
-                    <button
-                        onClick={handleSave}
-                        disabled={loading || !hasChanges || isCurrentUser}
+                    <button type="submit"
+                        disabled={loading || isCurrentUser}
                         className="px-5 py-2 rounded-lg text-sm font-medium disabled:opacity-40"
-                        style={{ background: "linear-gradient(90deg, #c9a84c, #e8c96e)", color: "#0a0906" }}
-                    >
+                        style={{ background: "linear-gradient(90deg, #c9a84c, #e8c96e)", color: "#0a0906" }}>
                         {loading ? <Spinner small /> : "Guardar cambios"}
                     </button>
                 </div>
-            </div>
+            </form>
         </div>
     );
 };

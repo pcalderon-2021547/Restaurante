@@ -21,7 +21,9 @@ import userRoutes from '../src/users/user.routes.js';
 const BASE_PATH = '/api/v1';
 
 const middlewares = (app) => {
-  app.use(express.urlencoded({ extended: false, limit: '10mb' }));
+  // NOTA: NO usar express.urlencoded() de forma global porque interfiere con
+  // multer al procesar multipart/form-data (req.file llega undefined).
+  // Multer maneja solo los requests multipart; express.json() solo los JSON.
   app.use(express.json({ limit: '10mb' }));
   app.use(cors(corsOptions));
   app.use(helmet(helmetConfiguration));
