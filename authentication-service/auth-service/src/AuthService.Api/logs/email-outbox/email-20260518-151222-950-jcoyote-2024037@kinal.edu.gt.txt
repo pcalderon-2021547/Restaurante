@@ -1,0 +1,15 @@
+To: jcoyote-2024037@kinal.edu.gt
+Subject: Verifica tu correo electrónico - Kinal Sports
+Timestamp (UTC): 2026-05-18T15:12:22.9574840Z
+---
+
+            <h2>¡Bienvenido a Kinal Sports, xd2!</h2>
+            <p>Por favor, verifica tu correo electrónico para tu cuenta de Kinal Sports haciendo clic en el siguiente enlace:</p>
+            <a href='http://localhost:5173/verify-email?token=Z-VJext0QSQhG0nOsm6s7xc3yiczozCyAqnakOJo6Bw' style='background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>
+                Verificar correo
+            </a>
+            <p>Si no puedes hacer clic en el enlace, copia y pega esta URL en tu navegador:</p>
+            <p>http://localhost:5173/verify-email?token=Z-VJext0QSQhG0nOsm6s7xc3yiczozCyAqnakOJo6Bw</p>
+            <p>Este enlace expirará en 24 horas.</p>
+            <p>Si no creaste una cuenta, ignora este correo.</p>
+        

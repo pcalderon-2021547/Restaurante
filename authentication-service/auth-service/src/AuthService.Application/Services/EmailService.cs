@@ -6,6 +6,7 @@ using MimeKit;
 using AuthService.Application.Interfaces;
 using System.Text.RegularExpressions;
 using System.Text;
+using System.Net.Sockets;
 
 namespace AuthService.Application.Services;
 
@@ -108,33 +109,43 @@ public class EmailService(IConfiguration configuration, ILogger<EmailService> lo
 
             var port = int.Parse(portString ?? "587");
 
-            using var client = new SmtpClient();
-
-            // Configurar timeout
-            var timeoutMs = int.Parse(smtpSettings["Timeout"] ?? "30000");
-            client.Timeout = timeoutMs;
-
-            // FIX: Bypass SSL (Cloudinary, etc.)
-            client.CheckCertificateRevocation = false;
-            client.ServerCertificateValidationCallback = (s, c, h, e) => true;
-
             try
             {
+                using var client = new SmtpClient();
+
+                // Configurar timeout
+                var timeoutMs = int.Parse(smtpSettings["Timeout"] ?? "30000");
+                client.Timeout = timeoutMs;
+
+                // FIX: Bypass SSL (Cloudinary, etc.)
+                client.CheckCertificateRevocation = false;
+                client.ServerCertificateValidationCallback = (s, c, h, e) => true;
+
                 // Verificar configuración de SSL implícito
                 var useImplicitSsl = bool.Parse(smtpSettings["UseImplicitSsl"] ?? "false");
 
-                // Configuración específica por puerto y SSL
-                if (useImplicitSsl || port == 465)
+                try
                 {
-                    await client.ConnectAsync(host, port, SecureSocketOptions.SslOnConnect);
+                    // Configuración específica por puerto y SSL
+                    if (useImplicitSsl || port == 465)
+                    {
+                        await client.ConnectAsync(host, port, SecureSocketOptions.SslOnConnect);
+                    }
+                    else if (port == 587)
+                    {
+                        await client.ConnectAsync(host, port, SecureSocketOptions.StartTls);
+                    }
+                    else
+                    {
+                        await client.ConnectAsync(host, port, SecureSocketOptions.Auto);
+                    }
                 }
-                else if (port == 587)
+                catch (SocketException ex)
                 {
-                    await client.ConnectAsync(host, port, SecureSocketOptions.StartTls);
-                }
-                else
-                {
-                    await client.ConnectAsync(host, port, SecureSocketOptions.Auto);
+                    // Fallback estilo Gmail (como en otros envíos): StartTls en 587
+                    logger.LogWarning(ex, "SMTP primary connection failed. Retrying with StartTls on port 587");
+                    await client.DisconnectAsync(true);
+                    await client.ConnectAsync(host, 587, SecureSocketOptions.StartTls);
                 }
 
                 // Autenticación

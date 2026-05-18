@@ -3,11 +3,15 @@ using AuthService.Application.Interfaces;
 using AuthService.Domain.Constants;
 using AuthService.Domain.Entities;
 using AuthService.Domain.Interfaces;
+using AuthService.Application.Validators;
 
 namespace AuthService.Application.Services;
 
 public class UserManagementService(IUserRepository users, IRoleRepository roles, ICloudinaryService cloudinary) : IUserManagementService
 {
+    private static bool IsPublicUrl(string value)
+        => !string.IsNullOrWhiteSpace(value) && (value.StartsWith("http://") || value.StartsWith("https://"));
+
     public async Task<UserResponseDto> UpdateUserRoleAsync(string userId, string roleName)
     {
         // Normalize
@@ -86,5 +90,65 @@ public class UserManagementService(IUserRepository users, IRoleRepository roles,
             CreatedAt = u.CreatedAt,
             UpdatedAt = u.UpdatedAt
         }).ToList();
+    }
+
+    public async Task<UserResponseDto> UpdateUserProfileAsync(string userId, UpdateUserProfileDto dto)
+    {
+        if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("Invalid userId", nameof(userId));
+
+        var user = await users.GetByIdAsync(userId);
+
+        if (!string.IsNullOrWhiteSpace(dto.Name)) user.Name = dto.Name;
+        if (!string.IsNullOrWhiteSpace(dto.Surname)) user.Surname = dto.Surname;
+        if (!string.IsNullOrWhiteSpace(dto.Phone)) user.UserProfile.Phone = dto.Phone;
+
+        var currentProfilePicture = user.UserProfile.ProfilePicture ?? string.Empty;
+
+        if (dto.ProfilePicture != null && dto.ProfilePicture.Size > 0)
+        {
+            var (isValid, errorMessage) = FileValidator.ValidateImage(dto.ProfilePicture);
+            if (!isValid)
+            {
+                throw new InvalidOperationException(errorMessage ?? "Invalid profile image");
+            }
+
+            var fileName = FileValidator.GenerateSecureFileName(dto.ProfilePicture.FileName);
+            var uploaded = await cloudinary.UploadImageAsync(dto.ProfilePicture, fileName);
+
+            if (!string.IsNullOrWhiteSpace(currentProfilePicture) && !IsPublicUrl(currentProfilePicture))
+            {
+                await cloudinary.DeleteImageAsync(currentProfilePicture);
+            }
+
+            user.UserProfile.ProfilePicture = uploaded;
+        }
+        else if (dto.RemovePhoto)
+        {
+            if (!string.IsNullOrWhiteSpace(currentProfilePicture) && !IsPublicUrl(currentProfilePicture))
+            {
+                await cloudinary.DeleteImageAsync(currentProfilePicture);
+            }
+
+            user.UserProfile.ProfilePicture = cloudinary.GetDefaultAvatarUrl();
+        }
+
+        user = await users.UpdateAsync(user);
+
+        var userRole = user.UserRoles.FirstOrDefault()?.Role?.Name ?? RoleConstants.USER_ROLE;
+        return new UserResponseDto
+        {
+            Id = user.Id,
+            Name = user.Name,
+            Surname = user.Surname,
+            Username = user.Username,
+            Email = user.Email,
+            ProfilePicture = cloudinary.GetFullImageUrl(user.UserProfile?.ProfilePicture ?? string.Empty),
+            Phone = user.UserProfile?.Phone ?? string.Empty,
+            Role = userRole,
+            Status = user.Status,
+            IsEmailVerified = user.UserEmail?.EmailVerified ?? false,
+            CreatedAt = user.CreatedAt,
+            UpdatedAt = user.UpdatedAt
+        };
     }
 }

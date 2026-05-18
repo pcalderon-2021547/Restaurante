@@ -66,6 +66,12 @@ const User = sequelize.define('User', {
         type: DataTypes.BIGINT
     }
 
+    ,
+    avatar: {
+        type: DataTypes.STRING,
+        allowNull: true
+    }
+
 }, {
     timestamps: true
 });

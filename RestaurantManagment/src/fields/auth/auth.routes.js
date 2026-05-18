@@ -2,18 +2,22 @@
 
 import { Router } from 'express';
 import {
-  register,
-  login,
-  verifyEmail,
-  requestPasswordReset,
-  resetPassword,
-  listUsers,resendVerification
+    register,
+    login,
+    verifyEmail,
+    requestPasswordReset,
+    resetPassword,
+    listUsers, resendVerification, getProfile, updateProfile
 } from './auth.controller.js';
 
 import { validateRegister, validateLogin, validateResetPassword } from '../../../middlewares/authValidator.js';
 import { rateLimitAuth } from '../../../middlewares/rateLimiter.js';
 import { validateJWT } from '../../../middlewares/validate_jwt.js';
 import { requireRole } from '../../../middlewares/validate_role.js';
+import uploadService from '../../../helpers/file-upload.service.js';
+
+// handleUploadError will be used as error middleware when routes receive files
+const { upload, handleUploadError } = uploadService;
 
 const router = Router();
 
@@ -209,7 +213,7 @@ const router = Router();
  *         description: Token inválido o expirado
  */
 
-router.post('/register', rateLimitAuth, validateRegister,register);
+router.post('/register', rateLimitAuth, upload.single('profilePicture'), handleUploadError, validateRegister, register);
 router.post('/login', rateLimitAuth, validateLogin,login);
 
 router.post('/verify-email', verifyEmail);
@@ -219,6 +223,10 @@ router.post('/request-reset', requestPasswordReset);
 router.post('/reset-password', validateResetPassword,resetPassword);
 
 router.get('/users', validateJWT, requireRole('ADMIN_ROLE'), listUsers);
+
+// Profile routes
+router.get('/profile', validateJWT, getProfile);
+router.put('/profile', validateJWT, upload.single('profilePicture'), handleUploadError, updateProfile);
 
 router.get('/reset-password', (req, res) => {
     const { token } = req.query;

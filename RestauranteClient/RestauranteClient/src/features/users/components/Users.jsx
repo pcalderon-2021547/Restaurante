@@ -20,6 +20,7 @@ export const Users = () => {
     const error          = useUserManagementStore((s) => s.error);
     const fetchUsers     = useUserManagementStore((s) => s.fetchUsers);
     const updateUserRole = useUserManagementStore((s) => s.updateUserRole);
+    const updateUserProfile = useUserManagementStore((s) => s.updateUserProfile);
 
     const safeUsers   = Array.isArray(users) ? users : [];
     const currentUser = useAuthStore((s) => s.user);
@@ -79,6 +80,17 @@ export const Users = () => {
             showError(err.response?.data?.message || "No se pudo crear el usuario");
             return false;
         }
+    };
+
+    const handleSaveProfile = async (user, formData) => {
+        const res = await updateUserProfile(user.id, formData);
+        if (res.success) {
+            showSuccess("Foto de perfil actualizada");
+            await fetchUsers(undefined, { force: true });
+            return true;
+        }
+        showError(res.error || "No se pudo actualizar la foto");
+        return false;
     };
 
     if (loading && safeUsers.length === 0) return <Spinner />;
@@ -251,6 +263,7 @@ export const Users = () => {
                 user={selectedUser}
                 loading={loading}
                 onSaveRole={handleSaveRole}
+                onSaveProfile={handleSaveProfile}
                 currentUserId={currentUser?.id}
             />
         </div>

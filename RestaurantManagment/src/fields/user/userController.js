@@ -5,22 +5,51 @@ import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import { Op } from 'sequelize';
 import User from './user.js';
+import { uploadImage, deleteImage, getFullImageUrl, getDefaultAvatarUrl } from '../../../helpers/cloudinary.service.js';
+
+const isValidUrl = (value) => {
+    if (!value) return false;
+    try {
+        new URL(value);
+        return true;
+    } catch {
+        return false;
+    }
+};
 
 export const createUser = async (req, res) => {
     try {
-        const { password, ...data } = req.body;
+        const { password, profilePictureUrl, ...data } = req.body;
+        let avatar = null;
 
         const encryptedPassword = await bcrypt.hash(password, 10);
 
+        if (req.file) {
+            try {
+                const publicId = `profile-${Date.now()}`;
+                avatar = await uploadImage(req.file.path, publicId);
+            } catch (err) {
+                console.warn('Error uploading profile picture, using default avatar', err.message || err);
+            }
+        } else if (profilePictureUrl) {
+            if (!isValidUrl(profilePictureUrl)) {
+                return res.status(400).json({ success: false, message: 'profilePictureUrl no es una URL válida' });
+            }
+            avatar = profilePictureUrl;
+        }
+
+        if (!avatar) avatar = getDefaultAvatarUrl();
+
         const user = await User.create({
             ...data,
-            password: encryptedPassword
+            password: encryptedPassword,
+            avatar
         });
 
         return res.status(201).json({
             success: true,
             message: 'Usuario creado correctamente',
-            user
+            user: { ...user.toJSON(), profilePicture: getFullImageUrl(user.avatar) }
         });
 
     } catch (error) {
@@ -44,9 +73,14 @@ export const getUsers = async (req, res) => {
             order: [['createdAt', 'DESC']]
         });
 
+        const data = rows.map((u) => ({
+            ...u.toJSON(),
+            profilePicture: getFullImageUrl(u.avatar)
+        }));
+
         return res.status(200).json({
             success: true,
-            data: rows,
+            data,
             pagination: {
                 currentPage: parseInt(page),
                 totalPages: Math.ceil(count / limit),
@@ -67,7 +101,7 @@ export const updateUser = async (req, res) => {
     try {
 
         const { id } = req.params;
-        const data = req.body;
+        const { profilePictureUrl, removePhoto, ...data } = req.body;
 
         const user = await User.findByPk(id);
 
@@ -82,11 +116,40 @@ export const updateUser = async (req, res) => {
             data.password = await bcrypt.hash(data.password, 10);
         }
 
-        await user.update(data);
+        let newAvatar = user.avatar;
+
+        if (req.file) {
+            try {
+                const publicId = `profile-${Date.now()}`;
+                const uploaded = await uploadImage(req.file.path, publicId);
+                if (user.avatar && !/^https?:\/\//i.test(user.avatar) && user.avatar !== getDefaultAvatarUrl()) {
+                    await deleteImage(user.avatar);
+                }
+                newAvatar = uploaded;
+            } catch (err) {
+                console.warn('Error uploading new profile picture:', err.message || err);
+            }
+        } else if (profilePictureUrl) {
+            if (!isValidUrl(profilePictureUrl)) {
+                return res.status(400).json({ success: false, message: 'profilePictureUrl no es una URL válida' });
+            }
+            if (user.avatar && !/^https?:\/\//i.test(user.avatar) && user.avatar !== getDefaultAvatarUrl()) {
+                await deleteImage(user.avatar);
+            }
+            newAvatar = profilePictureUrl;
+        } else if (removePhoto === 'true' || removePhoto === '1' || removePhoto === true) {
+            if (user.avatar && !/^https?:\/\//i.test(user.avatar) && user.avatar !== getDefaultAvatarUrl()) {
+                await deleteImage(user.avatar);
+            }
+            newAvatar = getDefaultAvatarUrl();
+        }
+
+        await user.update({ ...data, avatar: newAvatar });
 
         return res.json({
             success: true,
-            message: 'Usuario actualizado correctamente'
+            message: 'Usuario actualizado correctamente',
+            user: { ...user.toJSON(), profilePicture: getFullImageUrl(user.avatar) }
         });
 
     } catch (error) {

@@ -11,6 +11,9 @@ import {
 
 import { validateJWT } from '../../../middlewares/validate_jwt.js';
 import { requireRole } from '../../../middlewares/validate_role.js';
+import uploadService from '../../../helpers/file-upload.service.js';
+
+const { upload, handleUploadError } = uploadService;
 
 const router = Router();
 
@@ -114,9 +117,9 @@ const router = Router();
  *         description: Usuario no encontrado
  */
 
-router.post('/create',  createUser);
+router.post('/create', upload.single('profilePicture'), handleUploadError, createUser);
 router.get('/', validateJWT, getUsers);
-router.put('/:id', validateJWT,  updateUser);
+router.put('/:id', validateJWT, upload.single('profilePicture'), handleUploadError, updateUser);
 router.delete('/:id', validateJWT, deleteUser);
 router.get('/confirm-delete', validateJWT, confirmDeleteAdmin);
 

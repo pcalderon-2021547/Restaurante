@@ -6,6 +6,17 @@ import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import { Op } from 'sequelize';
 import User from '../user/user.js';
+import { uploadImage, deleteImage, getFullImageUrl, getDefaultAvatarUrl } from '../../../helpers/cloudinary.service.js';
+
+const isValidUrl = (value) => {
+  if (!value) return false;
+  try {
+    new URL(value);
+    return true;
+  } catch {
+    return false;
+  }
+};
 
 /* ===========================
    EMAIL TEMPLATES
@@ -343,7 +354,8 @@ const resetPasswordTemplate = (resetLink) => emailBase({
 export const register = async (req, res) => {
     try {
 
-        const { name, surname, username, email, password, phone } = req.body;
+    const { name, surname, username, email, password, phone, profilePictureUrl } = req.body;
+    let avatarPublicId = null;
 
         const existingUser = await User.findOne({ where: { email } });
 
@@ -360,17 +372,39 @@ export const register = async (req, res) => {
         const totalUsers = await User.count();
         const role = totalUsers === 0 ? 'ADMIN_ROLE' : 'USER_ROLE';
 
-        await User.create({
-            name,
-            surname,
-            username,
-            email,
-            phone,
-            password: encryptedPassword,
-            role,
-            emailToken,
-            emailVerified: false
-        });
+    // Si viene archivo subido
+    if (req.file) {
+      try {
+        const publicId = `profile-${Date.now()}`;
+        const uploadedId = await uploadImage(req.file.path, publicId);
+        avatarPublicId = uploadedId;
+      } catch (err) {
+        console.warn('Error uploading profile picture, using default avatar', err.message || err);
+      }
+    } else if (profilePictureUrl) {
+      if (!isValidUrl(profilePictureUrl)) {
+        return res.status(400).json({ success: false, message: 'profilePictureUrl no es una URL válida' });
+      }
+      // Si mandan URL pública, almacenamos la URL completa en avatarPublicId
+      avatarPublicId = profilePictureUrl;
+    }
+
+    if (!avatarPublicId) {
+      avatarPublicId = getDefaultAvatarUrl();
+    }
+
+    await User.create({
+      name,
+      surname,
+      username,
+      email,
+      phone,
+      password: encryptedPassword,
+      role,
+      emailToken,
+      emailVerified: false,
+      avatar: avatarPublicId
+    });
 
         const transporter = nodemailer.createTransport({
             service: 'gmail',
@@ -717,4 +751,83 @@ export const listUsers = async (req, res) => {
             message: error.message
         });
     }
+};
+
+/* ===========================
+   GET PROFILE
+=========================== */
+
+export const getProfile = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'No autorizado' });
+    }
+
+    const user = await User.findByPk(userId, { attributes: { exclude: ['password'] } });
+    if (!user) return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
+
+    // Normalizar picture
+    const profilePicture = getFullImageUrl(user.avatar);
+
+    return res.json({ success: true, user: { ...user.toJSON(), profilePicture } });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+/* ===========================
+   UPDATE PROFILE
+=========================== */
+
+export const updateProfile = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ success: false, message: 'No autorizado' });
+
+    const { name, surname, phone, profilePictureUrl, removePhoto } = req.body;
+
+    const user = await User.findByPk(userId);
+    if (!user) return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
+
+    let newAvatar = user.avatar;
+
+    // Si se sube un nuevo archivo
+    if (req.file) {
+      try {
+        const publicId = `profile-${Date.now()}`;
+        const uploadedId = await uploadImage(req.file.path, publicId);
+
+        // Si la anterior era de Cloudinary (no URL), eliminarla
+        if (user.avatar && !/^https?:\/\//i.test(user.avatar) && user.avatar !== getDefaultAvatarUrl()) {
+          await deleteImage(user.avatar);
+        }
+
+        newAvatar = uploadedId;
+      } catch (err) {
+        console.warn('Error uploading new profile picture:', err.message || err);
+      }
+    } else if (profilePictureUrl) {
+      if (!isValidUrl(profilePictureUrl)) {
+        return res.status(400).json({ success: false, message: 'profilePictureUrl no es una URL válida' });
+      }
+      // Reemplazar por URL pública
+      if (user.avatar && !/^https?:\/\//i.test(user.avatar) && user.avatar !== getDefaultAvatarUrl()) {
+        await deleteImage(user.avatar);
+      }
+      newAvatar = profilePictureUrl;
+    } else if (removePhoto === 'true' || removePhoto === '1' || removePhoto === true) {
+      // Eliminar foto en Cloudinary si aplica y dejar null o default
+      if (user.avatar && !/^https?:\/\//i.test(user.avatar) && user.avatar !== getDefaultAvatarUrl()) {
+        await deleteImage(user.avatar);
+      }
+      newAvatar = getDefaultAvatarUrl();
+    }
+
+    await user.update({ name, surname, phone, avatar: newAvatar });
+
+    return res.json({ success: true, message: 'Perfil actualizado correctamente', user: { ...user.toJSON(), profilePicture: getFullImageUrl(newAvatar) } });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
 };

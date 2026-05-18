@@ -1,38 +1,79 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Spinner } from "../../../shared/components/layout/Spinner.jsx";
 import { showSuccess, showError } from "../../../shared/utils/toast.js";
 import { updateUserRole } from "../../../shared/api/auth.js";
 import defaultAvatarImg from "../../../assets/img/avatarDefault.png";
 
-export const UserDetailModal = ({ isOpen, onClose, user, currentUserId, onSaveRole }) => {
+export const UserDetailModal = ({ isOpen, onClose, user, currentUserId, onSaveRole, onSaveProfile }) => {
     if (!isOpen || !user) return null;
 
     const [loading, setLoading] = useState(false);
     const isCurrentUser = currentUserId === user.id;
 
-    const { register, handleSubmit } = useForm({
-        defaultValues: { role: user.role || "USER_ROLE" },
+    const { register, handleSubmit, watch } = useForm({
+        defaultValues: { role: user.role || "USER_ROLE", removePhoto: false },
     });
 
-    const avatarSrc = (() => {
+    const avatarSrc = useMemo(() => {
         const value = user?.profilePicture?.trim();
         if (!value) return defaultAvatarImg;
         if (value.startsWith("http://") || value.startsWith("https://")) return value;
         const base = import.meta.env.VITE_CLOUDINARY_BASE_URL || "https://res.cloudinary.com/dqx1m6nxh/image/upload/";
         return `${base}${value.replace(/^\+/, "")}`;
-    })();
+    }, [user]);
+
+    const selectedFile = watch("profilePicture")?.[0];
+    const removePhoto = watch("removePhoto");
+    const [preview, setPreview] = useState(null);
+
+    useEffect(() => {
+        if (!selectedFile) {
+            setPreview(null);
+            return;
+        }
+        const url = URL.createObjectURL(selectedFile);
+        setPreview(url);
+        return () => URL.revokeObjectURL(url);
+    }, [selectedFile]);
 
     const onSubmit = async (data) => {
-        if (isCurrentUser) return;
         setLoading(true);
         try {
-            await updateUserRole(user.id, data.role);
-            showSuccess("Rol actualizado correctamente");
-            if (onSaveRole) onSaveRole(user, data.role);
+            // 1) Foto de perfil
+            if ((selectedFile || removePhoto) && typeof onSaveProfile === "function") {
+                if (selectedFile) {
+                    const allowed = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+                    const maxSize = 5 * 1024 * 1024;
+                    if (!allowed.includes(selectedFile.type)) {
+                        showError("Tipo de imagen no permitido. Usa JPG, JPEG, PNG o WEBP");
+                        setLoading(false);
+                        return;
+                    }
+                    if (selectedFile.size > maxSize) {
+                        showError("La imagen supera los 5MB");
+                        setLoading(false);
+                        return;
+                    }
+                }
+                const formData = new FormData();
+                if (selectedFile) formData.append("profilePicture", selectedFile);
+                if (removePhoto) formData.append("removePhoto", "true");
+
+                const ok = await onSaveProfile(user, formData);
+                if (ok) showSuccess("Foto de perfil actualizada");
+            }
+
+            // 2) Rol (solo si no es el usuario actual)
+            if (!isCurrentUser && data.role !== user.role) {
+                await updateUserRole(user.id, data.role);
+                showSuccess("Rol actualizado correctamente");
+                if (onSaveRole) onSaveRole(user, data.role);
+            }
+
             onClose();
         } catch (err) {
-            showError(err.response?.data?.message || "No se pudo actualizar el rol");
+            showError(err.response?.data?.message || "No se pudo actualizar el usuario");
         } finally {
             setLoading(false);
         }
@@ -72,7 +113,7 @@ export const UserDetailModal = ({ isOpen, onClose, user, currentUserId, onSaveRo
                     {/* Avatar + nombre */}
                     <div className="flex items-center gap-4">
                         <img
-                            src={avatarSrc}
+                            src={preview || avatarSrc}
                             alt={user.username}
                             className="rounded-full object-cover"
                             style={{ width: 60, height: 60, border: "2px solid rgba(201,168,76,0.25)" }}
@@ -84,6 +125,31 @@ export const UserDetailModal = ({ isOpen, onClose, user, currentUserId, onSaveRo
                             </p>
                             <p className="text-xs" style={{ color: "#5a5040" }}>@{user.username}</p>
                         </div>
+                    </div>
+
+                    {/* Foto de perfil */}
+                    <div>
+                        <p className="text-xs uppercase tracking-widest mb-2" style={{ color: "#5a5040" }}>Foto de perfil</p>
+                        <input
+                            type="file"
+                            accept="image/*"
+                            {...register("profilePicture")}
+                            className="w-full text-sm rounded-lg px-3 py-2"
+                            style={{
+                                background: "#1c1a16",
+                                border: "1px dashed rgba(201,168,76,0.25)",
+                                color: "#9a8e74",
+                            }}
+                        />
+                        <label className="flex items-center gap-2 mt-2 text-xs" style={{ color: "#5a5040" }}>
+                            <input type="checkbox" {...register("removePhoto")} />
+                            Quitar foto actual
+                        </label>
+                        {selectedFile && (
+                            <p className="text-xs mt-1" style={{ color: "#5a5040" }}>
+                                {selectedFile.name} ({Math.round(selectedFile.size / 1024)} KB)
+                            </p>
+                        )}
                     </div>
 
                     {/* Info grid */}

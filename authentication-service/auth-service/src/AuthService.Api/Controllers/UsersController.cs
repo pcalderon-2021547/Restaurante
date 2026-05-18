@@ -33,6 +33,21 @@ public class UsersController(IUserManagementService userManagementService) : Con
         return Ok(result);
     }
 
+    [HttpPut("{userId}")]
+    [Authorize]
+    [EnableRateLimiting("ApiPolicy")]
+    [RequestSizeLimit(10 * 1024 * 1024)]
+    public async Task<ActionResult<UserResponseDto>> UpdateUserProfile(string userId, [FromForm] UpdateUserProfileDto dto)
+    {
+        if (!await CurrentUserIsAdmin())
+        {
+            return StatusCode(403, new { success = false, message = "Forbidden" });
+        }
+
+        var result = await userManagementService.UpdateUserProfileAsync(userId, dto);
+        return Ok(new { success = true, message = "Usuario actualizado correctamente", user = result });
+    }
+
     [HttpGet("{userId}/roles")]
     [Authorize]
     public async Task<ActionResult<IReadOnlyList<string>>> GetUserRoles(string userId)
