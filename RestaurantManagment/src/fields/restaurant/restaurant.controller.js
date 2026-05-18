@@ -1,11 +1,16 @@
 'use strict';
+import mongoose from 'mongoose';
 import {
     createRestaurantService,
     getRestaurantsService,
     updateRestaurantService,
     deleteRestaurantService
 } from './restaurant.service.js';
+import Review from '../review/review.model.js';
+import Event from '../evento/event.model.js';
 import { handleError } from '../../../utils/handle-error.js';
+
+const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
 
 export const createRestaurant = async (req, res) => {
     try {
@@ -55,7 +60,53 @@ export const updateRestaurant = async (req, res) => {
         return handleError(res, error, 'Error al actualizar restaurante');
     }
 };
+export const getRestaurantReviews = async (req, res) => {
+    try {
+        const { id } = req.params;
 
+        if (!isValidId(id)) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID de restaurante inválido'
+            });
+        }
+
+        const reviews = await Review.find({ restaurant: id }).sort({ createdAt: -1 });
+
+        return res.status(200).json({
+            success: true,
+            total: reviews.length,
+            reviews
+        });
+    } catch (error) {
+        return handleError(res, error, 'Error al obtener reseñas del restaurante');
+    }
+};
+
+export const getRestaurantEvents = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        if (!isValidId(id)) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID de restaurante inválido'
+            });
+        }
+
+        const events = await Event.find({ restaurant: id })
+            .populate('restaurant', 'name')
+            .sort({ date: 1 });
+
+        return res.status(200).json({
+            success: true,
+            total: events.length,
+            events
+        });
+    } catch (error) {
+        return handleError(res, error, 'Error al obtener eventos del restaurante');
+    }
+};
 export const deleteRestaurant = async (req, res) => {
     try {
         const restaurant = await deleteRestaurantService(req.params.id);

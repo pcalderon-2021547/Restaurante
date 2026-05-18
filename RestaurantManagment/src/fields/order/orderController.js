@@ -1,7 +1,10 @@
 'use strict';
 
+import mongoose from 'mongoose';
 import Order from './order_model.js';
 import User from '../user/user.js'; 
+import OrderDetail from '../orderDetail/orderDetail.js';
+import Dish from '../dish/dish.js';
 import { sendEmail } from '../../../utils/send-email.js';
 import { EmailPDFService } from '../services/EmailPDFService.js';
 
@@ -41,13 +44,48 @@ const handleOrderError = (res, error, defaultMessage) => {
 export const createOrder = async (req, res) => {
     try {
         req.body.user = req.user.id;
+        const { items } = req.body;
         const order = new Order(req.body);
         await order.save();
+
+        let details = [];
+        if (Array.isArray(items) && items.length > 0) {
+            details = [];
+            for (const item of items) {
+                const { dish, quantity } = item;
+
+                if (!dish || !quantity || quantity <= 0) {
+                    return res.status(400).json({ success: false, message: 'Cada item debe incluir dish y quantity válidos' });
+                }
+
+                if (!mongoose.Types.ObjectId.isValid(dish)) {
+                    return res.status(400).json({ success: false, message: `ID de platillo inválido: ${dish}` });
+                }
+
+                const dishData = await Dish.findById(dish);
+                if (!dishData) {
+                    return res.status(404).json({ success: false, message: `Platillo no encontrado: ${dish}` });
+                }
+
+                const price = dishData.price;
+                const subtotal = Number((price * quantity).toFixed(2));
+                const detail = new OrderDetail({ order: order._id, dish, quantity, price, subtotal });
+                await detail.save();
+                details.push(detail);
+            }
+
+            const totals = calculateOrderTotals(details);
+            order.subtotal = totals.subtotal;
+            order.tax = totals.tax;
+            order.total = totals.total;
+            await order.save();
+        }
 
         return res.status(201).json({
             success: true,
             message: 'Orden creada',
-            order
+            order,
+            details
         });
 
     } catch (error) {
@@ -84,6 +122,24 @@ export const getMyOrders = async (req, res) => {
         });
     } catch (error) {
         return handleOrderError(res, error, 'Error al listar tus órdenes');
+    }
+};
+
+export const getOrderById = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const order = await Order.findById(id).populate('restaurant').populate('table');
+        if (!order) {
+            return res.status(404).json({ success: false, message: 'Orden no encontrada' });
+        }
+        if (req.user && req.user.role === 'USER_ROLE' && ((order.user?.toString && order.user.toString()) !== (req.user.id || req.user._id))) {
+            return res.status(403).json({ success: false, message: 'No tienes permiso para ver esta orden' });
+        }
+
+        return res.status(200).json({ success: true, order });
+    } catch (error) {
+        return handleOrderError(res, error, 'Error al obtener la orden');
     }
 };
 
@@ -153,6 +209,62 @@ export const deleteOrder = async (req, res) => {
 
     } catch (error) {
         return handleOrderError(res, error, 'Error al eliminar orden');
+    }
+};
+
+const calculateOrderTotals = (details) => {
+    const subtotal = details.reduce((acc, item) => acc + item.subtotal, 0);
+    const tax = Number((subtotal * 0.12).toFixed(2));
+    const total = Number((subtotal + tax).toFixed(2));
+    return { subtotal, tax, total };
+};
+
+export const createOrderWithDetails = async (req, res) => {
+    try {
+        req.body.user = req.user.id;
+        const { restaurant, type, address, table, items } = req.body;
+
+        if (!Array.isArray(items) || items.length === 0) {
+            return res.status(400).json({ success: false, message: 'Debe enviar al menos un platillo' });
+        }
+
+        const order = new Order({ user: req.body.user, restaurant, type, address, table });
+        await order.save();
+
+        const details = [];
+
+        for (const item of items) {
+            const { dish, quantity } = item;
+            if (!dish || !quantity || quantity <= 0) {
+                return res.status(400).json({ success: false, message: 'Cada item debe incluir dish y quantity válidos' });
+            }
+
+            const dishData = await Dish.findById(dish);
+            if (!dishData) {
+                return res.status(404).json({ success: false, message: `Platillo no encontrado: ${dish}` });
+            }
+
+            const price = dishData.price;
+            const subtotal = Number((price * quantity).toFixed(2));
+            const detail = new OrderDetail({ order: order._id, dish, quantity, price, subtotal });
+            await detail.save();
+            details.push(detail);
+        }
+
+        const totals = calculateOrderTotals(details);
+        order.subtotal = totals.subtotal;
+        order.tax = totals.tax;
+        order.total = totals.total;
+        await order.save();
+
+        return res.status(201).json({
+            success: true,
+            message: 'Orden y detalles creados correctamente',
+            order,
+            details
+        });
+    } catch (error) {
+        return handleOrderError(res, error, 'Error al crear orden con detalles');
     }
 };
 

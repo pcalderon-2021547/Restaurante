@@ -3,7 +3,9 @@ import {
     createRestaurant,
     getRestaurants,
     updateRestaurant,
-    deleteRestaurant
+    deleteRestaurant,
+    getRestaurantReviews,
+    getRestaurantEvents
 } from './restaurant.controller.js';
 
 import { validateJWT } from '../../../middlewares/validate_jwt.js';
@@ -66,6 +68,8 @@ router.post('/create',
 );
 
 router.get('/', getRestaurants);
+router.get('/:id/reviews', getRestaurantReviews);
+router.get('/:id/events', validateJWT, getRestaurantEvents);
 
 router.put('/update/:id',
     validateJWT,

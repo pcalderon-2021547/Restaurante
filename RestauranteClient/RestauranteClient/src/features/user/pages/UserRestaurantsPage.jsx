@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useRestaurantStore } from "../../restaurants/store/useRestaurantStore";
 import { Spinner } from "../../../shared/components/layout/Spinner.jsx";
 import { showError } from "../../../shared/utils/toast.js";
@@ -37,18 +38,28 @@ export const UserRestaurantsPage = () => {
             ) : (
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {restaurants.filter((r) => r.isActive !== false).map((restaurant) => (
-                        <div key={restaurant._id} className="rounded-2xl p-6" style={{ background: "#141210", border: "1px solid rgba(201,168,76,0.12)" }}>
-                            <h2 className="text-xl font-semibold" style={{ color: "#c9a84c" }}>{restaurant.name}</h2>
-                            <p className="text-sm mt-2" style={{ color: "#9a8e74" }}>{restaurant.description || "Sin descripción"}</p>
-                            <div className="mt-4 text-sm space-y-2" style={{ color: "#f0e8d5" }}>
-                                <p><strong>Teléfono:</strong> {restaurant.phone || "N/A"}</p>
-                                <p><strong>Horario:</strong> {restaurant.openingHour || "--"} - {restaurant.closingHour || "--"}</p>
-                                <p><strong>Dirección:</strong> {restaurant.address || "No registrada"}</p>
-                            </div>
-                        </div>
+                        <RestaurantCard key={restaurant._id} restaurant={restaurant} />
                     ))}
                 </div>
             )}
+        </div>
+    );
+};
+
+const RestaurantCard = ({ restaurant }) => {
+    const navigate = useNavigate();
+    return (
+        <div className="rounded-2xl p-6" style={{ background: "#141210", border: "1px solid rgba(201,168,76,0.12)" }}>
+            <h2 className="text-xl font-semibold" style={{ color: "#c9a84c" }}>{restaurant.name}</h2>
+            <p className="text-sm mt-2" style={{ color: "#9a8e74" }}>{restaurant.description || "Sin descripción"}</p>
+            <div className="mt-4 text-sm space-y-2" style={{ color: "#f0e8d5" }}>
+                <p><strong>Teléfono:</strong> {restaurant.phone || "N/A"}</p>
+                <p><strong>Horario:</strong> {restaurant.openingHour || "--"} - {restaurant.closingHour || "--"}</p>
+                <p><strong>Dirección:</strong> {restaurant.address || "No registrada"}</p>
+            </div>
+            <div className="mt-4 flex gap-2">
+                <button onClick={() => navigate(`/user/order/create/${restaurant._id}`)} className="px-4 py-2 rounded" style={{ background: "linear-gradient(90deg, #c9a84c, #e8c96e)", color: "#0a0906" }}>Pedir</button>
+            </div>
         </div>
     );
 };

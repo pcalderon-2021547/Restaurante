@@ -52,6 +52,7 @@ const router = Router();
 import {
     createOrderDetail,
     getOrderDetails,
+    getOrderDetailsByOrder,
     updateOrderDetail,
     deleteOrderDetail
 } from './orderDetailController.js';
@@ -62,11 +63,13 @@ import { requireRole } from '../../../middlewares/validate_role.js';
 router.post(
     '/create',
     validateJWT,
-    requireRole('ADMIN_ROLE'),
+    requireRole('ADMIN_ROLE', 'USER_ROLE'),
     createOrderDetail
 );
 
 router.get('/', getOrderDetails);
+
+router.get('/order/:orderId', validateJWT, requireRole('ADMIN_ROLE', 'USER_ROLE'), getOrderDetailsByOrder);
 
 router.put(
     '/update/:id',

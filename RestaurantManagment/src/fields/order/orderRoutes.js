@@ -1,10 +1,12 @@
 import { Router } from 'express';
 import {
     createOrder,
+    createOrderWithDetails,
     getOrders,
     updateOrder,
     deleteOrder,
     getMyOrders,
+    getOrderById,
     sendAllOrdersPDF,
     sendOrdersByRestaurantPDF,
     sendOrdersByStatusPDF,
@@ -133,10 +135,23 @@ router.post(
     createOrder
 );
 
+router.post(
+    '/create-with-details',
+    validateJWT,
+    requireRole('ADMIN_ROLE', 'USER_ROLE'),
+    (req, res, next) => {
+        req.body.user = req.user.id;
+        next();
+    },
+    validateCreateOrder,
+    createOrderWithDetails
+);
+
 router.get('/', validateJWT, requireRole('ADMIN_ROLE'), getOrders);
 
 router.get('/my-orders', validateJWT, requireRole('ADMIN_ROLE', 'USER_ROLE'), getMyOrders);
 
+router.get('/:id', validateJWT, requireRole('ADMIN_ROLE', 'USER_ROLE'), validateOrderId, getOrderById);
 
 router.put(
     '/update/:id',

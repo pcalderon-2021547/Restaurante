@@ -2,7 +2,9 @@ import { create } from "zustand";
 import {
     getOrders as getOrdersRequest,
     getMyOrders as getMyOrdersRequest,
+    getOrderById as getOrderByIdRequest,
     createOrder as createOrderRequest,
+    createOrderWithDetails as createOrderWithDetailsRequest,
     updateOrder as updateOrderRequest,
     deleteOrder as deleteOrderRequest,
 } from "../../../shared/api";
@@ -41,6 +43,30 @@ export const useOrderStore = create((set, get) => ({
         } catch (error) {
             set({ error: error.response?.data?.message || "Error al crear pedido.", loading: false });
             throw error;
+        }
+    },
+
+    createOrderWithDetails: async (data) => {
+        try {
+            set({ loading: true, error: null });
+            const response = await createOrderWithDetailsRequest(data);
+            set({ orders: [response.data.order, ...get().orders], loading: false });
+            return response.data;
+        } catch (error) {
+            set({ error: error.response?.data?.message || "Error al crear pedido.", loading: false });
+            throw error;
+        }
+    },
+
+    getOrderById: async (id) => {
+        try {
+            set({ loading: true, error: null });
+            const response = await getOrderByIdRequest(id);
+            set({ loading: false });
+            return response.data.order;
+        } catch (error) {
+            set({ error: error.response?.data?.message || "Error al obtener pedido.", loading: false });
+            return null;
         }
     },
 

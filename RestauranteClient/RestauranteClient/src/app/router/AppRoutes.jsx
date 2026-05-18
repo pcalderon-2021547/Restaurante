@@ -21,6 +21,10 @@ import { UserDashboardPage } from "../layouts/UserDashboardPage.jsx";
 import { UserHomePage } from "../../features/user/pages/UserHomePage.jsx";
 import { UserPlaceholderPage } from "../../features/user/pages/UserPlaceholderPage.jsx";
 import { UserProfilePage } from "../../features/user/pages/UserProfilePage.jsx";
+import { UserEventsPage } from "../../features/user/pages/UserEventsPage.jsx";
+import { UserReviewsPage } from "../../features/user/pages/UserReviewsPage.jsx";
+import { UserOrderDetailPage } from "../../features/user/pages/UserOrderDetailPage.jsx";
+import { UserOrderDetailsPage } from "../../features/user/pages/UserOrderDetailsPage.jsx";
 import { Tables } from "../../features/table/components/Tables.jsx";
 import { UserOrdersPage } from "../../features/user/pages/UserOrdersPage.jsx";
 import { UserReservationsPage } from "../../features/user/pages/UserReservationsPage.jsx";
@@ -85,8 +89,12 @@ export const AppRoutes = () => {
                 <Route path="placeholder" element={<UserPlaceholderPage />} />
                 <Route path="menus" element={<UserMenusPage />} />
                 <Route path="orders" element={<UserOrdersPage />} />
+                <Route path="orders/:orderId" element={<UserOrderDetailsPage />} />
                 <Route path="reservations" element={<UserReservationsPage />} />
                 <Route path="restaurants" element={<UserRestaurantsPage />} />
+                <Route path="order/create/:restaurantId" element={<UserOrderDetailPage />} />
+                <Route path="events" element={<UserEventsPage />} />
+                <Route path="reviews" element={<UserReviewsPage />} />
                 <Route
                     path="profile"
                     element={<UserProfilePage />}

@@ -62,12 +62,13 @@ export const createEvent = async (req, res) => {
         }
 
         const eventDate = new Date(date);
-        if (eventDate < new Date()) {
+        if (Number.isNaN(eventDate.getTime())) {
             return res.status(400).json({
                 success: false,
-                message: 'No se puede crear un evento en una fecha pasada'
+                message: 'Fecha inválida para el evento'
             });
         }
+
 
         const event = new Event(req.body);
         await event.save();

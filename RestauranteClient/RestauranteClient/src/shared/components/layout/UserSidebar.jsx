@@ -6,12 +6,13 @@ export const UserSidebar = () => {
     const items = [
         { label: "Inicio", to: "/user" },
         { label: "Restaurantes", to: "/user/restaurants" },
+        { label: "Realizar pedido", to: "/user/restaurants" },
         { label: "Menús", to: "/user/menus" },
         { label: "Eventos", to: "/user/events" },
         { label: "Reseñas", to: "/user/reviews" },
         { label: "Perfil", to: "/user/profile" },
-        {label: "Mis pedidos", to: "/user/orders" },
-        {label: "Mis reservaciones", to: "/user/reservations" },
+        { label: "Mis pedidos", to: "/user/orders" },
+        { label: "Mis reservaciones", to: "/user/reservations" },
     ];
 
     return (

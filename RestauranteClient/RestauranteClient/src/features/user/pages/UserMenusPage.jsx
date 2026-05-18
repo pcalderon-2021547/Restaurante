@@ -17,10 +17,14 @@ export const UserMenusPage = () => {
         if (error) showError(error);
     }, [error]);
 
-    const findRestaurantName = (restaurantId) => {
-        const restaurant = restaurants.find((r) => r._id === restaurantId || r.id === restaurantId);
-        return restaurant?.name || "Desconocido";
-    };
+   const findRestaurantName = (restaurantField) => {
+    if (restaurantField && typeof restaurantField === "object") {
+        return restaurantField.name || "Desconocido";
+    }
+
+    const restaurant = restaurants.find((r) => r._id === restaurantField || r.id === restaurantField);
+    return restaurant?.name || "Desconocido";
+};
 
     return (
         <div className="p-6">

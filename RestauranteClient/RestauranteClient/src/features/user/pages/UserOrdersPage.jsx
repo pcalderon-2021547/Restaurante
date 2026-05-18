@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
 import { useOrderStore } from "../../order/store/useOrderStore";
-import { OrderModal } from "../../order/components/OrderModal.jsx";
+import { useNavigate } from "react-router-dom";
 import { Spinner } from "../../../shared/components/layout/Spinner.jsx";
 import { showError } from "../../../shared/utils/toast.js";
 
 export const UserOrdersPage = () => {
     const { orders, loading, error, getMyOrders } = useOrderStore();
-    const [openModal, setOpenModal] = useState(false);
-    const [selectedOrder, setSelectedOrder] = useState(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
         getMyOrders();
@@ -28,16 +27,7 @@ export const UserOrdersPage = () => {
                         Pedidos <em style={{ color: "#c9a84c", fontStyle: "italic" }}>de usuario</em>
                     </h1>
                 </div>
-                <button
-                    onClick={() => {
-                        setSelectedOrder(null);
-                        setOpenModal(true);
-                    }}
-                    className="px-5 py-2 rounded-lg text-sm font-medium"
-                    style={{ background: "linear-gradient(90deg, #c9a84c, #e8c96e)", color: "#0a0906" }}
-                >
-                    + Nuevo Pedido
-                </button>
+                <div />
             </div>
 
             {loading && orders.length === 0 ? (
@@ -70,22 +60,17 @@ export const UserOrdersPage = () => {
                             </span>
                             <span className="col-span-2 text-right">
                                 <button
-                                    onClick={() => {
-                                        setSelectedOrder(order);
-                                        setOpenModal(true);
-                                    }}
+                                    onClick={() => navigate(`/user/orders/${order._id || order.id}`)}
                                     className="px-3 py-1 rounded text-xs"
                                     style={{ background: "rgba(201,168,76,0.1)", color: "#c9a84c", border: "1px solid rgba(201,168,76,0.2)" }}
                                 >
-                                    Ver / Editar
+                                    Ver
                                 </button>
                             </span>
                         </div>
                     ))}
                 </div>
             )}
-
-            <OrderModal isOpen={openModal} onClose={() => { setOpenModal(false); setSelectedOrder(null); }} order={selectedOrder} />
         </div>
     );
 };

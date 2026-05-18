@@ -25,6 +25,7 @@ export const updateDish     = async (id, data) => axiosAdmin.put(`/dish/update/$
 export const deleteDish     = async (id)       => axiosAdmin.delete(`/dish/delete/${id}`);
 
 export const getOrderDetails      = async ()         => axiosAdmin.get("/orderDetail");
+export const getOrderDetailsByOrder = async (orderId) => axiosAdmin.get(`/orderDetail/order/${orderId}`);
 export const createOrderDetail    = async (data)     => axiosAdmin.post("/orderDetail/create", data);
 export const updateOrderDetail    = async (id, data) => axiosAdmin.put(`/orderDetail/update/${id}`, data);
 export const deleteOrderDetail    = async (id)       => axiosAdmin.delete(`/orderDetail/delete/${id}`);
@@ -41,7 +42,9 @@ export const getOrders = async () => {
 export const getMyOrders = async () => {
     return axiosAdmin.get("/order/my-orders");
 };
+export const getOrderById = async (id) => axiosAdmin.get(`/order/${id}`);
 export const createOrder = async (data) => axiosAdmin.post("/order/create", data);
+export const createOrderWithDetails = async (data) => axiosAdmin.post("/order/create", data);
 export const updateOrder = async (id, data) => axiosAdmin.put(`/order/update/${id}`, data);
 export const deleteOrder = async (id) => axiosAdmin.delete(`/order/delete/${id}`);
 

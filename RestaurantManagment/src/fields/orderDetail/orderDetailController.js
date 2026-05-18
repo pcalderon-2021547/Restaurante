@@ -49,6 +49,22 @@ export const createOrderDetail = async (req, res) => {
         const price = dishData.price;
         const subtotal = price * quantity;
 
+        // If the requester is a regular user, ensure they can only add details
+        // to orders that belong to them
+        if (req.user && req.user.role === 'USER_ROLE') {
+            const existingOrder = await Order.findById(order);
+            if (!existingOrder) {
+                return res.status(404).json({ success: false, message: 'Orden no encontrada' });
+            }
+            if ((existingOrder.user?.toString && existingOrder.user.toString()) !== (req.user.id || req.user._id)) {
+                return res.status(403).json({ success: false, message: 'No tienes permiso para modificar esta orden' });
+            }
+            // Also prevent adding details to orders that are not pending
+            if (existingOrder.status && existingOrder.status !== 'pending') {
+                return res.status(400).json({ success: false, message: 'No se pueden agregar detalles a una orden en ese estado' });
+            }
+        }
+
         const detail = new OrderDetail({
             order,
             dish,
@@ -93,6 +109,31 @@ export const getOrderDetails = async (req, res) => {
             message: 'Error al listar detalles',
             error: error.message
         });
+    }
+};
+
+export const getOrderDetailsByOrder = async (req, res) => {
+    try {
+        const { orderId } = req.params;
+
+        if (!isValidId(orderId)) {
+            return res.status(400).json({ success: false, message: 'ID de orden inválido' });
+        }
+
+        // if requester is USER_ROLE ensure ownership
+        if (req.user && req.user.role === 'USER_ROLE') {
+            const existingOrder = await Order.findById(orderId);
+            if (!existingOrder) return res.status(404).json({ success: false, message: 'Orden no encontrada' });
+            if ((existingOrder.user?.toString && existingOrder.user.toString()) !== (req.user.id || req.user._id)) {
+                return res.status(403).json({ success: false, message: 'No tienes permiso para ver los detalles de esta orden' });
+            }
+        }
+
+        const details = await OrderDetail.find({ order: orderId }).populate('dish');
+
+        return res.status(200).json({ success: true, details });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Error al obtener detalles', error: error.message });
     }
 };
 
