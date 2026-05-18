@@ -89,7 +89,7 @@ export const UserDetailModal = ({ isOpen, onClose, user, currentUserId, onSaveRo
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4"
             style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)" }}>
-            <form onSubmit={handleSubmit(onSubmit)}
+            <form onSubmit={handleSubmit(onSubmit)} noValidate
                 className="w-full max-w-lg flex flex-col max-h-[90vh] rounded-xl overflow-hidden"
                 style={{ background: "#141210", border: "1px solid rgba(201,168,76,0.2)" }}>
 
@@ -197,7 +197,20 @@ export const UserDetailModal = ({ isOpen, onClose, user, currentUserId, onSaveRo
                     <button type="submit"
                         disabled={loading || isCurrentUser}
                         className="px-5 py-2 rounded-lg text-sm font-medium disabled:opacity-40"
-                        style={{ background: "linear-gradient(90deg, #c9a84c, #e8c96e)", color: "#0a0906" }}>
+                        style={{
+                            background: "linear-gradient(90deg, #c9a84c, #e8c96e)",
+                            color: "#0a0906",
+                            minWidth: 160,
+                            height: 36,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            outline: "none",
+                            boxShadow: "none",
+                            border: "none",
+                            WebkitTapHighlightColor: "transparent",
+                            appearance: "none"
+                        }}>
                         {loading ? <Spinner small /> : "Guardar cambios"}
                     </button>
                 </div>

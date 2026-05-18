@@ -1,4 +1,19 @@
-export const Spinner = () => {
+export const Spinner = ({ small = false }) => {
+    if (small) {
+        return (
+            <div style={{
+                width: 16,
+                height: 16,
+                border: '2px solid #2a2218',
+                borderTop: '2px solid #c9a84c',
+                borderRadius: '50%',
+                animation: 'spin 0.8s linear infinite'
+            }}>
+                <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            </div>
+        );
+    }
+
     return (
         <div style={{
             width: '100%',
