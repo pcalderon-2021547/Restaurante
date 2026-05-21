@@ -40,7 +40,9 @@ public static class SecurityExtensions
         });
 
         // Configurar Data Protection
-        var keysDirectory = new DirectoryInfo("./keys");
+        var environment = services.BuildServiceProvider().GetRequiredService<IWebHostEnvironment>();
+        var keysPath = environment.IsProduction() ? "./keys" : "./keys-development";
+        var keysDirectory = new DirectoryInfo(keysPath);
         if (!keysDirectory.Exists)
         {
             keysDirectory.Create();
@@ -52,7 +54,6 @@ public static class SecurityExtensions
                 .SetDefaultKeyLifetime(TimeSpan.FromDays(90));
 
         // En producción, configurar encriptación con certificado
-        var environment = services.BuildServiceProvider().GetRequiredService<IWebHostEnvironment>();
         if (environment.IsProduction())
         {
             // En producción deberías usar un certificado real
@@ -66,11 +67,12 @@ public static class SecurityExtensions
         else
         {
             // En desarrollo, usar DPAPI (solo Windows) o sin encriptación
+            // En desarrollo se usan claves locales sin DPAPI para evitar llaves rotas
+            // cuando el proyecto se ejecuta con otro usuario o contexto de Windows.
             if (OperatingSystem.IsWindows())
             {
                 dataProtectionBuilder.ProtectKeysWithDpapi();
             }
-            // En Linux/macOS en desarrollo, las claves no se encriptan (solo para desarrollo)
         }
 
         // Configurar Antiforgery (CSRF Protection)

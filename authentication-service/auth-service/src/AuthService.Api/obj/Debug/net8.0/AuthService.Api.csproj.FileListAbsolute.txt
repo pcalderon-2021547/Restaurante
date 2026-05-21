@@ -876,4 +876,11 @@ C:\Users\pcc\desktop\Restaurante\authentication-service\auth-service\src\AuthSer
 C:\Users\pcc\desktop\Restaurante\authentication-service\auth-service\src\AuthService.Api\obj\Debug\net8.0\AuthService.Api.pdb
 C:\Users\pcc\desktop\Restaurante\authentication-service\auth-service\src\AuthService.Api\obj\Debug\net8.0\AuthService.Api.genruntimeconfig.cache
 C:\Users\pcc\desktop\Restaurante\authentication-service\auth-service\src\AuthService.Api\obj\Debug\net8.0\ref\AuthService.Api.dll
-C:\Restaurante\authentication-service\auth-service\src\AuthService.Api\obj\Debug\net8.0\AuthServ.C02AB606.Up2Date
+C:\Restaurante\authentication-service\auth-service\src\AuthService.Api\obj\Debug\net8.0\AuthService.Api.csproj.CopyComplete
+C:\Restaurante\tmp\auth-build-check\appsettings.Development.json
+C:\Restaurante\tmp\auth-build-check\appsettings.json
+C:\Restaurante\tmp\auth-build-check\AuthService.Api.exe
+C:\Restaurante\tmp\auth-build-check\AuthService.Api.deps.json
+C:\Restaurante\tmp\auth-build-check\AuthService.Api.runtimeconfig.json
+C:\Restaurante\tmp\auth-build-check\AuthService.Api.dll
+C:\Restaurante\tmp\auth-build-check\AuthService.Api.pdb

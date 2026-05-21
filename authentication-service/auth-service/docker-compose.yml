@@ -13,6 +13,15 @@ services:
        - "5435:5432"
       volumes:
         - postgres_data:/var/lib/postgresql/data
+    mongo:
+      image: mongo:6
+      container_name: restaurante-mongo
+      restart: always
+      ports:
+        - "27017:27017"
+      volumes:
+        - mongo_data:/data/db
 
 volumes:
   postgres_data:
+  mongo_data:

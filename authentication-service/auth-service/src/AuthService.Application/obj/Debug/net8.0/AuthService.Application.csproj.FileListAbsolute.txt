@@ -76,4 +76,7 @@ C:\Users\pcc\desktop\Restaurante\authentication-service\auth-service\src\AuthSer
 C:\Users\pcc\desktop\Restaurante\authentication-service\auth-service\src\AuthService.Application\obj\Debug\net8.0\refint\AuthService.Application.dll
 C:\Users\pcc\desktop\Restaurante\authentication-service\auth-service\src\AuthService.Application\obj\Debug\net8.0\AuthService.Application.pdb
 C:\Users\pcc\desktop\Restaurante\authentication-service\auth-service\src\AuthService.Application\obj\Debug\net8.0\ref\AuthService.Application.dll
-C:\Restaurante\authentication-service\auth-service\src\AuthService.Application\obj\Debug\net8.0\AuthServ.67992DEE.Up2Date
+C:\Restaurante\authentication-service\auth-service\src\AuthService.Application\obj\Debug\net8.0\AuthService.Application.csproj.CopyComplete
+C:\Restaurante\tmp\auth-build-check\AuthService.Application.deps.json
+C:\Restaurante\tmp\auth-build-check\AuthService.Application.dll
+C:\Restaurante\tmp\auth-build-check\AuthService.Application.pdb

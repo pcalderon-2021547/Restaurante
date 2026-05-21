@@ -57,3 +57,6 @@ C:\Users\pcc\desktop\Restaurante\authentication-service\auth-service\src\AuthSer
 C:\Users\pcc\desktop\Restaurante\authentication-service\auth-service\src\AuthService.Domain\obj\Debug\net8.0\refint\AuthService.Domain.dll
 C:\Users\pcc\desktop\Restaurante\authentication-service\auth-service\src\AuthService.Domain\obj\Debug\net8.0\AuthService.Domain.pdb
 C:\Users\pcc\desktop\Restaurante\authentication-service\auth-service\src\AuthService.Domain\obj\Debug\net8.0\ref\AuthService.Domain.dll
+C:\Restaurante\tmp\auth-build-check\AuthService.Domain.deps.json
+C:\Restaurante\tmp\auth-build-check\AuthService.Domain.dll
+C:\Restaurante\tmp\auth-build-check\AuthService.Domain.pdb
