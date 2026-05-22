@@ -161,15 +161,17 @@ public class AuthService(
         // Buscar usuario por email o username
         User? user = null;
 
-        if (loginDto.EmailOrUsername.Contains('@'))
+        var emailOrUsername = loginDto.EmailOrUsername.Trim();
+
+        if (emailOrUsername.Contains('@'))
         {
             // Es un email
-            user = await userRepository.GetByEmailAsync(loginDto.EmailOrUsername.ToLowerInvariant());
+            user = await userRepository.GetByEmailAsync(emailOrUsername.ToLowerInvariant());
         }
         else
         {
             // Es un username
-            user = await userRepository.GetByUsernameAsync(loginDto.EmailOrUsername);
+            user = await userRepository.GetByUsernameAsync(emailOrUsername);
         }
 
         // Verificar si el usuario existe

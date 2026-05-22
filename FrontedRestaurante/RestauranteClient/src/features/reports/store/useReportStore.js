@@ -4,11 +4,15 @@ import {
     getGeneralStats as getGeneralStatsRequest,
     getPeakHours as getPeakHoursRequest,
     getTopDishes as getTopDishesRequest,
+    sendGeneralReportPDF as sendGeneralReportPDFRequest,
+    sendOwnRestaurantReportPDF as sendOwnRestaurantReportPDFRequest,
+    sendRestaurantReportPDF as sendRestaurantReportPDFRequest,
 } from "../../../shared/api";
 
 export const useReportStore = create((set) => ({
     stats: null,
     loading: false,
+    sendingPdf: false,
     error: null,
 
     getGeneralStats: async () => {
@@ -41,6 +45,45 @@ export const useReportStore = create((set) => ({
             });
         } catch (error) {
             set({ error: error.response?.data?.message || "Error al obtener estadisticas del restaurante.", loading: false });
+        }
+    },
+
+    sendGeneralPdf: async (email) => {
+        try {
+            set({ sendingPdf: true, error: null });
+            const response = await sendGeneralReportPDFRequest(email);
+            set({ sendingPdf: false });
+            return response.data;
+        } catch (error) {
+            const message = error.response?.data?.message || "Error al enviar PDF general.";
+            set({ error: message, sendingPdf: false });
+            throw new Error(message);
+        }
+    },
+
+    sendRestaurantPdf: async (restaurantId, email) => {
+        try {
+            set({ sendingPdf: true, error: null });
+            const response = await sendRestaurantReportPDFRequest(restaurantId, email);
+            set({ sendingPdf: false });
+            return response.data;
+        } catch (error) {
+            const message = error.response?.data?.message || "Error al enviar PDF del restaurante.";
+            set({ error: message, sendingPdf: false });
+            throw new Error(message);
+        }
+    },
+
+    sendOwnRestaurantPdf: async (email) => {
+        try {
+            set({ sendingPdf: true, error: null });
+            const response = await sendOwnRestaurantReportPDFRequest(email);
+            set({ sendingPdf: false });
+            return response.data;
+        } catch (error) {
+            const message = error.response?.data?.message || "Error al enviar PDF de tu restaurante.";
+            set({ error: message, sendingPdf: false });
+            throw new Error(message);
         }
     },
 }));

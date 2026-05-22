@@ -6,19 +6,21 @@ export const UserSidebar = () => {
     const items = [
         { label: "Inicio", to: "/user" },
         { label: "Restaurantes", to: "/user/restaurants" },
-        { label: "Realizar pedido", to: "/user/restaurants" },
-        { label: "Menús", to: "/user/menus" },
+        { label: "Menus", to: "/user/menus" },
         { label: "Eventos", to: "/user/events" },
-        { label: "Reseñas", to: "/user/reviews" },
-        { label: "Perfil", to: "/user/profile" },
+        { label: "Resenas", to: "/user/reviews" },
         { label: "Mis pedidos", to: "/user/orders" },
         { label: "Mis reservaciones", to: "/user/reservations" },
+        { label: "Perfil", to: "/user/profile" },
     ];
 
     return (
         <aside className="dash-sidebar">
             {items.map((item) => {
-                const active = location.pathname === item.to;
+                const active = item.to === "/user"
+                    ? location.pathname === item.to
+                    : location.pathname.startsWith(item.to);
+
                 return (
                     <Link
                         key={item.to}

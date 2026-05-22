@@ -6,6 +6,7 @@ import {
     getRestaurantStats,
     getDemandReport,
     sendGeneralStatsPDF,
+    sendOwnRestaurantStatsPDF,
     sendRestaurantStatsPDF,
     sendTopDishesPDF,
     sendGeneralStatsExcel,
@@ -97,6 +98,12 @@ router.get('/send-pdf/general/:email', validateJWT, requireRole('ADMIN_ROLE'), s
  * Envía PDF con el reporte de desempeño de UN restaurante específico
  */
 router.get('/send-pdf/restaurant/:restaurantId/:email', validateJWT, requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE'), attachOwnedRestaurant, sendRestaurantStatsPDF);
+
+/**
+ * GET /reports/send-pdf/my-restaurant/:email
+ * Envia PDF del restaurante asignado al ADMIN_RESTAURANT_ROLE
+ */
+router.get('/send-pdf/my-restaurant/:email', validateJWT, requireRole('ADMIN_RESTAURANT_ROLE'), attachOwnedRestaurant, sendOwnRestaurantStatsPDF);
 
 /**
  * GET /reports/send-pdf/top-dishes/:email?limit=10&restaurantId=xxx

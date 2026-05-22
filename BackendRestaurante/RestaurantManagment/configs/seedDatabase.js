@@ -67,12 +67,24 @@ const seedMongoCollection = async (Model, items, collectionName, key = 'name') =
     const existing = await Model.find({ [key]: { $in: keys } });
     const existingKeys = new Set(existing.map((doc) => doc[key]));
     const toInsert = items.filter((item) => !existingKeys.has(item[key]));
+    const toUpdate = items.filter((item) => existingKeys.has(item[key]));
 
     if (toInsert.length > 0) {
       await Model.insertMany(toInsert, { ordered: false });
       console.log(`Added ${toInsert.length} fixed documents to ${collectionName}.`);
-    } else {
+    }
+
+    if (toUpdate.length > 0) {
+      await Promise.all(
+        toUpdate.map((item) => Model.updateOne({ [key]: item[key] }, { $set: item }))
+      );
+      console.log(`Refreshed ${toUpdate.length} fixed documents in ${collectionName}.`);
+    }
+
+    if (toInsert.length === 0 && toUpdate.length === 0) {
       console.log(`${collectionName} already has the fixed seed records.`);
+    } else {
+      console.log(`${collectionName} fixed seed is ready.`);
     }
 
     const docs = await Model.find({ [key]: { $in: keys } });

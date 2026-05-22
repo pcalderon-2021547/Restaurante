@@ -35,18 +35,21 @@ export const useAuthStore = create(
                 });
             },
 
-            login: async ({ email, password }) => {
+            login: async ({ email, emailOrUsername, username, password }) => {
                 try {
                     set({ loading: true, error: null });
+                    const identifier = (emailOrUsername || email || username || "").trim();
 
                     const { data } = await loginRequest({
-                        emailOrUsername: email, 
+                        emailOrUsername: identifier,
                         password
                     });
 
                     const token = data.accessToken;
                     const role = data.userDetails?.role || data.userDetails?.rol || data.userDetails?.Role;
                     const userId = data.userDetails?.id ?? data.userDetails?._id ?? data.userDetails?.Id ?? data.userDetails?.userId;
+                    const userEmail = data.userDetails?.email || data.userDetails?.Email || (identifier.includes("@") ? identifier : "");
+                    const userUsername = data.userDetails?.username || data.userDetails?.Username || (!identifier.includes("@") ? identifier : "");
 
                     if (!token || !role) {
                         const message = "No se pudo obtener el rol del usuario";
@@ -75,7 +78,7 @@ export const useAuthStore = create(
                     }
 
                     set({
-                        user: { id: userId, email, role },
+                        user: { id: userId, email: userEmail, username: userUsername, role },
                         token,
                         expiresAt,
                         loading: false,

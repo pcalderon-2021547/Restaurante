@@ -13,60 +13,61 @@ export const LoginForm = ({ onForgot, onRegister }) => {
         const res = await login(data);
         if (res.success) {
             navigate(res.redirectTo || "/user");
-            toast.success("¡Bienvenido de nuevo!", { duration: 4000 });
+            toast.success("Bienvenido de nuevo", { duration: 4000 });
         }
     };
 
     return (
         <form onSubmit={handleSubmit(onSubmit)}>
             <div className="auth-input-group">
-                <label htmlFor="email" className="auth-label">
-                    Correo electrónico
+                <label htmlFor="emailOrUsername" className="auth-label">
+                    Correo o usuario
                 </label>
                 <input
-                    id="email"
-                    type="email"
-                    placeholder="correo@ejemplo.com"
+                    id="emailOrUsername"
+                    type="text"
+                    placeholder="correo@ejemplo.com o pabloandres"
                     className="auth-input"
-                    {...register("email", {
-                        required: "El correo es requerido",
-                        pattern: {
-                            value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                            message: "Ingresa un correo válido"
-                        }
+                    autoComplete="username"
+                    {...register("emailOrUsername", {
+                        required: "El correo o usuario es requerido",
+                        validate: (value) =>
+                            value.trim().length > 0 || "Ingresa tu correo o usuario"
                     })}
                 />
-                {errors.email && <p className="auth-error">{errors.email.message}</p>}
+                {errors.emailOrUsername && (
+                    <p className="auth-error">{errors.emailOrUsername.message}</p>
+                )}
             </div>
 
             <div className="auth-input-group">
                 <label htmlFor="password" className="auth-label">
-                    Contraseña
+                    Contrasena
                 </label>
                 <input
                     id="password"
                     type="password"
-                    placeholder="••••••••"
+                    placeholder="********"
                     className="auth-input"
+                    autoComplete="current-password"
                     {...register("password", {
-                        required: "La contraseña es obligatoria"
+                        required: "La contrasena es obligatoria"
                     })}
                 />
                 {errors.password && <p className="auth-error">{errors.password.message}</p>}
             </div>
 
             <button type="submit" className="auth-btn" disabled={loading}>
-                {loading ? "Verificando..." : "Iniciar sesión"}
+                {loading ? "Verificando..." : "Iniciar sesion"}
             </button>
 
-            {/* Links secundarios */}
             <div style={{
                 display: "flex",
                 justifyContent: "space-between",
                 marginTop: "1.25rem"
             }}>
                 <button type="button" onClick={onForgot} className="auth-link-btn">
-                    ¿Olvidaste tu contraseña?
+                    Olvidaste tu contrasena?
                 </button>
                 <button type="button" onClick={onRegister} className="auth-link-btn">
                     Crear cuenta

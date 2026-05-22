@@ -166,9 +166,21 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
     try {
 
-        const { email, password } = req.body;
+        const identifier = (req.body.emailOrUsername || req.body.email || req.body.username || '').trim();
+        const { password } = req.body;
 
-        const user = await User.findOne({ where: { email } });
+        if (!identifier || !password) {
+            return res.status(400).json({
+                success: false,
+                message: 'Correo o usuario y contrasena son obligatorios'
+            });
+        }
+
+        const user = await User.findOne({
+            where: identifier.includes('@')
+                ? { email: identifier.toLowerCase() }
+                : { username: identifier }
+        });
 
         if (!user) {
             return res.status(400).json({

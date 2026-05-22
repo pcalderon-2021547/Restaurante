@@ -1,27 +1,35 @@
+import { Link } from "react-router-dom";
 import { useAuthStore } from "../../auth/store/authStore";
 
 export const UserProfilePage = () => {
     const user = useAuthStore((state) => state.user);
 
-    return (
-        <div className="rounded-xl p-6" style={{ background: "#141210", border: "1px solid rgba(201,168,76,0.12)" }}>
-            <p className="text-xs uppercase tracking-widest" style={{ color: "#5a5040" }}>
-                Perfil
-            </p>
-            <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "2rem", color: "#c9a84c" }}>
-                Mi información
-            </h2>
+    const fields = [
+        ["Correo", user?.email || "Sin correo"],
+        ["Usuario", user?.username || "Sin usuario"],
+        ["Rol", user?.role || "USER_ROLE"],
+        ["ID", user?.id || "No disponible"]
+    ];
 
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 rounded-lg" style={{ background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.2)" }}>
-                    <p className="text-xs uppercase tracking-widest" style={{ color: "#9a8e74" }}>Correo</p>
-                    <p className="text-sm" style={{ color: "#f0e8d5" }}>{user?.email || "Sin correo"}</p>
+    return (
+        <section className="user-profile">
+            <div className="user-profile-head">
+                <div>
+                    <p className="user-home-kicker">Perfil</p>
+                    <h1>Mi informacion</h1>
+                    <p>Estos son los datos guardados en tu sesion actual.</p>
                 </div>
-                <div className="p-4 rounded-lg" style={{ background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.2)" }}>
-                    <p className="text-xs uppercase tracking-widest" style={{ color: "#9a8e74" }}>Rol</p>
-                    <p className="text-sm" style={{ color: "#f0e8d5" }}>{user?.role || "Usuario"}</p>
-                </div>
+                <Link to="/user/orders">Mis pedidos</Link>
             </div>
-        </div>
+
+            <div className="user-profile-grid">
+                {fields.map(([label, value]) => (
+                    <article key={label} className="user-profile-field">
+                        <span>{label}</span>
+                        <strong>{value}</strong>
+                    </article>
+                ))}
+            </div>
+        </section>
     );
 };

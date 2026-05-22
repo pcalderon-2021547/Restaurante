@@ -33,6 +33,146 @@ const resolveReportRestaurantId = (req) => {
     return req.query.restaurantId;
 };
 
+const formatMoney = (value) => `Q${Number(value || 0).toFixed(2)}`;
+const formatNumber = (value, digits = 0) => Number(value || 0).toFixed(digits);
+const reportFields = [
+    { label: 'Concepto', key: 'concepto' },
+    { label: 'Valor', key: 'valor' },
+    { label: 'Detalle', key: 'detalle' }
+];
+
+const statusRows = (items, label, detailBuilder = () => '') => (
+    items.length > 0
+        ? items.map((item) => ({
+            concepto: `${label} (${item._id || 'sin estado'})`,
+            valor: item.count,
+            detalle: detailBuilder(item)
+        }))
+        : [{ concepto: label, valor: 0, detalle: 'Sin registros' }]
+);
+
+const buildRestaurantPdfRows = async (restaurantId) => {
+    const mongoose = await getMongoose();
+    const rId = new mongoose.Types.ObjectId(restaurantId);
+
+    const restaurant = await Restaurant.findById(restaurantId);
+    if (!restaurant) return null;
+
+    const [
+        orderTotals,
+        ordersByStatus,
+        ordersByType,
+        reservationsByStatus,
+        eventsByStatus,
+        reviewsStats,
+        topDishes,
+        ordersPerDay,
+        recentOrders
+    ] = await Promise.all([
+        Order.aggregate([
+            { $match: { restaurant: rId } },
+            {
+                $group: {
+                    _id: null,
+                    totalOrdenes: { $sum: 1 },
+                    ingresos: { $sum: '$total' },
+                    ticketPromedio: { $avg: '$total' },
+                    ingresosPagados: { $sum: { $cond: [{ $eq: ['$status', 'paid'] }, '$total', 0] } }
+                }
+            }
+        ]),
+        Order.aggregate([
+            { $match: { restaurant: rId } },
+            { $group: { _id: '$status', count: { $sum: 1 }, ingresos: { $sum: '$total' } } },
+            { $sort: { count: -1 } }
+        ]),
+        Order.aggregate([
+            { $match: { restaurant: rId } },
+            { $group: { _id: '$type', count: { $sum: 1 }, ingresos: { $sum: '$total' } } },
+            { $sort: { count: -1 } }
+        ]),
+        Reservation.aggregate([
+            { $lookup: { from: 'tables', localField: 'table', foreignField: '_id', as: 'tableInfo' } },
+            { $unwind: '$tableInfo' },
+            { $match: { 'tableInfo.restaurant': rId } },
+            { $group: { _id: '$status', count: { $sum: 1 }, personas: { $sum: '$numberOfPeople' } } },
+            { $sort: { count: -1 } }
+        ]),
+        Event.aggregate([
+            { $match: { restaurant: rId } },
+            { $group: { _id: '$status', count: { $sum: 1 } } },
+            { $sort: { count: -1 } }
+        ]),
+        Review.aggregate([
+            { $match: { restaurant: rId } },
+            { $group: { _id: null, promedio: { $avg: '$rating' }, total: { $sum: 1 } } }
+        ]),
+        OrderDetail.aggregate([
+            { $lookup: { from: 'dishes', localField: 'dish', foreignField: '_id', as: 'dishInfo' } },
+            { $unwind: '$dishInfo' },
+            { $match: { 'dishInfo.restaurant': rId } },
+            {
+                $group: {
+                    _id: '$dish',
+                    nombre: { $first: '$dishInfo.name' },
+                    totalVendido: { $sum: '$quantity' },
+                    ingresos: { $sum: '$subtotal' }
+                }
+            },
+            { $sort: { totalVendido: -1 } },
+            { $limit: 8 }
+        ]),
+        Order.aggregate([
+            { $match: { restaurant: rId } },
+            {
+                $group: {
+                    _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+                    ordenes: { $sum: 1 },
+                    ingresos: { $sum: '$total' }
+                }
+            },
+            { $sort: { _id: -1 } },
+            { $limit: 10 }
+        ]),
+        Order.find({ restaurant: rId })
+            .sort({ createdAt: -1 })
+            .limit(5)
+            .select('type status total createdAt')
+    ]);
+
+    const totals = orderTotals[0] || {};
+    const review = reviewsStats[0] || {};
+
+    const rows = [
+        { concepto: 'Restaurante', valor: restaurant.name, detalle: `${restaurant.category || 'Sin categoria'} | ${restaurant.address || 'Sin direccion'}` },
+        { concepto: 'Horario', valor: `${restaurant.openingHour || '--'} - ${restaurant.closingHour || '--'}`, detalle: restaurant.phone || 'Sin telefono' },
+        { concepto: 'Pedidos totales', valor: totals.totalOrdenes || 0, detalle: `Ingresos totales: ${formatMoney(totals.ingresos)}` },
+        { concepto: 'Ingresos pagados', valor: formatMoney(totals.ingresosPagados), detalle: `Ticket promedio: ${formatMoney(totals.ticketPromedio)}` },
+        { concepto: 'Calificacion de clientes', valor: formatNumber(review.promedio, 2), detalle: `Resenas registradas: ${review.total || 0}` },
+        ...statusRows(ordersByStatus, 'Pedidos por estado', (item) => `Ingresos: ${formatMoney(item.ingresos)}`),
+        ...statusRows(ordersByType, 'Pedidos por tipo', (item) => `Ingresos: ${formatMoney(item.ingresos)}`),
+        ...statusRows(reservationsByStatus, 'Reservaciones por estado', (item) => `Personas: ${item.personas || 0}`),
+        ...statusRows(eventsByStatus, 'Eventos por estado'),
+        ...topDishes.map((dish, index) => ({
+            concepto: `Top platillo ${index + 1}`,
+            valor: dish.nombre,
+            detalle: `${dish.totalVendido} vendidos | ${formatMoney(dish.ingresos)}`
+        })),
+        ...ordersPerDay.map((day) => ({
+            concepto: `Actividad ${day._id}`,
+            valor: `${day.ordenes} pedidos`,
+            detalle: `Ingresos: ${formatMoney(day.ingresos)}`
+        })),
+        ...recentOrders.map((order, index) => ({
+            concepto: `Pedido reciente ${index + 1}`,
+            valor: order.status,
+            detalle: `${order.type} | ${formatMoney(order.total)} | ${order.createdAt?.toISOString?.().slice(0, 10) || 'sin fecha'}`
+        }))
+    ];
+
+    return { restaurant, rows };
+};
+
 // ══════════════════════════════════════════════════════════════════════════════
 // ESTADÍSTICAS JSON
 // ══════════════════════════════════════════════════════════════════════════════
@@ -175,16 +315,60 @@ export const sendGeneralStatsPDF = async (req, res) => {
         const { email } = req.params;
         if (!email || !email.includes('@')) return res.status(400).json({ success: false, message: 'El correo proporcionado no es válido' });
 
-        const [restaurants, ordersAgg, reservationsAgg, eventsAgg, reviewsAgg] = await Promise.all([
-            Restaurant.find({ isActive: true }).select('name averageRating totalReviews'),
-            Order.aggregate([{ $group: { _id: '$status', count: { $sum: 1 }, ingresos: { $sum: '$total' } } }]),
-            Reservation.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]),
-            Event.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]),
-            Review.aggregate([{ $group: { _id: null, promedio: { $avg: '$rating' }, total: { $sum: 1 } } }])
+        const [restaurants, orderTotals, ordersAgg, reservationsAgg, eventsAgg, reviewsAgg, topDishes] = await Promise.all([
+            Restaurant.find({ isActive: true }).select('name category averageRating totalReviews address'),
+            Order.aggregate([
+                {
+                    $group: {
+                        _id: null,
+                        totalOrdenes: { $sum: 1 },
+                        ingresos: { $sum: '$total' },
+                        ticketPromedio: { $avg: '$total' },
+                        ingresosPagados: { $sum: { $cond: [{ $eq: ['$status', 'paid'] }, '$total', 0] } }
+                    }
+                }
+            ]),
+            Order.aggregate([{ $group: { _id: '$status', count: { $sum: 1 }, ingresos: { $sum: '$total' } } }, { $sort: { count: -1 } }]),
+            Reservation.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }, { $sort: { count: -1 } }]),
+            Event.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }, { $sort: { count: -1 } }]),
+            Review.aggregate([{ $group: { _id: null, promedio: { $avg: '$rating' }, total: { $sum: 1 } } }]),
+            OrderDetail.aggregate([
+                { $lookup: { from: 'dishes', localField: 'dish', foreignField: '_id', as: 'dishInfo' } },
+                { $unwind: '$dishInfo' },
+                { $group: { _id: '$dish', nombre: { $first: '$dishInfo.name' }, totalVendido: { $sum: '$quantity' }, ingresos: { $sum: '$subtotal' } } },
+                { $sort: { totalVendido: -1 } },
+                { $limit: 10 }
+            ])
         ]);
 
+        const totals = orderTotals[0] || {};
+        const reviews = reviewsAgg[0] || {};
+        const restaurantRows = await Promise.all(restaurants.map(async (restaurant) => {
+            const summary = await buildRestaurantPdfRows(restaurant._id);
+            const ordersTotalRow = summary?.rows.find((row) => row.concepto === 'Pedidos totales');
+            const paidRow = summary?.rows.find((row) => row.concepto === 'Ingresos pagados');
+            return [
+                { concepto: `Restaurante: ${restaurant.name}`, valor: restaurant.category || 'Sin categoria', detalle: restaurant.address || 'Sin direccion' },
+                ordersTotalRow ? { ...ordersTotalRow, concepto: `${restaurant.name} | Pedidos` } : null,
+                paidRow ? { ...paidRow, concepto: `${restaurant.name} | Ingresos pagados` } : null,
+                { concepto: `${restaurant.name} | Rating`, valor: restaurant.averageRating || 0, detalle: `${restaurant.totalReviews || 0} resenas` }
+            ].filter(Boolean);
+        }));
+
         const data = [
-            { concepto: 'Restaurantes Activos', valor: restaurants.length, detalle: restaurants.map(r => r.name).join(', ') },
+            { concepto: 'Restaurantes activos', valor: restaurants.length, detalle: restaurants.map((r) => r.name).join(', ') || 'Sin restaurantes' },
+            { concepto: 'Pedidos totales del sistema', valor: totals.totalOrdenes || 0, detalle: `Ingresos totales: ${formatMoney(totals.ingresos)}` },
+            { concepto: 'Ingresos pagados del sistema', valor: formatMoney(totals.ingresosPagados), detalle: `Ticket promedio: ${formatMoney(totals.ticketPromedio)}` },
+            { concepto: 'Calificacion promedio del sistema', valor: formatNumber(reviews.promedio, 2), detalle: `Total de resenas: ${reviews.total || 0}` },
+            ...statusRows(ordersAgg, 'Pedidos por estado', (item) => `Ingresos: ${formatMoney(item.ingresos)}`),
+            ...statusRows(reservationsAgg, 'Reservaciones por estado'),
+            ...statusRows(eventsAgg, 'Eventos por estado'),
+            ...topDishes.map((dish, index) => ({
+                concepto: `Top platillo global ${index + 1}`,
+                valor: dish.nombre,
+                detalle: `${dish.totalVendido} vendidos | ${formatMoney(dish.ingresos)}`
+            })),
+            ...restaurantRows.flat(),
             ...ordersAgg.map(o => ({ concepto: `Órdenes (${o._id})`, valor: o.count, detalle: `Ingresos: Q${o.ingresos?.toFixed(2) ?? 0}` })),
             ...reservationsAgg.map(r => ({ concepto: `Reservaciones (${r._id})`, valor: r.count, detalle: '' })),
             ...eventsAgg.map(e => ({ concepto: `Eventos (${e._id})`, valor: e.count, detalle: '' })),
@@ -207,6 +391,26 @@ export const sendRestaurantStatsPDF = async (req, res) => {
         const ownership = ensureOwnedRestaurant(req, restaurantId, 'reporte');
         if (!ownership.allowed) return res.status(ownership.status).json({ success: false, message: ownership.message });
         if (!email || !email.includes('@')) return res.status(400).json({ success: false, message: 'El correo proporcionado no es válido' });
+
+        const report = await buildRestaurantPdfRows(restaurantId);
+        if (!report) return res.status(404).json({ success: false, message: 'Restaurante no encontrado' });
+
+        const pdfService = new EmailPDFService();
+        const pdfResult = await pdfService.sendEntityPDF({
+            toEmail: email,
+            subject: `Reporte del Restaurante - ${report.restaurant.name}`,
+            title: `Reporte del Restaurante: ${report.restaurant.name}`,
+            entityName: 'Reporte de Restaurante',
+            data: report.rows,
+            fields: reportFields,
+            filename: `reporte_${report.restaurant.name.replace(/\s+/g, '_')}.pdf`
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: `PDF enviado correctamente a ${pdfResult.toEmail}`,
+            data: { correoDestino: pdfResult.toEmail, archivoEnviado: pdfResult.filename, restaurante: report.restaurant.name }
+        });
 
         const restaurant = await Restaurant.findById(restaurantId);
         if (!restaurant) return res.status(404).json({ success: false, message: 'Restaurante no encontrado' });
@@ -237,6 +441,16 @@ export const sendRestaurantStatsPDF = async (req, res) => {
     } catch (error) {
         return res.status(500).json({ success: false, message: 'Error al enviar el PDF', error: error.message });
     }
+};
+
+// GET /reports/send-pdf/my-restaurant/:email
+export const sendOwnRestaurantStatsPDF = async (req, res) => {
+    if (!req.user?.restaurantId) {
+        return res.status(403).json({ success: false, message: 'No tienes un restaurante asignado para reportes' });
+    }
+
+    req.params.restaurantId = req.user.restaurantId;
+    return sendRestaurantStatsPDF(req, res);
 };
 
 // GET /reports/send-pdf/top-dishes/:email?limit=10

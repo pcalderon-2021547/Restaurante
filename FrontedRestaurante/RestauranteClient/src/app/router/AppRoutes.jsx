@@ -32,17 +32,10 @@ import { UserRestaurantsPage } from "../../features/user/pages/UserRestaurantsPa
 import { UserMenusPage } from "../../features/user/pages/UserMenusPage.jsx";
 import { Users } from "../../features/users/components/Users.jsx";
 
-const ComingSoon = ({ section }) => (
-    <div className="flex flex-col items-center justify-center h-64 text-gray-400">
-        <p className="text-2xl font-bold mb-2">{section}</p>
-        <p className="text-sm">Sección en construcción</p>
-    </div>
-);
-
 export const AppRoutes = () => {
     return (
         <Routes>
-            {/* RUTAS PÚBLICAS */}
+            {/* RUTAS PUBLICAS */}
             <Route path="/" element={<AuthPage />} />
             <Route path="/verify-email" element={<VerifyEmailPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
@@ -59,7 +52,6 @@ export const AppRoutes = () => {
                     </ProtectedRoute>
                 }
             >
-                <Route index element={<ComingSoon section="Dashboard" />} />
                 <Route path="users" element={<RoleGuard allowedRoles={["ADMIN_ROLE"]}><Users /></RoleGuard>} />
                 <Route path="products" element={<RoleGuard allowedRoles={["ADMIN_ROLE", "ADMIN_RESTAURANT_ROLE"]}><Products /></RoleGuard>} />
                 <Route path="categories" element={<RoleGuard allowedRoles={["ADMIN_ROLE"]}><Categories /></RoleGuard>} />
@@ -95,10 +87,7 @@ export const AppRoutes = () => {
                 <Route path="order/create/:restaurantId" element={<UserOrderDetailPage />} />
                 <Route path="events" element={<UserEventsPage />} />
                 <Route path="reviews" element={<UserReviewsPage />} />
-                <Route
-                    path="profile"
-                    element={<UserProfilePage />}
-                />
+                <Route path="profile" element={<UserProfilePage />} />
             </Route>
         </Routes>
     );

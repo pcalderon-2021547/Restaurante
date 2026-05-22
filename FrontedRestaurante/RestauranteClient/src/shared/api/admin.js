@@ -35,6 +35,9 @@ export const getTopDishes         = async (params)   => axiosAdmin.get("/reports
 export const getPeakHours         = async (params)   => axiosAdmin.get("/reports/stats/peak-hours", { params });
 export const getRestaurantStats   = async (restaurantId) => axiosAdmin.get(`/reports/stats/restaurant/${restaurantId}`);
 export const getDemandReport      = async (params)   => axiosAdmin.get("/reports/stats/demand", { params });
+export const sendGeneralReportPDF = async (email) => axiosAdmin.get(`/reports/send-pdf/general/${encodeURIComponent(email)}`);
+export const sendRestaurantReportPDF = async (restaurantId, email) => axiosAdmin.get(`/reports/send-pdf/restaurant/${restaurantId}/${encodeURIComponent(email)}`);
+export const sendOwnRestaurantReportPDF = async (email) => axiosAdmin.get(`/reports/send-pdf/my-restaurant/${encodeURIComponent(email)}`);
 
 export const getOrders = async () => {
     return axiosAdmin.get("/order");
