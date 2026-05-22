@@ -20,9 +20,10 @@ export const RestaurantModal = ({ isOpen, onClose, restaurant }) => {
                     averagePrice: restaurant.averagePrice,
                     openingHour: restaurant.openingHour,
                     closingHour: restaurant.closingHour,
+                    ownerId: restaurant.ownerId || "",
                 });
             } else {
-                reset({ name: "", description: "", address: "", phone: "", email: "", category: "", averagePrice: "", openingHour: "", closingHour: "" });
+                reset({ name: "", description: "", address: "", phone: "", email: "", category: "", averagePrice: "", openingHour: "", closingHour: "", ownerId: "" });
             }
         }
     }, [isOpen, restaurant]);
@@ -104,6 +105,7 @@ export const RestaurantModal = ({ isOpen, onClose, restaurant }) => {
                         <Field label="Precio promedio (Q)" name="averagePrice" type="number" min="0" placeholder="Ej. 150" required />
                         <Field label="Hora apertura" name="openingHour" type="time" required />
                         <Field label="Hora cierre" name="closingHour" type="time" required />
+                        <div className="col-span-2"><Field label="ID administrador restaurante" name="ownerId" placeholder="ID del usuario ADMIN_RESTAURANT_ROLE" /></div>
                     </div>
 
                     <div className="flex gap-3 pt-2" style={{ borderTop: "1px solid rgba(201,168,76,0.1)" }}>

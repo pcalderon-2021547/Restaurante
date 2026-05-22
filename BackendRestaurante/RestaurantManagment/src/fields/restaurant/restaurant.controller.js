@@ -9,6 +9,7 @@ import {
 import Review from '../review/review.model.js';
 import Event from '../evento/event.model.js';
 import { handleError } from '../../../utils/handle-error.js';
+import { ensureOwnedRestaurant } from '../../../helpers/ownership.js';
 
 const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
 
@@ -43,6 +44,14 @@ export const getRestaurants = async (req, res) => {
 
 export const updateRestaurant = async (req, res) => {
     try {
+        const ownership = ensureOwnedRestaurant(req, req.params.id, 'restaurante');
+        if (!ownership.allowed) {
+            return res.status(ownership.status).json({
+                success: false,
+                message: ownership.message
+            });
+        }
+
         const restaurant = await updateRestaurantService(req.params.id, req.body);
 
         if (!restaurant) {
@@ -91,6 +100,14 @@ export const getRestaurantEvents = async (req, res) => {
             return res.status(400).json({
                 success: false,
                 message: 'ID de restaurante inválido'
+            });
+        }
+
+        const ownership = ensureOwnedRestaurant(req, id, 'restaurante');
+        if (!ownership.allowed) {
+            return res.status(ownership.status).json({
+                success: false,
+                message: ownership.message
             });
         }
 

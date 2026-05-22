@@ -3,6 +3,8 @@ import nodemailer from 'nodemailer'; // Librería para enviar correos
 import Product from './product.js'; 
 import User from '../user/user.js'; 
 import mongoose from 'mongoose'; 
+import { ensureOwnedRestaurant, forceOwnedRestaurantInBody, getRestaurantFilter } from '../../../helpers/ownership.js';
+import { renderEmailTemplate } from '../../utils/reactEmailTemplate.js';
 
 // Enviar alerta cuando el stock llega a 0
 const sendLowStockAlert = async (product) => {
@@ -29,17 +31,23 @@ const sendLowStockAlert = async (product) => {
             from: process.env.EMAIL_USER,
             to: adminEmails,
             subject: `Sin stock: ${product.name}`,
-            html: `
-                <h2>Alerta de inventario</h2>
-                <p>El producto <strong>${product.name}</strong> ha llegado a <strong>0 unidades</strong> en stock.</p>
-                <ul>
-                    <li><strong>ID:</strong> ${product._id}</li>
-                    <li><strong>Categoría:</strong> ${product.category}</li>
-                    <li><strong>Costo unitario:</strong> Q${product.cost}</li>
-                    <li><strong>Stock actual:</strong> ${product.stock}</li>
-                </ul>
-                <p>Por favor, realiza un pedido a tu proveedor para reabastecer este producto.</p>
-            `
+            html: renderEmailTemplate({
+                title: `Sin stock: ${product.name}`,
+                preheader: 'Un producto llego a cero unidades en inventario.',
+                heading: 'Alerta de inventario',
+                intro: 'Un insumo o producto clave necesita reabastecimiento para mantener la operacion del restaurante.',
+                paragraphs: [
+                    `El producto ${product.name} ha llegado a 0 unidades en stock.`,
+                    'Revisa el inventario y coordina el pedido con tu proveedor para evitar interrupciones en cocina o servicio.'
+                ],
+                details: [
+                    { label: 'Producto', value: product.name },
+                    { label: 'Categoria', value: product.category || 'Sin categoria' },
+                    { label: 'Costo unitario', value: `Q${product.cost}` },
+                    { label: 'Stock actual', value: String(product.stock) }
+                ],
+                notice: `ID del producto: ${product._id}`
+            })
         });
 
         console.log(`Alerta de stock enviada a: ${adminEmails.join(', ')}`); // Log éxitoso
@@ -79,6 +87,7 @@ const handleProductError = (res, error, defaultMessage) => {
 // Crear producto
 export const createProduct = async (req, res) => {
     try {
+        forceOwnedRestaurantInBody(req);
         const product = new Product(req.body); // Crear instancia
         await product.save(); // Guardar en Mongo
 
@@ -99,7 +108,7 @@ export const createProduct = async (req, res) => {
 // Obtener todos los productos
 export const getProducts = async (req, res) => {
     try {
-        const products = await Product.find(); // Buscar todos
+        const products = await Product.find(getRestaurantFilter(req)); // Buscar todos
         return res.status(200).json({
             success: true,
             products
@@ -121,6 +130,24 @@ export const updateProduct = async (req, res) => {
                 message: 'ID de producto inválido'
             });
         }
+
+        const existingProduct = await Product.findById(id);
+        if (!existingProduct) {
+            return res.status(404).json({
+                success: false,
+                message: 'Producto no encontrado'
+            });
+        }
+
+        const ownership = ensureOwnedRestaurant(req, existingProduct.restaurant, 'producto');
+        if (!ownership.allowed) {
+            return res.status(ownership.status).json({
+                success: false,
+                message: ownership.message
+            });
+        }
+
+        delete req.body.restaurant;
 
         // Actualizar producto
         const product = await Product.findByIdAndUpdate(
@@ -197,9 +224,9 @@ export const searchProductByName = async (req, res) => {
         }
 
         // Buscar con expresión regular
-        const products = await Product.find({
+        const products = await Product.find(getRestaurantFilter(req, {
             name: { $regex: name, $options: 'i' }
-        });
+        }));
 
         return res.status(200).json({
             success: true,
@@ -223,7 +250,7 @@ export const filterByCategory = async (req, res) => {
             });
         }
 
-        const products = await Product.find({ category }); // Buscar por categoría
+        const products = await Product.find(getRestaurantFilter(req, { category })); // Buscar por categoría
 
         return res.status(200).json({
             success: true,
@@ -263,6 +290,14 @@ export const restockProduct = async (req, res) => {
             return res.status(404).json({
                 success: false,
                 message: 'Producto no encontrado'
+            });
+        }
+
+        const ownership = ensureOwnedRestaurant(req, product.restaurant, 'producto');
+        if (!ownership.allowed) {
+            return res.status(ownership.status).json({
+                success: false,
+                message: ownership.message
             });
         }
 
@@ -307,6 +342,14 @@ export const getProductById = async (req, res) => {
             });
         }
 
+        const ownership = ensureOwnedRestaurant(req, product.restaurant, 'producto');
+        if (!ownership.allowed) {
+            return res.status(ownership.status).json({
+                success: false,
+                message: ownership.message
+            });
+        }
+
         return res.status(200).json({
             success: true,
             product
@@ -337,6 +380,14 @@ export const toggleProductStatus = async (req, res) => {
             return res.status(404).json({
                 success: false,
                 message: 'El Producto no fue encontrado'
+            });
+        }
+
+        const ownership = ensureOwnedRestaurant(req, product.restaurant, 'producto');
+        if (!ownership.allowed) {
+            return res.status(ownership.status).json({
+                success: false,
+                message: ownership.message
             });
         }
 

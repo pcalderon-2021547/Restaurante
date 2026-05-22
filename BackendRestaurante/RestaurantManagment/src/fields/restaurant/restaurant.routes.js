@@ -11,6 +11,7 @@ import {
 import { validateJWT } from '../../../middlewares/validate_jwt.js';
 import { requireRole } from '../../../middlewares/validate_role.js';
 import { validateObjectId } from '../../../middlewares/validate-object-id.js';
+import { attachOwnedRestaurant } from '../../../middlewares/attach_owned_restaurant.js';
 
 const router = Router();
 
@@ -69,11 +70,12 @@ router.post('/create',
 
 router.get('/', getRestaurants);
 router.get('/:id/reviews', getRestaurantReviews);
-router.get('/:id/events', validateJWT, getRestaurantEvents);
+router.get('/:id/events', validateJWT, requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE', 'USER_ROLE'), attachOwnedRestaurant, getRestaurantEvents);
 
 router.put('/update/:id',
     validateJWT,
-    requireRole('ADMIN_ROLE'),
+    requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE'),
+    attachOwnedRestaurant,
     validateObjectId,
     updateRestaurant
 );

@@ -15,6 +15,7 @@ import {
 
 import { validateJWT } from '../../../middlewares/validate_jwt.js';
 import { requireRole } from '../../../middlewares/validate_role.js';
+import { attachOwnedRestaurant } from '../../../middlewares/attach_owned_restaurant.js';
 
 import {
     validateOrderId,
@@ -126,7 +127,8 @@ const router = Router();
 router.post(
     '/create',
     validateJWT,
-    requireRole('ADMIN_ROLE', 'USER_ROLE'),
+    requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE', 'USER_ROLE'),
+    attachOwnedRestaurant,
     (req, res, next) => {
         req.body.user = req.user.id;
         next();
@@ -138,7 +140,8 @@ router.post(
 router.post(
     '/create-with-details',
     validateJWT,
-    requireRole('ADMIN_ROLE', 'USER_ROLE'),
+    requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE', 'USER_ROLE'),
+    attachOwnedRestaurant,
     (req, res, next) => {
         req.body.user = req.user.id;
         next();
@@ -147,16 +150,17 @@ router.post(
     createOrderWithDetails
 );
 
-router.get('/', validateJWT, requireRole('ADMIN_ROLE'), getOrders);
+router.get('/', validateJWT, requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE'), attachOwnedRestaurant, getOrders);
 
 router.get('/my-orders', validateJWT, requireRole('ADMIN_ROLE', 'USER_ROLE'), getMyOrders);
 
-router.get('/:id', validateJWT, requireRole('ADMIN_ROLE', 'USER_ROLE'), validateOrderId, getOrderById);
+router.get('/:id', validateJWT, requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE', 'USER_ROLE'), attachOwnedRestaurant, validateOrderId, getOrderById);
 
 router.put(
     '/update/:id',
     validateJWT,
-    requireRole('ADMIN_ROLE'),
+    requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE'),
+    attachOwnedRestaurant,
     validateOrderId,
     validateOrderStatus,
     updateOrder

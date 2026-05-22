@@ -2,6 +2,7 @@
     import {createDish,getDishes,updateDish,deleteDish} from './dishController.js';
     import { validateJWT } from '../../../middlewares/validate_jwt.js';
     import { requireRole } from '../../../middlewares/validate_role.js';
+    import { attachOwnedRestaurant } from '../../../middlewares/attach_owned_restaurant.js';
 
     const router=Router();
     /**
@@ -49,10 +50,10 @@
  *         description: Plato creado correctamente
  */
     router.post('/create',validateJWT,
-        requireRole('ADMIN_ROLE'),createDish);
-    router.get('/',getDishes);
+        requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE'), attachOwnedRestaurant, createDish);
+    router.get('/', validateJWT, requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE', 'USER_ROLE'), attachOwnedRestaurant, getDishes);
     router.put('/update/:id',validateJWT,
-        requireRole('ADMIN_ROLE'),updateDish);
+        requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE'), attachOwnedRestaurant, updateDish);
     router.delete('/delete/:id',validateJWT,
         requireRole('ADMIN_ROLE'),deleteDish);
 

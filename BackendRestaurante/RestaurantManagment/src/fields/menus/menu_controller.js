@@ -2,6 +2,7 @@
 import Menu from './menu_model.js';
 import Restaurant from '../restaurant/restaurant.model.js';
 import mongoose from 'mongoose';
+import { ensureOwnedRestaurant, forceOwnedRestaurantInBody, getRestaurantFilter } from '../../../helpers/ownership.js';
 
 const handleMenuError = (res, error, defaultMessage) => {
 
@@ -29,6 +30,7 @@ const handleMenuError = (res, error, defaultMessage) => {
 
 export const createMenu = async (req, res) => {
     try {
+        forceOwnedRestaurantInBody(req);
 
         const { restaurant, type, validFrom, validUntil } = req.body;
 
@@ -83,7 +85,7 @@ export const createMenu = async (req, res) => {
 export const getMenus = async (req, res) => {
     try {
 
-        const menus = await Menu.find({ isActive: true })
+        const menus = await Menu.find(getRestaurantFilter(req, { isActive: true }))
             .populate('restaurant')
             .populate({
                 path: 'dishes',
@@ -109,6 +111,22 @@ export const updateMenu = async (req, res) => {
             return res.status(400).json({
                 success: false,
                 message: 'ID de menú inválido'
+            });
+        }
+
+        const existingMenu = await Menu.findById(id);
+        if (!existingMenu) {
+            return res.status(404).json({
+                success: false,
+                message: 'MenÃº no encontrado'
+            });
+        }
+
+        const ownership = ensureOwnedRestaurant(req, existingMenu.restaurant, 'menÃº');
+        if (!ownership.allowed) {
+            return res.status(ownership.status).json({
+                success: false,
+                message: ownership.message
             });
         }
 

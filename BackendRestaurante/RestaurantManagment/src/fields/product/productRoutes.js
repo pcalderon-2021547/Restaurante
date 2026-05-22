@@ -14,6 +14,7 @@ import {
 import { validateCreateProduct, validateUpdateProduct, validateRestockAmount } from '../../../middlewares/productValidator.js';
 import { validateJWT } from '../../../middlewares/validate_jwt.js';
 import { requireRole } from '../../../middlewares/validate_role.js';
+import { attachOwnedRestaurant } from '../../../middlewares/attach_owned_restaurant.js';
 
 /**
  * @swagger
@@ -133,13 +134,14 @@ import { requireRole } from '../../../middlewares/validate_role.js';
 const router = Router();
 
 // Rutas agregadas
-router.post('/create', validateJWT, requireRole('ADMIN_ROLE'), validateCreateProduct, createProduct);router.get('/', getProducts);
-router.get('/search', searchProductByName);   
-router.get('/category', filterByCategory);      
-router.get('/:id', getProductById); 
-router.put('/toggle/:id', validateJWT, requireRole('ADMIN_ROLE'), toggleProductStatus);       
-router.put('/update/:id', validateJWT, requireRole('ADMIN_ROLE'), validateUpdateProduct, updateProduct);
+router.post('/create', validateJWT, requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE'), attachOwnedRestaurant, validateCreateProduct, createProduct);
+router.get('/', validateJWT, requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE', 'USER_ROLE'), attachOwnedRestaurant, getProducts);
+router.get('/search', validateJWT, requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE', 'USER_ROLE'), attachOwnedRestaurant, searchProductByName);   
+router.get('/category', validateJWT, requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE', 'USER_ROLE'), attachOwnedRestaurant, filterByCategory);      
+router.get('/:id', validateJWT, requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE', 'USER_ROLE'), attachOwnedRestaurant, getProductById); 
+router.put('/toggle/:id', validateJWT, requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE'), attachOwnedRestaurant, toggleProductStatus);       
+router.put('/update/:id', validateJWT, requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE'), attachOwnedRestaurant, validateUpdateProduct, updateProduct);
 router.delete('/delete/:id', validateJWT, requireRole('ADMIN_ROLE'), deleteProduct);
-router.put('/restock/:id', validateJWT, requireRole('ADMIN_ROLE'), validateRestockAmount, restockProduct);
+router.put('/restock/:id', validateJWT, requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE'), attachOwnedRestaurant, validateRestockAmount, restockProduct);
 
 export default router;

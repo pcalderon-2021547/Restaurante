@@ -25,6 +25,7 @@ export const AvatarUser = () => {
         : "US";
 
     const isAdmin = user?.role === "ADMIN_ROLE";
+    const isRestaurantAdmin = user?.role === "ADMIN_RESTAURANT_ROLE";
 
     const handleLogout = () => {
         logout();
@@ -42,11 +43,11 @@ export const AvatarUser = () => {
                     <div className="avatar-dropdown-header">
                         <p className="avatar-dropdown-email">{user?.email}</p>
                         <p className="avatar-dropdown-role">
-                            {user?.role === "ADMIN_ROLE" ? "Administrador" : "Usuario"}
+                            {isAdmin ? "Administrador" : isRestaurantAdmin ? "Admin restaurante" : "Usuario"}
                         </p>
                     </div>
                     <div style={{ padding: '0.4rem 0' }}>
-                        {isAdmin ? (
+                        {isAdmin || isRestaurantAdmin ? (
                             <>
                                 <Link
                                     to="/dashboard"
@@ -55,13 +56,15 @@ export const AvatarUser = () => {
                                 >
                                     Dashboard
                                 </Link>
-                                <Link
-                                    to="/dashboard/users"
-                                    className="avatar-dropdown-item"
-                                    onClick={() => setOpen(false)}
-                                >
-                                    Usuarios
-                                </Link>
+                                {isAdmin && (
+                                    <Link
+                                        to="/dashboard/users"
+                                        className="avatar-dropdown-item"
+                                        onClick={() => setOpen(false)}
+                                    >
+                                        Usuarios
+                                    </Link>
+                                )}
                             </>
                         ) : (
                             <>

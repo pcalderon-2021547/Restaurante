@@ -1,0 +1,194 @@
+# Restaurante
+
+Este repositorio contiene un sistema de gestión de restaurantes compuesto por varios microservicios backend, un servicio de administración, un servicio de autenticación separado y una aplicación frontend cliente.
+
+## Arquitectura general
+
+- `authentication-service/auth-service`: servicio de autenticación basado en .NET (ASP.NET Core) con soporte para base de datos Dockerizada.
+- `BackendRestaurante`: carpeta principal con microservicios Node.js y un servidor de gestión `RestaurantManagment`.
+- `FrontedRestaurante/RestauranteClient`: aplicación cliente construida con React + Vite.
+- `scripts`: scripts de automatización para instalar y ejecutar servicios.
+
+## Objetivo del proyecto
+
+El proyecto cubre el ciclo completo de un restaurante:
+
+- registro e inicio de sesión de usuarios
+- gestión de menús, platillos, categorías y productos
+- manejo de órdenes, reservas y mesas
+- control de delivery y entregas
+- generación de reportes y análisis
+- gestión de reseñas
+- administración de restaurantes y eventos
+- cliente web para interactuar con el sistema
+
+## Roles y responsabilidades principales
+
+### Roles esperados
+
+- **Cliente**: busca menús, realiza pedidos, hace reservaciones y deja reseñas.
+- **Personal de restaurante / administrador**: gestiona menús, platos, tablas, ordenes, reservas, eventos y revisa reportes.
+- **Repartidor**: administra las entregas y el estado de los pedidos de delivery.
+- **Usuario autenticado**: usa el servidor de gestión para acciones protegidas por JWT.
+
+### Funcionalidades clave
+
+- Autenticación, registro, verificación de email y recuperación de contraseña.
+- CRUD de menús, categorías y platillos.
+- CRUD de productos e inventario.
+- Gestión de órdenes y detalle de pedidos.
+- Reservaciones de mesas.
+- Gestión de reseñas y calificaciones.
+- Reportería y métricas.
+- Gestión de restaurantes y eventos.
+- Microservicios independientes para cada dominio.
+
+## Carpetas y servicios principales
+
+### `BackendRestaurante`
+
+Contiene los microservicios Node.js. Cada servicio es un servidor Express independiente.
+
+- `Delivery-service`: microservicio de entregas.
+- `Menu-service`: microservicio de menús, platillos y categorías.
+- `Order-service`: microservicio de órdenes y detalle de pedidos.
+- `Product-service`: microservicio de productos e inventario.
+- `Reports-service`: microservicio de reportes y análisis.
+- `Reservation-service`: microservicio de reservaciones.
+- `Review-service`: microservicio de reseñas.
+- `Table-service`: microservicio de mesas.
+- `RestaurantManagment`: servidor de administración con rutas REST más amplias.
+
+### `RestaurantManagment`
+
+Este servidor es el principal backend de gestión. Usa:
+
+- Express para la API.
+- MongoDB y PostgreSQL.
+- Sequelize para PostgreSQL.
+- Mongoose para MongoDB.
+- Swagger para documentación de API.
+
+Sus rutas principales están bajo `POST /restaurantManagement/v1/*`.
+
+Incluye módulos para:
+
+- autenticación (`/auth`)
+- usuarios (`/users`)
+- categorías (`/category`)
+- productos (`/product`)
+- platillos (`/dish`)
+- mesas (`/table`)
+- órdenes (`/order`)
+- detalles de orden (`/orderDetail`)
+- reservaciones (`/reservation`)
+- restaurantes (`/restaurant`)
+- reseñas (`/review`)
+- menús (`/menu`)
+- eventos (`/event`)
+- reportes (`/reports`)
+
+### `authentication-service/auth-service`
+
+Servicio de autenticación de backend basado en .NET:
+
+- solución: `AuthService.sln`
+- contiene proyectos de API, aplicación, dominio y persistencia.
+- ofrece Swagger y endpoints de autenticación.
+- puede ejecutarse con `docker-compose up -d` desde `authentication-service/auth-service`.
+- usa PostgreSQL y MongoDB definidos en `docker-compose.yml`.
+
+### `FrontedRestaurante/RestauranteClient`
+
+App cliente React construida con Vite:
+
+- React + React Router Dom
+- TailwindCSS
+- Axios para llamadas a API
+- Zustand para estado local
+- React Hook Form para formularios
+- React Hot Toast para notificaciones
+
+## Tecnologías usadas
+
+- Node.js + Express
+- MongoDB + Mongoose
+- PostgreSQL + Sequelize
+- ASP.NET Core (.NET)
+- React + Vite
+- TailwindCSS
+- JWT, CORS, Helmet, Morgan
+- pnpm como gestor de paquetes
+
+## Cómo instalar y ejecutar
+
+### Instalar dependencias globales
+
+Asegúrate de tener `pnpm` instalado.
+
+### Instalar servicios del backend
+
+Desde la raíz del proyecto:
+
+```bash
+pnpm install:services
+```
+
+Este script recorre cada carpeta de servicio en `BackendRestaurante` y ejecuta `pnpm install`.
+
+### Ejecutar microservicios backend
+
+Desde la raíz:
+
+```bash
+pnpm dev
+```
+
+Esto inicia todos los microservicios definidos en `scripts/run-services.js` con `pnpm run dev`.
+
+### Ejecutar frontend
+
+```bash
+cd FrontedRestaurante/RestauranteClient
+pnpm install
+pnpm dev
+```
+
+### Ejecutar servicio de autenticación
+
+```bash
+cd authentication-service/auth-service
+docker-compose up -d
+```
+
+### Documentación de API
+
+- `RestaurantManagment` expone Swagger en `http://localhost:3010/api-docs`.
+- El servicio de autenticación puede exponer Swagger en los puertos definidos en `launchSettings.json`.
+
+## Cómo se maneja el proyecto
+
+- Cada microservicio tiene su propio `package.json` y corre en proceso independiente.
+- Los servicios comparten un patrón común: `express`, `cors`, `helmet`, `morgan`, `express.json`.
+- `Menu-service` usa base path `/api/v1` y tiene rutas como `/api/v1/menus`, `/api/v1/dishes`, `/api/v1/categories`.
+- `RestaurantManagment` usa `/restaurantManagement/v1` y centraliza la administración de usuarios, productos, órdenes, reservas, reportes y más.
+- El servicio de autenticación .NET maneja la seguridad centralizada, registro, login, verificación de email y restablecimiento de contraseña.
+
+## Notas importantes
+
+- Aun cuando no todos los servicios exponen un `README`, la estructura está diseñada para ser modular.
+- El punto de integración principal para APIs administrativas es `RestaurantManagment`.
+- El frontend es el cliente web que consume los diversos servicios y API.
+
+## Estructura rápida
+
+- `package.json`: scripts raíz para instalación y ejecución de servicios.
+- `scripts/install-services.js`: instala dependencias de cada microservicio.
+- `scripts/run-services.js`: arranca cada microservicio en modo `dev`.
+- `BackendRestaurante/*`: microservicios backend.
+- `FrontedRestaurante/RestauranteClient`: frontend React.
+- `authentication-service/auth-service`: autenticación y base de datos Dockerizada.
+
+---
+
+Este README describe la arquitectura, funciones y roles del proyecto. Si quieres, puedo agregar un diagrama de flujos o una guía de endpoints más detallada para cada microservicio.

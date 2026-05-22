@@ -8,6 +8,7 @@ import {
 import { validateCreateMenu, validateMenuId } from '../../../middlewares/menuValidator.js';
 import { validateJWT } from '../../../middlewares/validate_jwt.js';
 import { requireRole } from '../../../middlewares/validate_role.js';
+import { attachOwnedRestaurant } from '../../../middlewares/attach_owned_restaurant.js';
 
 const router = Router();
 
@@ -53,17 +54,19 @@ const router = Router();
 router.post(
     '/create',
     validateJWT,
-    requireRole('ADMIN_ROLE'),
+    requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE'),
+    attachOwnedRestaurant,
     validateCreateMenu,
     createMenu
 );
 
-router.get('/', getMenus);
+router.get('/', validateJWT, requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE', 'USER_ROLE'), attachOwnedRestaurant, getMenus);
 
 router.put(
     '/update/:id',
     validateJWT,
-    requireRole('ADMIN_ROLE'),
+    requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE'),
+    attachOwnedRestaurant,
     validateMenuId,
     updateMenu
 );

@@ -53,26 +53,26 @@ export const AppRoutes = () => {
                 path="/dashboard"
                 element={
                     <ProtectedRoute>
-                        <RoleGuard allowedRoles={["ADMIN_ROLE"]}>
+                        <RoleGuard allowedRoles={["ADMIN_ROLE", "ADMIN_RESTAURANT_ROLE"]}>
                             <DashboardPage />
                         </RoleGuard>
                     </ProtectedRoute>
                 }
             >
                 <Route index element={<ComingSoon section="Dashboard" />} />
-                <Route path="users" element={<Users />} />
-                <Route path="products" element={<Products />} />
-                <Route path="categories" element={<Categories />} />
-                <Route path="menus" element={<Menus />} />
-                <Route path="dishes" element={<Dish />} />
-                <Route path="orders" element={<Orders />} />
-                <Route path="order-details" element={<OrderDetails />} />
-                <Route path="reservations" element={<Reservations />} />
-                <Route path="events" element={<Events />} />
-                <Route path="reviews" element={<Reviews />} />
-                <Route path="reports" element={<Reports />} />
-                <Route path="restaurants" element={<Restaurants />} />
-                <Route path="tables" element={<Tables />} />
+                <Route path="users" element={<RoleGuard allowedRoles={["ADMIN_ROLE"]}><Users /></RoleGuard>} />
+                <Route path="products" element={<RoleGuard allowedRoles={["ADMIN_ROLE", "ADMIN_RESTAURANT_ROLE"]}><Products /></RoleGuard>} />
+                <Route path="categories" element={<RoleGuard allowedRoles={["ADMIN_ROLE"]}><Categories /></RoleGuard>} />
+                <Route path="menus" element={<RoleGuard allowedRoles={["ADMIN_ROLE", "ADMIN_RESTAURANT_ROLE"]}><Menus /></RoleGuard>} />
+                <Route path="dishes" element={<RoleGuard allowedRoles={["ADMIN_ROLE", "ADMIN_RESTAURANT_ROLE"]}><Dish /></RoleGuard>} />
+                <Route path="orders" element={<RoleGuard allowedRoles={["ADMIN_ROLE", "ADMIN_RESTAURANT_ROLE"]}><Orders /></RoleGuard>} />
+                <Route path="order-details" element={<RoleGuard allowedRoles={["ADMIN_ROLE"]}><OrderDetails /></RoleGuard>} />
+                <Route path="reservations" element={<RoleGuard allowedRoles={["ADMIN_ROLE", "ADMIN_RESTAURANT_ROLE"]}><Reservations /></RoleGuard>} />
+                <Route path="events" element={<RoleGuard allowedRoles={["ADMIN_ROLE", "ADMIN_RESTAURANT_ROLE"]}><Events /></RoleGuard>} />
+                <Route path="reviews" element={<RoleGuard allowedRoles={["ADMIN_ROLE", "ADMIN_RESTAURANT_ROLE"]}><Reviews /></RoleGuard>} />
+                <Route path="reports" element={<RoleGuard allowedRoles={["ADMIN_ROLE", "ADMIN_RESTAURANT_ROLE"]}><Reports /></RoleGuard>} />
+                <Route path="restaurants" element={<RoleGuard allowedRoles={["ADMIN_ROLE"]}><Restaurants /></RoleGuard>} />
+                <Route path="tables" element={<RoleGuard allowedRoles={["ADMIN_ROLE", "ADMIN_RESTAURANT_ROLE"]}><Tables /></RoleGuard>} />
             </Route>
 
             <Route

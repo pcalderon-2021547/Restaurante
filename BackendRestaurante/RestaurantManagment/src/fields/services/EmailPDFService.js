@@ -2,6 +2,7 @@
 
 import nodemailer from 'nodemailer';
 import PDFDocument from 'pdfkit';
+import { renderEmailTemplate } from '../../utils/reactEmailTemplate.js';
 
 /**
  * Servicio reutilizable para generar un PDF con datos de cualquier entidad
@@ -170,41 +171,22 @@ export class EmailPDFService {
             from: `"Gestión Restaurante" <${process.env.EMAIL_USER}>`,
             to:   toEmail,
             subject,
-            html: `
-<div style="background:#0a0906;padding:40px 0;font-family:'Segoe UI',Arial,sans-serif;">
-  <div style="max-width:580px;margin:0 auto;background:#141210;border:1px solid rgba(201,168,76,0.25);border-radius:10px;overflow:hidden;">
-
-    <div style="background:#0a0906;border-top:3px solid #c9a84c;padding:24px 30px;">
-      <h1 style="margin:0;color:#c9a84c;font-size:18px;letter-spacing:2px;">GESTIÓN RESTAURANTE</h1>
-      <p style="margin:6px 0 0;color:#5a5040;font-size:12px;">Sistema de Reportes Gastronómicos</p>
-    </div>
-
-    <div style="padding:30px;color:#f0e8d5;">
-      <h2 style="margin-top:0;font-size:16px;color:#c9a84c;">${subject}</h2>
-      <p style="font-size:13px;line-height:1.7;color:#9a8e74;">
-        Se ha generado el reporte correspondiente a la entidad
-        <strong style="color:#f0e8d5;">${entityName}</strong>.
-        El documento PDF se encuentra adjunto a este correo.
-      </p>
-      <div style="background:#1c1a16;border-left:3px solid #c9a84c;padding:14px 18px;margin:20px 0;border-radius:4px;">
-        <p style="margin:0;font-size:12px;color:#9a8e74;">
-          <strong style="color:#c9a84c;">Fecha de generación:</strong><br>
-          ${new Date().toLocaleString('es-GT')}
-        </p>
-        <p style="margin:8px 0 0;font-size:12px;color:#9a8e74;">
-          <strong style="color:#c9a84c;">Total de registros incluidos:</strong><br>
-          ${Array.isArray(data) ? data.length : 1}
-        </p>
-      </div>
-    </div>
-
-    <div style="background:#0a0906;padding:14px 30px;text-align:center;border-top:1px solid rgba(201,168,76,0.15);">
-      <p style="margin:0;font-size:11px;color:#3a3328;">
-        © ${new Date().getFullYear()} Gestión Restaurante. Todos los derechos reservados.
-      </p>
-    </div>
-  </div>
-</div>`,
+            html: renderEmailTemplate({
+                title: subject,
+                preheader: `Tu reporte PDF de ${entityName} esta listo.`,
+                heading: subject,
+                intro: 'Preparamos el documento solicitado con la presentacion del restaurante y lo adjuntamos a este correo.',
+                paragraphs: [
+                    `El reporte corresponde a ${entityName}.`,
+                    'Puedes descargar el archivo adjunto para revisar los datos con calma o compartirlo con tu equipo.'
+                ],
+                details: [
+                    { label: 'Formato', value: 'PDF' },
+                    { label: 'Registros incluidos', value: String(Array.isArray(data) ? data.length : 1) },
+                    { label: 'Generado', value: new Date().toLocaleString('es-GT') }
+                ],
+                notice: 'Este mensaje fue generado automaticamente desde el modulo de reportes.'
+            }),
             attachments: [{ filename: pdfFilename, content: pdfBuffer, contentType: 'application/pdf' }]
         });
 

@@ -16,6 +16,7 @@ import {
 
 import { validateJWT } from '../../../middlewares/validate_jwt.js';
 import { requireRole } from '../../../middlewares/validate_role.js';
+import { attachOwnedRestaurant } from '../../../middlewares/attach_owned_restaurant.js';
 
 const router = Router();
 
@@ -63,25 +64,25 @@ router.get('/stats/general', validateJWT, requireRole('ADMIN_ROLE'), getGeneralS
  * GET /reports/stats/top-dishes?limit=10&restaurantId=xxx
  * Platillos más vendidos (global o por restaurante)
  */
-router.get('/stats/top-dishes', validateJWT, requireRole('ADMIN_ROLE'), getTopDishes);
+router.get('/stats/top-dishes', validateJWT, requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE'), attachOwnedRestaurant, getTopDishes);
 
 /**
  * GET /reports/stats/peak-hours?restaurantId=xxx
  * Horas pico por volumen de órdenes
  */
-router.get('/stats/peak-hours', validateJWT, requireRole('ADMIN_ROLE'), getPeakHours);
+router.get('/stats/peak-hours', validateJWT, requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE'), attachOwnedRestaurant, getPeakHours);
 
 /**
  * GET /reports/stats/restaurant/:restaurantId
  * Estadísticas detalladas de UN restaurante: ingresos, ocupación, pedidos/día, satisfacción
  */
-router.get('/stats/restaurant/:restaurantId', validateJWT, requireRole('ADMIN_ROLE'), getRestaurantStats);
+router.get('/stats/restaurant/:restaurantId', validateJWT, requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE'), attachOwnedRestaurant, getRestaurantStats);
 
 /**
  * GET /reports/stats/demand?from=YYYY-MM-DD&to=YYYY-MM-DD&restaurantId=xxx
  * Demanda por rango de fechas: órdenes/día, reservaciones/día, ingresos/día
  */
-router.get('/stats/demand', validateJWT, requireRole('ADMIN_ROLE'), getDemandReport);
+router.get('/stats/demand', validateJWT, requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE'), attachOwnedRestaurant, getDemandReport);
 
 // ── REPORTES PDF → CORREO (solo ADMIN) ───────────────────────────────────────
 
@@ -95,13 +96,13 @@ router.get('/send-pdf/general/:email', validateJWT, requireRole('ADMIN_ROLE'), s
  * GET /reports/send-pdf/restaurant/:restaurantId/:email
  * Envía PDF con el reporte de desempeño de UN restaurante específico
  */
-router.get('/send-pdf/restaurant/:restaurantId/:email', validateJWT, requireRole('ADMIN_ROLE'), sendRestaurantStatsPDF);
+router.get('/send-pdf/restaurant/:restaurantId/:email', validateJWT, requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE'), attachOwnedRestaurant, sendRestaurantStatsPDF);
 
 /**
  * GET /reports/send-pdf/top-dishes/:email?limit=10&restaurantId=xxx
  * Envía PDF con el ranking de platillos más vendidos
  */
-router.get('/send-pdf/top-dishes/:email', validateJWT, requireRole('ADMIN_ROLE'), sendTopDishesPDF);
+router.get('/send-pdf/top-dishes/:email', validateJWT, requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE'), attachOwnedRestaurant, sendTopDishesPDF);
 
 // ── REPORTES EXCEL → CORREO (solo ADMIN) ─────────────────────────────────────
 
@@ -115,18 +116,18 @@ router.get('/send-excel/general/:email', validateJWT, requireRole('ADMIN_ROLE'),
  * GET /reports/send-excel/restaurant/:restaurantId/:email
  * Envía Excel con 3 hojas del restaurante: Resumen, Top Platillos, Órdenes por Día
  */
-router.get('/send-excel/restaurant/:restaurantId/:email', validateJWT, requireRole('ADMIN_ROLE'), sendRestaurantStatsExcel);
+router.get('/send-excel/restaurant/:restaurantId/:email', validateJWT, requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE'), attachOwnedRestaurant, sendRestaurantStatsExcel);
 
 /**
  * GET /reports/send-excel/top-dishes/:email?limit=10&restaurantId=xxx
  * Envía Excel con ranking de platillos más vendidos
  */
-router.get('/send-excel/top-dishes/:email', validateJWT, requireRole('ADMIN_ROLE'), sendTopDishesExcel);
+router.get('/send-excel/top-dishes/:email', validateJWT, requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE'), attachOwnedRestaurant, sendTopDishesExcel);
 
 /**
  * GET /reports/send-excel/demand/:email?from=YYYY-MM-DD&to=YYYY-MM-DD&restaurantId=xxx
  * Envía Excel con demanda diaria: órdenes, reservaciones e ingresos por fecha
  */
-router.get('/send-excel/demand/:email', validateJWT, requireRole('ADMIN_ROLE'), sendDemandExcel);
+router.get('/send-excel/demand/:email', validateJWT, requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE'), attachOwnedRestaurant, sendDemandExcel);
 
 export default router;

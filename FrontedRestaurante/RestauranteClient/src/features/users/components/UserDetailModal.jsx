@@ -176,6 +176,7 @@ export const UserDetailModal = ({ isOpen, onClose, user, currentUserId, onSaveRo
                             }}
                         >
                             <option value="USER_ROLE">USER_ROLE</option>
+                            <option value="ADMIN_RESTAURANT_ROLE">ADMIN_RESTAURANT_ROLE</option>
                             <option value="ADMIN_ROLE">ADMIN_ROLE</option>
                         </select>
                         {isCurrentUser && (

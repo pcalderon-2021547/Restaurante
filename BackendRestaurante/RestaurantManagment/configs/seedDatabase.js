@@ -15,60 +15,32 @@ import Order from '../src/fields/order/order_model.js';
 import OrderDetail from '../src/fields/orderDetail/orderDetail.js';
 import User from '../src/fields/user/user.js';
 
+const REQUIRED_RECORDS = 10;
+const fixedDate = (day, hour = 19) => new Date(Date.UTC(2026, 5, day, hour, 0, 0));
+
 const createAdminUsers = async () => {
   const passwordHash = bcrypt.hashSync('Admin123!', 10);
   const baseUsers = [
-    {
-      name: 'Admin',
-      surname: 'Restaurante',
-      username: 'admin',
-      email: 'admin@restaurante.local',
-      password: passwordHash,
-      role: 'ADMIN_ROLE',
-      status: true,
-      emailVerified: true
-    },
-    {
-      name: 'Carlos',
-      surname: 'Perez',
-      username: 'cperez',
-      email: 'carlos@restaurante.local',
-      password: passwordHash,
-      role: 'USER_ROLE',
-      status: true,
-      emailVerified: true
-    },
-    {
-      name: 'Ana',
-      surname: 'Lopez',
-      username: 'alopez',
-      email: 'ana@restaurante.local',
-      password: passwordHash,
-      role: 'USER_ROLE',
-      status: true,
-      emailVerified: true
-    },
-    {
-      name: 'Luis',
-      surname: 'Gomez',
-      username: 'lgomez',
-      email: 'luis@restaurante.local',
-      password: passwordHash,
-      role: 'USER_ROLE',
-      status: true,
-      emailVerified: true
-    },
-    {
-      name: 'Maria',
-      surname: 'Lopez',
-      username: 'mlopez',
-      email: 'maria@restaurante.local',
-      password: passwordHash,
-      role: 'USER_ROLE',
-      status: true,
-      emailVerified: true
-    }
-  ];
+    ['Admin', 'Restaurante', 'admin', 'admin@restaurante.local', 'ADMIN_ROLE'],
+    ['Carlos', 'Perez', 'cperez', 'carlos@restaurante.local', 'USER_ROLE'],
+    ['Ana', 'Lopez', 'alopez', 'ana@restaurante.local', 'USER_ROLE'],
+    ['Luis', 'Gomez', 'lgomez', 'luis@restaurante.local', 'USER_ROLE'],
+    ['Maria', 'Lopez', 'mlopez', 'maria@restaurante.local', 'USER_ROLE'],
+    ['Sofia', 'Morales', 'smorales', 'sofia@restaurante.local', 'USER_ROLE'],
+    ['Diego', 'Castillo', 'dcastillo', 'diego@restaurante.local', 'USER_ROLE'],
+    ['Valeria', 'Ramos', 'vramos', 'valeria@restaurante.local', 'USER_ROLE'],
+    ['Andres', 'Herrera', 'aherrera', 'andres@restaurante.local', 'USER_ROLE'],
+    ['Lucia', 'Mendez', 'lmendez', 'lucia@restaurante.local', 'USER_ROLE']
+  ].map(([name, surname, username, email, role]) => ({
+    name,
+    surname,
+    username,
+    email,
+    password: passwordHash,
+    role,
+    status: true,
+    emailVerified: true
+  }));
 
   const existingUsers = await User.findAll({
     where: {
@@ -82,406 +54,240 @@ const createAdminUsers = async () => {
   if (toInsert.length > 0) {
     await User.bulkCreate(toInsert);
     console.log(`Seeded ${toInsert.length} User records.`);
-    return;
+  } else {
+    console.log('Users already have the fixed seed records.');
   }
-
-  console.log('Users already exist, skipping user seed.');
 };
 
-const seedMongoCollection = async (Model, items, collectionName) => {
-  const count = await Model.countDocuments();
+const seedMongoCollection = async (Model, items, collectionName, key = 'name') => {
+  const canMatchByKey = key && items.every((item) => Object.prototype.hasOwnProperty.call(item, key));
 
-  if (count === 0) {
-    const docs = await Model.insertMany(items);
-    console.log(`Seeded ${docs.length} documents into ${collectionName}.`);
-    return docs;
-  }
-
-  const canMatchByName = items.every((item) => item && Object.prototype.hasOwnProperty.call(item, 'name'));
-  if (count < items.length && canMatchByName) {
-    const existing = await Model.find({
-      name: { $in: items.map((item) => item.name) }
-    });
-    const existingNames = new Set(existing.map((doc) => doc.name));
-    const toInsert = items.filter((item) => !existingNames.has(item.name));
+  if (canMatchByKey) {
+    const keys = items.map((item) => item[key]);
+    const existing = await Model.find({ [key]: { $in: keys } });
+    const existingKeys = new Set(existing.map((doc) => doc[key]));
+    const toInsert = items.filter((item) => !existingKeys.has(item[key]));
 
     if (toInsert.length > 0) {
-      const inserted = await Model.insertMany(toInsert);
-      console.log(`Added ${inserted.length} missing documents to ${collectionName}.`);
-      return [...existing, ...inserted];
+      await Model.insertMany(toInsert, { ordered: false });
+      console.log(`Added ${toInsert.length} fixed documents to ${collectionName}.`);
+    } else {
+      console.log(`${collectionName} already has the fixed seed records.`);
     }
 
-    console.log(`${collectionName} already has data, skipping seed.`);
-    return await Model.find().limit(items.length);
+    const docs = await Model.find({ [key]: { $in: keys } });
+    return keys.map((value) => docs.find((doc) => String(doc[key]) === String(value))).filter(Boolean);
   }
 
+  const count = await Model.countDocuments();
   if (count < items.length) {
-    const existing = await Model.find().limit(count);
     const toInsert = items.slice(count);
-    const inserted = await Model.insertMany(toInsert);
-    console.log(`Added ${inserted.length} missing documents to ${collectionName}.`);
-    return [...existing, ...inserted];
+    const inserted = await Model.insertMany(toInsert, { ordered: false });
+    console.log(`Added ${inserted.length} fixed documents to ${collectionName}.`);
+  } else {
+    console.log(`${collectionName} already has at least ${items.length} records.`);
   }
 
-  console.log(`${collectionName} already has data, skipping seed.`);
-  return await Model.find().limit(items.length);
+  return await Model.find().sort({ createdAt: 1, _id: 1 }).limit(items.length);
 };
 
+const byIndex = (items, index) => items[index % items.length]._id;
+
 export const seedDatabase = async () => {
-  console.log('Starting data seed for RestaurantManagment.');
+  console.log('Starting fixed data seed for RestaurantManagment.');
 
   await createAdminUsers();
 
   const categories = await seedMongoCollection(Category, [
-    { name: 'Entradas', description: 'Platos para iniciar el menú', isActive: true },
-    { name: 'Platos Fuertes', description: 'Platos principales con sabor local', isActive: true },
-    { name: 'Postres', description: 'Dulces y postres para terminar la comida', isActive: true },
-    { name: 'Bebidas', description: 'Refrescos y bebidas calientes', isActive: true },
-    { name: 'Especiales', description: 'Platos especiales del chef', isActive: true }
+    { name: 'Entradas', description: 'Platos para abrir el apetito', isActive: true },
+    { name: 'Platos Fuertes', description: 'Recetas principales de la casa', isActive: true },
+    { name: 'Postres', description: 'Dulces y especialidades para cerrar', isActive: true },
+    { name: 'Bebidas', description: 'Bebidas frias, calientes y naturales', isActive: true },
+    { name: 'Especiales', description: 'Recomendaciones del chef', isActive: true },
+    { name: 'Parrilla', description: 'Cortes, brasas y acompanamientos', isActive: true },
+    { name: 'Mariscos', description: 'Sabores frescos del mar', isActive: true },
+    { name: 'Pastas', description: 'Pastas artesanales y salsas', isActive: true },
+    { name: 'Desayunos', description: 'Opciones para iniciar el dia', isActive: true },
+    { name: 'Vegetariano', description: 'Platos sin carne con buen sabor', isActive: true }
   ], 'Category');
 
-  const products = await seedMongoCollection(Product, [
-    { name: 'Pan de Ajo', stock: 50, cost: 1.5, category: 'Entradas' },
-    { name: 'Carne Asada', stock: 20, cost: 12.5, category: 'Platos Fuertes' },
-    { name: 'Tiramisu', stock: 15, cost: 5.0, category: 'Postres' },
-    { name: 'Limonada', stock: 40, cost: 2.0, category: 'Bebidas' },
-    { name: 'Pizza Especial', stock: 25, cost: 10.0, category: 'Especiales' }
-  ], 'Product');
-
   const restaurants = await seedMongoCollection(Restaurant, [
-    {
-      name: 'El Buen Sabor',
-      description: 'Restaurante de comida tradicional con ambiente familiar',
-      address: 'Zona 1, Ciudad',
-      phone: '12345678',
-      email: 'buen.sabor@example.com',
-      category: 'Asado',
-      averagePrice: 65,
-      openingHour: '08:00',
-      closingHour: '22:00',
-      image: '',
-      isActive: true
-    },
-    {
-      name: 'La Cuchara Dorada',
-      description: 'Cocina internacional con platos exclusivos',
-      address: 'Zona 3, Ciudad',
-      phone: '23456789',
-      email: 'cuchara.dorada@example.com',
-      category: 'Internacional',
-      averagePrice: 90,
-      openingHour: '09:00',
-      closingHour: '23:00',
-      image: '',
-      isActive: true
-    },
-    {
-      name: 'Sabores del Mar',
-      description: 'Mariscos frescos y platos costeros',
-      address: 'Zona 5, Ciudad',
-      phone: '34567890',
-      email: 'sabores.mar@example.com',
-      category: 'Mariscos',
-      averagePrice: 120,
-      openingHour: '10:00',
-      closingHour: '23:00',
-      image: '',
-      isActive: true
-    },
-    {
-      name: 'Parrilla de la Casa',
-      description: 'Parrilladas y cortes premium',
-      address: 'Zona 2, Ciudad',
-      phone: '45678901',
-      email: 'parrilla.casa@example.com',
-      category: 'Parrilla',
-      averagePrice: 85,
-      openingHour: '11:00',
-      closingHour: '23:30',
-      image: '',
-      isActive: true
-    },
-    {
-      name: 'Dulce Tentación',
-      description: 'Postres y cafés especiales',
-      address: 'Zona 4, Ciudad',
-      phone: '56789012',
-      email: 'dulce.tentacion@example.com',
-      category: 'Postres',
-      averagePrice: 40,
-      openingHour: '07:00',
-      closingHour: '21:00',
-      image: '',
-      isActive: true
-    }
-  ], 'Restaurant');
+    ['El Buen Sabor', 'Comida tradicional con ambiente familiar', 'Zona 1, Ciudad', '12345678', 'buen.sabor@example.com', 'Tradicional', 65, '08:00', '22:00'],
+    ['La Cuchara Dorada', 'Cocina internacional con platos exclusivos', 'Zona 3, Ciudad', '23456789', 'cuchara.dorada@example.com', 'Internacional', 90, '09:00', '23:00'],
+    ['Sabores del Mar', 'Mariscos frescos y platos costeros', 'Zona 5, Ciudad', '34567890', 'sabores.mar@example.com', 'Mariscos', 120, '10:00', '23:00'],
+    ['Parrilla de la Casa', 'Parrilladas y cortes premium', 'Zona 2, Ciudad', '45678901', 'parrilla.casa@example.com', 'Parrilla', 85, '11:00', '23:30'],
+    ['Dulce Tentacion', 'Postres y cafes especiales', 'Zona 4, Ciudad', '56789012', 'dulce.tentacion@example.com', 'Postres', 40, '07:00', '21:00'],
+    ['Casa Nativa', 'Cocina guatemalteca de temporada', 'Zona 10, Ciudad', '67890123', 'casa.nativa@example.com', 'Tradicional', 75, '08:30', '22:30'],
+    ['Bistro Central', 'Bistro urbano con platos modernos', 'Zona 14, Ciudad', '78901234', 'bistro.central@example.com', 'Bistro', 110, '09:00', '22:00'],
+    ['Terra Verde', 'Propuesta vegetariana y saludable', 'Zona 15, Ciudad', '89012345', 'terra.verde@example.com', 'Vegetariano', 70, '07:30', '21:30'],
+    ['Pasta y Vino', 'Pastas frescas con seleccion de vinos', 'Zona 9, Ciudad', '90123456', 'pasta.vino@example.com', 'Pastas', 95, '11:00', '23:00'],
+    ['Cafe Aurora', 'Desayunos, cafe de especialidad y brunch', 'Zona 13, Ciudad', '11223344', 'cafe.aurora@example.com', 'Cafe', 55, '06:30', '20:00']
+  ].map(([name, description, address, phone, email, category, averagePrice, openingHour, closingHour]) => ({
+    name,
+    description,
+    address,
+    phone,
+    email,
+    category,
+    averagePrice,
+    openingHour,
+    closingHour,
+    image: '',
+    isActive: true,
+    averageRating: 4.5,
+    totalReviews: 10
+  })), 'Restaurant');
+
+  const products = await seedMongoCollection(Product, [
+    ['Pan de Ajo', 50, 1.5, 'Entradas'],
+    ['Carne Asada', 35, 12.5, 'Platos Fuertes'],
+    ['Tiramisu', 25, 5.0, 'Postres'],
+    ['Limonada', 80, 2.0, 'Bebidas'],
+    ['Masa de Pizza', 45, 4.0, 'Especiales'],
+    ['Camarones', 30, 18.0, 'Mariscos'],
+    ['Pasta Fresca', 60, 3.5, 'Pastas'],
+    ['Cafe Molido', 40, 6.0, 'Bebidas'],
+    ['Vegetales Mixtos', 70, 3.0, 'Vegetariano'],
+    ['Huevos de Granja', 90, 1.2, 'Desayunos']
+  ].map(([name, stock, cost, category], index) => ({
+    name,
+    stock,
+    cost,
+    category,
+    restaurant: byIndex(restaurants, index),
+    isActive: true
+  })), 'Product');
 
   const dishes = await seedMongoCollection(Dish, [
-    {
-      name: 'Ensalada César',
-      description: 'Lechuga, pollo, queso parmesano y aderezo César',
-      price: 8.5,
-      category: categories[0]._id,
-      restaurant: restaurants[0]._id,
-      products: [{ product: products[0]._id, quantity: 2 }],
-      isAvailable: true
-    },
-    {
-      name: 'Filete de Res',
-      description: 'Filete jugoso con papas a la francesa',
-      price: 14.9,
-      category: categories[1]._id,
-      restaurant: restaurants[1]._id,
-      products: [{ product: products[1]._id, quantity: 1 }],
-      isAvailable: true
-    },
-    {
-      name: 'Tiramisú Clásico',
-      description: 'Postre italiano con café y mascarpone',
-      price: 6.5,
-      category: categories[2]._id,
-      restaurant: restaurants[4]._id,
-      products: [{ product: products[2]._id, quantity: 1 }],
-      isAvailable: true
-    },
-    {
-      name: 'Limonada Natural',
-      description: 'Bebida refrescante con limón y hierbabuena',
-      price: 3.5,
-      category: categories[3]._id,
-      restaurant: restaurants[2]._id,
-      products: [{ product: products[3]._id, quantity: 1 }],
-      isAvailable: true
-    },
-    {
-      name: 'Pizza Especial de la Casa',
-      description: 'Pizza con ingredientes premium y salsa especial',
-      price: 12.0,
-      category: categories[4]._id,
-      restaurant: restaurants[3]._id,
-      products: [{ product: products[4]._id, quantity: 1 }],
-      isAvailable: true
-    }
-  ], 'Dish');
+    ['Ensalada Cesar', 'Lechuga, pollo, queso parmesano y aderezo de la casa', 8.5, 0, 0],
+    ['Filete de Res', 'Filete jugoso con papas y vegetales', 14.9, 1, 1],
+    ['Tiramisu Clasico', 'Postre italiano con cafe y mascarpone', 6.5, 2, 2],
+    ['Limonada Natural', 'Bebida refrescante con limon y hierbabuena', 3.5, 3, 3],
+    ['Pizza Especial', 'Pizza con ingredientes premium y salsa especial', 12.0, 4, 4],
+    ['Camarones al Ajillo', 'Camarones salteados con ajo y mantequilla', 18.0, 6, 5],
+    ['Fettuccine Alfredo', 'Pasta fresca con salsa cremosa', 11.5, 7, 6],
+    ['Cafe Aurora', 'Cafe de especialidad preparado al momento', 4.0, 3, 7],
+    ['Bowl Vegetariano', 'Vegetales, granos y aderezo de hierbas', 9.5, 9, 8],
+    ['Desayuno Chapin', 'Huevos, frijoles, platano y queso fresco', 7.5, 8, 9]
+  ].map(([name, description, price, categoryIndex, productIndex], index) => ({
+    name,
+    description,
+    price,
+    category: byIndex(categories, categoryIndex),
+    restaurant: byIndex(restaurants, index),
+    products: [{ product: byIndex(products, productIndex), quantity: index + 1 }],
+    isAvailable: true
+  })), 'Dish');
 
   const menus = await seedMongoCollection(Menu, [
-    {
-      name: 'Menú Ejecutivo',
-      description: 'Plato principal con bebida incluida',
-      restaurant: restaurants[0]._id,
-      dishes: [dishes[0]._id, dishes[1]._id],
-      type: 'DAILY',
-      validFrom: new Date(),
-      validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      isActive: true
-    },
-    {
-      name: 'Menú Familiar',
-      description: 'Opción para compartir con la familia',
-      restaurant: restaurants[1]._id,
-      dishes: [dishes[1]._id, dishes[2]._id],
-      type: 'EVENT',
-      validFrom: new Date(),
-      validUntil: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
-      isActive: true
-    },
-    {
-      name: 'Menú Mar',
-      description: 'Especiales del mar para compartir',
-      restaurant: restaurants[2]._id,
-      dishes: [dishes[2]._id, dishes[3]._id],
-      type: 'PROMOTION',
-      validFrom: new Date(),
-      validUntil: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
-      isActive: true
-    },
-    {
-      name: 'Menú Parrilla',
-      description: 'Selección de cortes y acompañamientos',
-      restaurant: restaurants[3]._id,
-      dishes: [dishes[1]._id, dishes[4]._id],
-      type: 'DAILY',
-      validFrom: new Date(),
-      validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      isActive: true
-    },
-    {
-      name: 'Menú Dulce',
-      description: 'Postres y bebidas para cerrar con sabor',
-      restaurant: restaurants[4]._id,
-      dishes: [dishes[2]._id, dishes[3]._id],
-      type: 'PROMOTION',
-      validFrom: new Date(),
-      validUntil: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-      isActive: true
-    }
-  ], 'Menu');
+    ['Menu Ejecutivo', 'Plato principal con bebida incluida', 'DAILY', 0],
+    ['Menu Familiar', 'Opcion para compartir con la familia', 'EVENT', 1],
+    ['Menu Mar', 'Especiales del mar para compartir', 'PROMOTION', 2],
+    ['Menu Parrilla', 'Seleccion de cortes y acompanamientos', 'DAILY', 3],
+    ['Menu Dulce', 'Postres y bebidas para cerrar con sabor', 'PROMOTION', 4],
+    ['Menu Nativo', 'Sabores guatemaltecos de temporada', 'DAILY', 5],
+    ['Menu Bistro', 'Platos modernos para almuerzo y cena', 'EVENT', 6],
+    ['Menu Verde', 'Opciones vegetarianas completas', 'PROMOTION', 7],
+    ['Menu Pasta', 'Pastas frescas con entrada', 'DAILY', 8],
+    ['Menu Brunch', 'Desayuno tardio con cafe incluido', 'EVENT', 9]
+  ].map(([name, description, type, index]) => ({
+    name,
+    description,
+    restaurant: byIndex(restaurants, index),
+    dishes: [byIndex(dishes, index), byIndex(dishes, index + 1)],
+    type,
+    validFrom: new Date('2026-01-01T00:00:00.000Z'),
+    validUntil: new Date('2026-12-31T23:59:59.000Z'),
+    isActive: true
+  })), 'Menu');
 
-  const tables = await seedMongoCollection(Table, [
-    { number: 1, capacity: 4, status: 'available', restaurant: restaurants[0]._id, location: 'Terraza' },
-    { number: 2, capacity: 2, status: 'available', restaurant: restaurants[0]._id, location: 'Salón' },
-    { number: 3, capacity: 4, status: 'reserved', restaurant: restaurants[1]._id, location: 'Interior' },
-    { number: 4, capacity: 6, status: 'occupied', restaurant: restaurants[2]._id, location: 'VIP' },
-    { number: 5, capacity: 4, status: 'available', restaurant: restaurants[3]._id, location: 'Jardín' }
-  ], 'Table');
+  const tables = await seedMongoCollection(Table, Array.from({ length: REQUIRED_RECORDS }, (_, index) => ({
+    number: index + 1,
+    capacity: [2, 4, 4, 6, 8][index % 5],
+    status: ['available', 'available', 'reserved', 'occupied'][index % 4],
+    restaurant: byIndex(restaurants, index),
+    location: ['Terraza', 'Salon Principal', 'Interior', 'VIP', 'Jardin'][index % 5]
+  })), 'Table', null);
 
-  const reservations = await seedMongoCollection(Reservation, [
-    {
-      user: '2',
-      customerName: 'Ana García',
-      customerPhone: '77712345',
-      table: tables[0]._id,
-      date: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      numberOfPeople: 4,
-      notes: 'Mesa cerca de ventana'
-    },
-    {
-      user: '3',
-      customerName: 'Luis Molina',
-      customerPhone: '77723456',
-      table: tables[1]._id,
-      date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
-      numberOfPeople: 2,
-      notes: 'Cumpleaños'
-    },
-    {
-      user: '4',
-      customerName: 'Maria Pérez',
-      customerPhone: '77734567',
-      table: tables[2]._id,
-      date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
-      numberOfPeople: 4,
-      notes: 'Reunión de trabajo'
-    },
-    {
-      user: '5',
-      customerName: 'José Ruiz',
-      customerPhone: '77745678',
-      table: tables[3]._id,
-      date: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000),
-      numberOfPeople: 6,
-      notes: 'Cena familiar'
-    },
-    {
-      user: '2',
-      customerName: 'Paola Méndez',
-      customerPhone: '77756789',
-      table: tables[4]._id,
-      date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-      numberOfPeople: 4,
-      notes: 'Solicita menú vegetariano'
-    }
-  ], 'Reservation');
+  const reservations = await seedMongoCollection(Reservation, Array.from({ length: REQUIRED_RECORDS }, (_, index) => ({
+    user: String(index + 2),
+    customerName: ['Ana Garcia', 'Luis Molina', 'Maria Perez', 'Jose Ruiz', 'Paola Mendez', 'Sofia Leon', 'Diego Cano', 'Valeria Soto', 'Andres Lima', 'Lucia Reyes'][index],
+    customerPhone: `77${String(710000 + index).slice(0, 6)}`,
+    table: byIndex(tables, index),
+    date: fixedDate(index + 3, 19 + (index % 3)),
+    numberOfPeople: [2, 3, 4, 5, 6][index % 5],
+    status: ['pending', 'confirmed', 'confirmed', 'pending'][index % 4],
+    notes: ['Mesa tranquila', 'Cumpleanos', 'Reunion de trabajo', 'Cena familiar', 'Menu vegetariano'][index % 5]
+  })), 'Reservation', null);
 
   const events = await seedMongoCollection(Event, [
-    {
-      restaurant: restaurants[0]._id,
-      name: 'Noche de Asado',
-      description: 'Asado especial con cortes premium y música en vivo',
-      date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      status: 'active'
-    },
-    {
-      restaurant: restaurants[1]._id,
-      name: 'Festival de Pasta',
-      description: 'Degustación de pastas italianas y vinos seleccionados',
-      date: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
-      status: 'active'
-    },
-    {
-      restaurant: restaurants[2]._id,
-      name: 'Tarde Marina',
-      description: 'Mariscos frescos y evento de degustación',
-      date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
-      status: 'active'
-    },
-    {
-      restaurant: restaurants[3]._id,
-      name: 'Parrillada Nocturna',
-      description: 'Cortes y acompañamientos especiales para una velada',
-      date: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000),
-      status: 'active'
-    },
-    {
-      restaurant: restaurants[4]._id,
-      name: 'Tardes Dulces',
-      description: 'Postres y café en un ambiente acogedor',
-      date: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000),
-      status: 'active'
-    }
-  ], 'Event');
+    ['Noche de Asado', 'Asado especial con cortes premium y musica en vivo', 7],
+    ['Festival de Pasta', 'Degustacion de pastas y vinos seleccionados', 10],
+    ['Tarde Marina', 'Mariscos frescos y degustacion costera', 14],
+    ['Parrillada Nocturna', 'Cortes y acompanamientos para una velada', 21],
+    ['Tardes Dulces', 'Postres y cafe en ambiente acogedor', 12],
+    ['Sabores Chapines', 'Recetas tradicionales con marimba en vivo', 8],
+    ['Cena Bistro', 'Menu de autor por temporada', 16],
+    ['Brunch Verde', 'Brunch saludable con bebidas naturales', 6],
+    ['Pasta Night', 'Noche italiana con pasta fresca', 18],
+    ['Cafe y Jazz', 'Cafe de especialidad con musica suave', 11]
+  ].map(([name, description, day], index) => ({
+    restaurant: byIndex(restaurants, index),
+    name,
+    description,
+    date: fixedDate(day, 20),
+    status: 'active'
+  })), 'Event');
 
-  const orders = await seedMongoCollection(Order, [
-    {
-      user: '2',
-      restaurant: restaurants[0]._id,
-      table: tables[0]._id,
-      type: 'dine_in',
-      status: 'pending',
-      address: '',
-      subtotal: 25,
-      tax: 2.5,
-      total: 27.5
-    },
-    {
-      user: '3',
-      restaurant: restaurants[1]._id,
-      table: tables[1]._id,
-      type: 'dine_in',
-      status: 'preparing',
-      address: '',
-      subtotal: 30,
-      tax: 3,
-      total: 33
-    },
-    {
-      user: '4',
-      restaurant: restaurants[2]._id,
-      type: 'delivery',
-      status: 'preparing',
-      address: 'Ciudad, Zona 9, Casa 123',
-      subtotal: 20,
-      tax: 2,
-      total: 22
-    },
-    {
-      user: '5',
-      restaurant: restaurants[3]._id,
-      table: tables[3]._id,
-      type: 'dine_in',
-      status: 'ready',
-      address: '',
-      subtotal: 45,
-      tax: 4.5,
-      total: 49.5
-    },
-    {
-      user: '2',
-      restaurant: restaurants[4]._id,
-      type: 'takeaway',
-      status: 'delivered',
-      address: 'Zona 4, Calle 5',
-      subtotal: 15,
-      tax: 1.5,
-      total: 16.5
-    }
-  ], 'Order');
+  const orders = await seedMongoCollection(Order, Array.from({ length: REQUIRED_RECORDS }, (_, index) => {
+    const subtotal = Number((18 + index * 4.75).toFixed(2));
+    const tax = Number((subtotal * 0.12).toFixed(2));
+    const total = Number((subtotal + tax).toFixed(2));
+    const type = ['dine_in', 'delivery', 'takeaway'][index % 3];
 
-  await seedMongoCollection(OrderDetail, [
-    { order: orders[0]._id, dish: dishes[0]._id, quantity: 2, price: 8.5, subtotal: 17 },
-    { order: orders[1]._id, dish: dishes[1]._id, quantity: 1, price: 14.9, subtotal: 14.9 },
-    { order: orders[2]._id, dish: dishes[3]._id, quantity: 1, price: 3.5, subtotal: 3.5 },
-    { order: orders[3]._id, dish: dishes[4]._id, quantity: 2, price: 12.0, subtotal: 24 },
-    { order: orders[4]._id, dish: dishes[2]._id, quantity: 1, price: 6.5, subtotal: 6.5 }
-  ], 'OrderDetail');
+    return {
+      user: String(index + 2),
+      restaurant: byIndex(restaurants, index),
+      table: type === 'dine_in' ? byIndex(tables, index) : undefined,
+      type,
+      status: ['pending', 'preparing', 'ready', 'delivered', 'paid'][index % 5],
+      address: type === 'delivery' ? `Zona ${index + 1}, Calle ${index + 10}` : '',
+      subtotal,
+      tax,
+      total
+    };
+  }), 'Order', null);
 
-  await seedMongoCollection(Review, [
-    { user: '2', restaurant: restaurants[0]._id, rating: 5, comment: 'Excelente servicio y comida deliciosa.' },
-    { user: '3', restaurant: restaurants[1]._id, rating: 4, comment: 'Muy buena experiencia, volveré pronto.' },
-    { user: '4', restaurant: restaurants[2]._id, rating: 5, comment: 'Los mariscos estaban frescos y sabrosos.' },
-    { user: '5', restaurant: restaurants[3]._id, rating: 4, comment: 'Ambiente agradable y buen sabor.' },
-    { user: '2', restaurant: restaurants[4]._id, rating: 5, comment: 'Postres deliciosos y atención excelente.' }
-  ], 'Review');
+  const orderDetails = await seedMongoCollection(OrderDetail, Array.from({ length: REQUIRED_RECORDS }, (_, index) => {
+    const quantity = (index % 3) + 1;
+    const price = dishes[index % dishes.length].price ?? 8;
 
-  console.log('RestaurantManagment seed completed.');
+    return {
+      order: byIndex(orders, index),
+      dish: byIndex(dishes, index),
+      quantity,
+      price,
+      subtotal: Number((price * quantity).toFixed(2))
+    };
+  }), 'OrderDetail', null);
+
+  await seedMongoCollection(Review, Array.from({ length: REQUIRED_RECORDS }, (_, index) => ({
+    user: String(index + 2),
+    restaurant: byIndex(restaurants, index),
+    rating: [5, 4, 5, 4, 5, 4, 5, 3, 5, 4][index],
+    comment: [
+      'Excelente servicio y comida deliciosa.',
+      'Muy buena experiencia, volvere pronto.',
+      'Los mariscos estaban frescos y sabrosos.',
+      'Ambiente agradable y buen sabor.',
+      'Postres deliciosos y atencion excelente.',
+      'Menu tradicional muy bien presentado.',
+      'Buen ambiente para una cena tranquila.',
+      'Opciones vegetarianas muy completas.',
+      'La pasta estaba en su punto.',
+      'Cafe excelente y servicio rapido.'
+    ][index]
+  })), 'Review', null);
+
+  console.log(`RestaurantManagment fixed seed completed with at least ${REQUIRED_RECORDS} records per main entity.`);
 };

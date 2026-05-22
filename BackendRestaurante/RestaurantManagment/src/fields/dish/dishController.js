@@ -1,6 +1,7 @@
 'use strict';
 import Dish from './dish.js';
 import mongoose from 'mongoose';
+import { ensureOwnedRestaurant, forceOwnedRestaurantInBody, getRestaurantFilter } from '../../../helpers/ownership.js';
 
 const handleDishError = (res, error, defaultMessage) => {
     if (error?.code === 11000) {
@@ -27,6 +28,7 @@ const handleDishError = (res, error, defaultMessage) => {
 
 export const createDish=async(req,res)=>{
     try {
+        forceOwnedRestaurantInBody(req);
         const dish=new Dish(req.body);
         await dish.save();
         return res.status(201).json({
@@ -40,7 +42,7 @@ export const createDish=async(req,res)=>{
 
 export const getDishes=async(req,res)=>{
     try {
-        const dishes = await Dish.find().populate('category').populate('products.product');
+        const dishes = await Dish.find(getRestaurantFilter(req)).populate('category').populate('products.product');
         return res.status(200).json({
             success: true,
             dishes
@@ -60,6 +62,24 @@ export const updateDish=async(req,res)=>{
                 message: 'ID de platillo inválido'
             });
         }
+
+        const existingDish = await Dish.findById(id);
+        if (!existingDish) {
+            return res.status(404).json({
+                success: false,
+                message: 'Platillo no encontrado'
+            });
+        }
+
+        const ownership = ensureOwnedRestaurant(req, existingDish.restaurant, 'platillo');
+        if (!ownership.allowed) {
+            return res.status(ownership.status).json({
+                success: false,
+                message: ownership.message
+            });
+        }
+
+        delete req.body.restaurant;
 
         const dish=await Dish.findByIdAndUpdate(id,req.body,{new:true,runValidators:true});
 

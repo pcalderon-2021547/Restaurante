@@ -83,7 +83,7 @@ export const useAuthStore = create(
                         isLoadingAuth: false
                     });
 
-                    const redirectTo = role === "ADMIN_ROLE" ? "/dashboard" : "/user";
+                    const redirectTo = role === "ADMIN_ROLE" || role === "ADMIN_RESTAURANT_ROLE" ? "/dashboard" : "/user";
 
                     return { success: true, role, redirectTo };
 

@@ -3,6 +3,7 @@ import {createTable,getTables,getTableById,updateTable,deleteTable} from './tabl
 import { validateJWT } from '../../../middlewares/validate_jwt.js';
 import { requireRole } from '../../../middlewares/validate_role.js';
 import { validateObjectId } from '../../../middlewares/validate-object-id.js';
+import { attachOwnedRestaurant } from '../../../middlewares/attach_owned_restaurant.js';
 
 
 const router = Router();
@@ -53,11 +54,11 @@ const router = Router();
  */
 
 router.post('/create',validateJWT,
-    requireRole('ADMIN_ROLE'), createTable);
-router.get('/', getTables);
-router.get('/:id',validateObjectId, getTableById);
+    requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE'), attachOwnedRestaurant, createTable);
+router.get('/', validateJWT, requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE', 'USER_ROLE'), attachOwnedRestaurant, getTables);
+router.get('/:id', validateJWT, requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE', 'USER_ROLE'), attachOwnedRestaurant, validateObjectId, getTableById);
 router.put('/update/:id', validateObjectId,validateJWT,
-    requireRole('ADMIN_ROLE'),updateTable);
+    requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE'), attachOwnedRestaurant, updateTable);
 router.delete('/delete/:id', validateJWT,
     requireRole('ADMIN_ROLE'),validateObjectId,deleteTable);
 

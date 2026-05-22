@@ -57,6 +57,11 @@ const restaurantSchema = mongoose.Schema({
     totalReviews: {
         type: Number,
         default: 0
+    },
+    ownerId: {
+        type: String,
+        trim: true,
+        index: true
     }
 
 }, { timestamps: true });

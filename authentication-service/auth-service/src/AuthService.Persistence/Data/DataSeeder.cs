@@ -9,22 +9,28 @@ public static class DataSeeder
 {
     public static async Task SeedAsync(ApplicationDbContext context)
     {
-        // Verificar si ya existen roles
-        if (!(context.Roles?.Any() ?? false))
+        var roleSet = context.Roles ?? throw new InvalidOperationException("Roles DbSet is null.");
+        var requiredRoles = new[]
         {
-            var roles = new List<Role>
-            {
-                new() {
-                    Id = UuidGenerator.GenerateRoleId(),
-                        Name = RoleConstants.ADMIN_ROLE
-                },
-                new() {
-                    Id = UuidGenerator.GenerateRoleId(),
-                        Name = RoleConstants.USER_ROLE
-                }
-            };
+            RoleConstants.ADMIN_ROLE,
+            RoleConstants.ADMIN_RESTAURANT_ROLE,
+            RoleConstants.USER_ROLE
+        };
 
-            await context.Roles!.AddRangeAsync(roles);
+        foreach (var roleName in requiredRoles)
+        {
+            if (!await roleSet.AnyAsync(r => r.Name == roleName))
+            {
+                await roleSet.AddAsync(new Role
+                {
+                    Id = UuidGenerator.GenerateRoleId(),
+                    Name = roleName
+                });
+            }
+        }
+
+        if (context.ChangeTracker.HasChanges())
+        {
             await context.SaveChangesAsync();
         }
 
@@ -32,7 +38,7 @@ public static class DataSeeder
         if (!(await (context.Users?.AnyAsync() ?? Task.FromResult(false))))
         {
             // Buscar rol admin existente
-            var adminRole = await (context.Roles ?? throw new InvalidOperationException("Roles DbSet is null.")).FirstOrDefaultAsync(r => r.Name == RoleConstants.ADMIN_ROLE);
+            var adminRole = await roleSet.FirstOrDefaultAsync(r => r.Name == RoleConstants.ADMIN_ROLE);
             if (adminRole != null)
             {
                 var passwordHasher = new PasswordHashService();

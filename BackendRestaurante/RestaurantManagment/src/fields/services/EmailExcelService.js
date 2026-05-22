@@ -2,6 +2,7 @@
 
 import nodemailer from 'nodemailer';
 import ExcelJS from 'exceljs';
+import { renderEmailTemplate } from '../../utils/reactEmailTemplate.js';
 
 export class EmailExcelService {
     constructor() {
@@ -76,7 +77,22 @@ export class EmailExcelService {
             from: `"Gestión Restaurante" <${process.env.EMAIL_USER}>`,
             to: toEmail,
             subject: subject || `Reporte Excel de ${entityName}`,
-            html: `<p>Adjunto encontrarás el reporte de <strong>${entityName}</strong>.</p>`,
+            html: renderEmailTemplate({
+                title: subject || `Reporte Excel de ${entityName}`,
+                preheader: `Tu reporte Excel de ${entityName} esta listo.`,
+                heading: subject || `Reporte Excel de ${entityName}`,
+                intro: 'Preparamos el archivo solicitado y lo adjuntamos a este correo.',
+                paragraphs: [
+                    `El reporte corresponde a ${entityName}.`,
+                    'Puedes abrir el Excel para filtrar, revisar y compartir la informacion del restaurante.'
+                ],
+                details: [
+                    { label: 'Formato', value: 'Excel' },
+                    { label: 'Registros incluidos', value: String(records) },
+                    { label: 'Archivo', value: filename }
+                ],
+                notice: 'Este mensaje fue generado automaticamente desde el modulo de reportes.'
+            }),
             attachments: [
                 {
                     filename,

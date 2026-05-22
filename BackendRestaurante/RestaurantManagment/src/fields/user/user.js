@@ -38,8 +38,12 @@ const User = sequelize.define('User', {
     },
 
     role: {
-        type: DataTypes.ENUM('ADMIN_ROLE', 'USER_ROLE'),
+        type: DataTypes.ENUM('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE', 'USER_ROLE'),
         defaultValue: 'USER_ROLE'
+    },
+    restaurantId: {
+        type: DataTypes.STRING,
+        allowNull: true
     },
 
     status: {

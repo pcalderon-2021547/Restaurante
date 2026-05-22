@@ -4,6 +4,7 @@ import Event from './event.model.js';
 import Restaurant from '../restaurant/restaurant.model.js';
 import mongoose from 'mongoose';
 import { EmailPDFService } from '../services/EmailPDFService.js';
+import { ensureOwnedRestaurant, forceOwnedRestaurantInBody, getRestaurantFilter } from '../../../helpers/ownership.js';
 
 // ── Campos visibles en el PDF (solo los del formulario) ───────────────────────
 const EVENT_FIELDS = [
@@ -37,6 +38,7 @@ const handleEventError = (res, error, defaultMessage) => {
 //CREAR EVENTO
 export const createEvent = async (req, res) => {
     try {
+        forceOwnedRestaurantInBody(req);
         const { restaurant, name, description, date } = req.body;
 
         if (!restaurant || !name || !description || !date) {
@@ -89,7 +91,7 @@ export const createEvent = async (req, res) => {
 // OBTENER TODOS LOS EVENTOS
 export const getEvents = async (req, res) => {
     try {
-        const events = await Event.find()
+        const events = await Event.find(getRestaurantFilter(req))
             .populate('restaurant')
             .sort({ date: 1 });
 
@@ -115,6 +117,14 @@ export const getEventsByRestaurant = async (req, res) => {
             return res.status(400).json({
                 success: false,
                 message: 'ID de restaurante inválido'
+            });
+        }
+
+        const ownership = ensureOwnedRestaurant(req, restaurantId, 'restaurante');
+        if (!ownership.allowed) {
+            return res.status(ownership.status).json({
+                success: false,
+                message: ownership.message
             });
         }
 
@@ -148,6 +158,24 @@ export const updateEvent = async (req, res) => {
                 message: 'ID de evento inválido'
             });
         }
+
+        const existingEvent = await Event.findById(id);
+        if (!existingEvent) {
+            return res.status(404).json({
+                success: false,
+                message: 'Evento no encontrado'
+            });
+        }
+
+        const ownership = ensureOwnedRestaurant(req, existingEvent.restaurant, 'evento');
+        if (!ownership.allowed) {
+            return res.status(ownership.status).json({
+                success: false,
+                message: ownership.message
+            });
+        }
+
+        delete req.body.restaurant;
 
         const event = await Event.findByIdAndUpdate(
             id,

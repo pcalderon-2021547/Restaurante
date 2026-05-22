@@ -7,6 +7,7 @@ import OrderDetail from '../orderDetail/orderDetail.js';
 import Dish from '../dish/dish.js';
 import { sendEmail } from '../../../utils/send-email.js';
 import { EmailPDFService } from '../services/EmailPDFService.js';
+import { ensureOwnedRestaurant, forceOwnedRestaurantInBody, getRestaurantFilter } from '../../../helpers/ownership.js';
 
 const ORDER_FIELDS = [
     { label: 'ID', key: '_id' },
@@ -43,6 +44,7 @@ const handleOrderError = (res, error, defaultMessage) => {
 
 export const createOrder = async (req, res) => {
     try {
+        forceOwnedRestaurantInBody(req);
         req.body.user = req.user.id;
         const { items } = req.body;
         const order = new Order(req.body);
@@ -96,7 +98,7 @@ export const createOrder = async (req, res) => {
 
 export const getOrders = async (req, res) => {
     try {
-        const orders = await Order.find()
+        const orders = await Order.find(getRestaurantFilter(req))
             .populate('restaurant')
             .populate('table');
 
@@ -136,6 +138,10 @@ export const getOrderById = async (req, res) => {
         if (req.user && req.user.role === 'USER_ROLE' && ((order.user?.toString && order.user.toString()) !== (req.user.id || req.user._id))) {
             return res.status(403).json({ success: false, message: 'No tienes permiso para ver esta orden' });
         }
+        const ownership = ensureOwnedRestaurant(req, order.restaurant, 'orden');
+        if (!ownership.allowed) {
+            return res.status(ownership.status).json({ success: false, message: ownership.message });
+        }
 
         return res.status(200).json({ success: true, order });
     } catch (error) {
@@ -154,6 +160,14 @@ export const updateOrder = async (req, res) => {
                 message: 'Orden no encontrada'
             });
         }
+
+        const ownership = ensureOwnedRestaurant(req, existingOrder.restaurant, 'orden');
+        if (!ownership.allowed) {
+            return res.status(ownership.status).json({ success: false, message: ownership.message });
+        }
+
+        delete req.body.restaurant;
+        delete req.body.user;
 
         const order = await Order.findByIdAndUpdate(
             id,
@@ -221,6 +235,7 @@ const calculateOrderTotals = (details) => {
 
 export const createOrderWithDetails = async (req, res) => {
     try {
+        forceOwnedRestaurantInBody(req);
         req.body.user = req.user.id;
         const { restaurant, type, address, table, items } = req.body;
 

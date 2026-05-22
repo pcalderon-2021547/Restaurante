@@ -11,6 +11,8 @@ import Dish from '../dish/dish.js';
 import { EmailPDFService } from '../services/EmailPDFService.js';
 import { EmailExcelService } from '../services/EmailExcelService.js';  
 import ExcelJS from 'exceljs';
+import { ensureOwnedRestaurant, isRestaurantAdminRole } from '../../../helpers/ownership.js';
+import { renderEmailTemplate } from '../../utils/reactEmailTemplate.js';
 
 const buildDateFilter = (from, to) => {
     const filter = {};
@@ -23,6 +25,13 @@ const buildDateFilter = (from, to) => {
 };
 
 const getMongoose = async () => (await import('mongoose')).default;
+
+const resolveReportRestaurantId = (req) => {
+    if (isRestaurantAdminRole(req)) {
+        return req.user.restaurantId;
+    }
+    return req.query.restaurantId;
+};
 
 // ══════════════════════════════════════════════════════════════════════════════
 // ESTADÍSTICAS JSON
@@ -61,7 +70,7 @@ export const getGeneralStats = async (req, res) => {
 export const getTopDishes = async (req, res) => {
     try {
         const limit = parseInt(req.query.limit) || 10;
-        const { restaurantId } = req.query;
+        const restaurantId = resolveReportRestaurantId(req);
         const mongoose = await getMongoose();
         const topDishes = await OrderDetail.aggregate([
             { $lookup: { from: 'dishes', localField: 'dish', foreignField: '_id', as: 'dishInfo' } },
@@ -79,7 +88,7 @@ export const getTopDishes = async (req, res) => {
 // GET /reports/stats/peak-hours?restaurantId=xxx
 export const getPeakHours = async (req, res) => {
     try {
-        const { restaurantId } = req.query;
+        const restaurantId = resolveReportRestaurantId(req);
         const mongoose = await getMongoose();
         const matchStage = restaurantId ? { restaurant: new mongoose.Types.ObjectId(restaurantId) } : {};
         const peakHours = await Order.aggregate([
@@ -98,6 +107,9 @@ export const getPeakHours = async (req, res) => {
 export const getRestaurantStats = async (req, res) => {
     try {
         const { restaurantId } = req.params;
+        const ownership = ensureOwnedRestaurant(req, restaurantId, 'reporte');
+        if (!ownership.allowed) return res.status(ownership.status).json({ success: false, message: ownership.message });
+
         const restaurant = await Restaurant.findById(restaurantId);
         if (!restaurant) return res.status(404).json({ success: false, message: 'Restaurante no encontrado' });
 
@@ -131,7 +143,8 @@ export const getRestaurantStats = async (req, res) => {
 // GET /reports/stats/demand?from=YYYY-MM-DD&to=YYYY-MM-DD&restaurantId=xxx
 export const getDemandReport = async (req, res) => {
     try {
-        const { from, to, restaurantId } = req.query;
+        const { from, to } = req.query;
+        const restaurantId = resolveReportRestaurantId(req);
         const dateFilter = buildDateFilter(from, to);
         const mongoose = await getMongoose();
         const matchOrder = { ...dateFilter };
@@ -191,6 +204,8 @@ export const sendGeneralStatsPDF = async (req, res) => {
 export const sendRestaurantStatsPDF = async (req, res) => {
     try {
         const { restaurantId, email } = req.params;
+        const ownership = ensureOwnedRestaurant(req, restaurantId, 'reporte');
+        if (!ownership.allowed) return res.status(ownership.status).json({ success: false, message: ownership.message });
         if (!email || !email.includes('@')) return res.status(400).json({ success: false, message: 'El correo proporcionado no es válido' });
 
         const restaurant = await Restaurant.findById(restaurantId);
@@ -229,7 +244,7 @@ export const sendTopDishesPDF = async (req, res) => {
     try {
         const { email } = req.params;
         const limit = parseInt(req.query.limit) || 10;
-        const { restaurantId } = req.query;
+        const restaurantId = resolveReportRestaurantId(req);
         if (!email || !email.includes('@')) return res.status(400).json({ success: false, message: 'El correo proporcionado no es válido' });
 
         const mongoose = await getMongoose();
@@ -299,7 +314,7 @@ export const downloadGeneralStatsExcel = async (req, res) => {
 export const downloadTopDishesExcel = async (req, res) => {
     try {
         const limit = parseInt(req.query.limit) || 10;
-        const { restaurantId } = req.query;
+        const restaurantId = resolveReportRestaurantId(req);
         const mongoose = await getMongoose();
 
         const topDishes = await OrderDetail.aggregate([
@@ -601,6 +616,9 @@ export const sendGeneralStatsExcel = async (req, res) => {
 export const sendRestaurantStatsExcel = async (req, res) => {
     try {
         const { restaurantId, email } = req.params;
+        const ownership = ensureOwnedRestaurant(req, restaurantId, 'reporte');
+        if (!ownership.allowed) return res.status(ownership.status).json({ success: false, message: ownership.message });
+
         if (!email || !email.includes('@')) {
             return res.status(400).json({ success: false, message: 'El correo proporcionado no es válido' });
         }
@@ -683,7 +701,22 @@ export const sendRestaurantStatsExcel = async (req, res) => {
             from: `"Gestión Restaurante" <${process.env.EMAIL_USER}>`,
             to: email,
             subject: `Reporte Excel – ${restaurant.name}`,
-            html: `<p>Adjunto encontrará el reporte Excel del restaurante <strong>${restaurant.name}</strong> con ${ordersPerDay.length} días de datos y top ${topDishesRaw.length} platillos.</p>`,
+            html: renderEmailTemplate({
+                title: `Reporte Excel - ${restaurant.name}`,
+                preheader: `Tu reporte de ${restaurant.name} esta listo.`,
+                heading: `Reporte Excel - ${restaurant.name}`,
+                intro: 'Preparamos el archivo con el resumen operativo del restaurante.',
+                paragraphs: [
+                    `El adjunto incluye ${ordersPerDay.length} dias de datos y el top ${topDishesRaw.length} de platillos.`,
+                    'Revisa las hojas de resumen, ventas y desempeno para tomar decisiones con informacion clara.'
+                ],
+                details: [
+                    { label: 'Restaurante', value: restaurant.name },
+                    { label: 'Hojas', value: 'Resumen, Top Platillos, Ordenes por Dia' },
+                    { label: 'Archivo', value: filename }
+                ],
+                notice: 'Este mensaje fue generado automaticamente desde el modulo de reportes.'
+            }),
             attachments: [{ filename, content: excelBuffer, contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }]
         }); 
 
@@ -771,7 +804,8 @@ export const sendTopDishesExcel = async (req, res) => {
 export const sendDemandExcel = async (req, res) => {
     try {
         const { email } = req.params;
-        const { from, to, restaurantId } = req.query;
+        const { from, to } = req.query;
+        const restaurantId = resolveReportRestaurantId(req);
 
         if (!email || !email.includes('@')) {
             return res.status(400).json({ success: false, message: 'El correo proporcionado no es válido' });

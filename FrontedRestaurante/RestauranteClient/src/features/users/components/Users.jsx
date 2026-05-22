@@ -11,6 +11,7 @@ const PAGE_SIZE = 8;
 
 const ROLE_STYLE = {
     ADMIN_ROLE: { label: "Admin",   color: "#c9a84c", bg: "rgba(201,168,76,0.1)",  border: "rgba(201,168,76,0.3)" },
+    ADMIN_RESTAURANT_ROLE: { label: "Admin Restaurante", color: "#8dd8c0", bg: "rgba(141,216,192,0.1)", border: "rgba(141,216,192,0.3)" },
     USER_ROLE:  { label: "Usuario", color: "#7eb8f7", bg: "rgba(126,184,247,0.1)", border: "rgba(126,184,247,0.3)" },
 };
 
@@ -145,6 +146,7 @@ export const Users = () => {
                 >
                     <option value="ALL">Todos los roles</option>
                     <option value="ADMIN_ROLE">Admin</option>
+                    <option value="ADMIN_RESTAURANT_ROLE">Admin Restaurante</option>
                     <option value="USER_ROLE">Usuario</option>
                 </select>
             </div>
