@@ -2,6 +2,7 @@
 import {
     createReservationService,
     getReservationsService,
+    getReservationsByRestaurantService,
     getReservationByIdService,
     updateReservationService,
     cancelReservationService,
@@ -41,8 +42,27 @@ export const createReservation = async (req, res) => {
     }
 };
 
+/**
+ * GET /reservation
+ * - ADMIN_ROLE          → todas las reservaciones
+ * - ADMIN_RESTAURANT_ROLE → solo las de su restaurante (req.user.restaurantId)
+ */
 export const getReservations = async (req, res) => {
     try {
+        const { role, restaurantId } = req.user;
+
+        if (role === 'ADMIN_RESTAURANT_ROLE') {
+            if (!restaurantId) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Tu cuenta no tiene un restaurante asignado'
+                });
+            }
+            const reservations = await getReservationsByRestaurantService(restaurantId);
+            return res.status(200).json({ success: true, reservations });
+        }
+
+        // ADMIN_ROLE u otros roles con acceso total
         const reservations = await getReservationsService();
         return res.status(200).json({ success: true, reservations });
     } catch (error) {

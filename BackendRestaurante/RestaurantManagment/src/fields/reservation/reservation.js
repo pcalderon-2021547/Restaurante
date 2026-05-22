@@ -19,6 +19,11 @@ const reservationSchema = mongoose.Schema({
         maxlength: [8, 'El teléfono no puede superar los 8 caracteres'],
         match: [/^\d{8}$/, 'El teléfono solo debe contener 8 dígitos numéricos']
     },
+    restaurant: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Restaurant',
+        required: [true, 'El restaurante es obligatorio']
+    },
     table: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Table',

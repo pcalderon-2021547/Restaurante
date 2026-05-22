@@ -37,7 +37,7 @@ export const ReservationModal = ({ isOpen, onClose, reservation }) => {
                 ? {
                       customerName: reservation.customerName,
                       customerPhone: reservation.customerPhone,
-                      restaurant: reservation.table?.restaurant?._id || reservation.restaurant || "",
+                      restaurant: reservation.table?.restaurant?._id || reservation.restaurant?._id || reservation.restaurant || "",
                       table: reservation.table?._id || reservation.table || "",
                       date: reservation.date ? new Date(reservation.date).toISOString().slice(0, 10) : "",
                       numberOfPeople: reservation.numberOfPeople,
@@ -49,20 +49,27 @@ export const ReservationModal = ({ isOpen, onClose, reservation }) => {
     }, [isOpen, reservation]);
 
     const onSubmit = async (data) => {
+        if (!data.table) {
+            showError("Selecciona una mesa disponible.");
+            return;
+        }
+        if (!data.restaurant) {
+            showError("Selecciona un restaurante.");
+            return;
+        }
+
+        // El backend infiere el restaurante desde la mesa, pero lo enviamos
+        // también para mayor claridad y compatibilidad.
         const payload = {
             customerName: data.customerName,
             customerPhone: data.customerPhone,
+            restaurant: data.restaurant,   // ← incluido en el payload
             table: data.table,
             date: data.date,
             numberOfPeople: Number(data.numberOfPeople),
             status: data.status,
             notes: data.notes,
         };
-
-        if (!payload.table) {
-            showError("Selecciona una mesa disponible.");
-            return;
-        }
 
         if (reservation) {
             await updateReservation(reservation._id || reservation.id, payload);
@@ -113,7 +120,10 @@ export const ReservationModal = ({ isOpen, onClose, reservation }) => {
                             <select style={inputStyle} {...register("table", { required: "Selecciona una mesa" })}>
                                 <option value="">Selecciona una mesa...</option>
                                 {tables
-                                    .filter((table) => (table.restaurant?._id ?? table.restaurant) === selectedRestaurant && (table.status === "available" || table._id === reservation?.table?._id || table._id === reservation?.table))
+                                    .filter((table) =>
+                                        (table.restaurant?._id ?? table.restaurant) === selectedRestaurant &&
+                                        (table.status === "available" || table._id === reservation?.table?._id || table._id === reservation?.table)
+                                    )
                                     .map((table) => (
                                         <option key={table._id} value={table._id}>Mesa {table.number} ({table.location})</option>
                                     ))}

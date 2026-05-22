@@ -1223,12 +1223,18 @@
           "System.IdentityModel.Tokens.Jwt": "8.14.0"
         },
         "runtime": {
-          "AuthService.Application.dll": {}
+          "AuthService.Application.dll": {
+            "assemblyVersion": "1.0.0",
+            "fileVersion": "1.0.0.0"
+          }
         }
       },
       "AuthService.Domain/1.0.0": {
         "runtime": {
-          "AuthService.Domain.dll": {}
+          "AuthService.Domain.dll": {
+            "assemblyVersion": "1.0.0",
+            "fileVersion": "1.0.0.0"
+          }
         }
       }
     }

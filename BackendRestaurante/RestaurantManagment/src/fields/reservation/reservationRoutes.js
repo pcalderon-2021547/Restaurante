@@ -14,6 +14,7 @@ import {
 import { validateJWT } from '../../../middlewares/validate_jwt.js';
 import { validateObjectId } from '../../../middlewares/validate-object-id.js';
 import { requireRole } from '../../../middlewares/validate_role.js';
+import { attachOwnedRestaurant } from '../../../middlewares/attach_owned_restaurant.js';
 
 /**
  * @swagger
@@ -40,7 +41,9 @@ import { requireRole } from '../../../middlewares/validate_role.js';
  * @swagger
  * /restaurantManagement/v1/reservation:
  *   get:
- *     summary: Listar todas las reservaciones
+ *     summary: >
+ *       Listar reservaciones.
+ *       ADMIN_ROLE ve todas; ADMIN_RESTAURANT_ROLE solo ve las de su restaurante.
  *     tags: [Reservation]
  *     security:
  *       - bearerAuth: []
@@ -137,10 +140,20 @@ router.post(
     '/create', validateJWT,
     createReservation
 );
-//listar
+
+/**
+ * Listar reservaciones:
+ *   - validateJWT       → popula req.user con { id, role }
+ *   - attachOwnedRestaurant → si role === ADMIN_RESTAURANT_ROLE, agrega req.user.restaurantId
+ *   - getReservations   → decide qué traer según req.user.role
+ */
 router.get(
-    '/', getReservations
+    '/',
+    validateJWT,
+    attachOwnedRestaurant,
+    getReservations
 );
+
 router.get('/my-reservations', validateJWT, getMyReservations);
 
 //listar por fecha
@@ -149,17 +162,17 @@ router.get(
 );
 //listar por Id
 router.get(
-    '/:id', validateObjectId,getReservationById
+    '/:id', validateObjectId, getReservationById
 );
 //actualizar
 router.put(
-    '/update/:id',validateJWT,
+    '/update/:id', validateJWT,
     validateObjectId,
-     updateReservation
+    updateReservation
 );
 //eliminar
 router.delete(
-    '/delete/:id',validateJWT,
+    '/delete/:id', validateJWT,
     validateObjectId,
     cancelReservation
 );

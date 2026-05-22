@@ -2,6 +2,7 @@
 import Reservation from './reservation.js';
 import User from '../user/user.js';
 import Table from '../table/table.js';
+import Restaurant from '../restaurant/restaurant.model.js'; // necesario para que Mongoose registre el modelo y el populate funcione
 import mongoose from 'mongoose';
 import { sendEmail } from '../../../utils/send-email.js';
 
@@ -36,7 +37,7 @@ export const createReservationService = async (data, userId) => {
         throw error;
     }
 
-    const foundTable = await Table.findById(table);
+    const foundTable = await Table.findById(table).populate('restaurant');
     if (!foundTable) {
         return null;
     }
@@ -59,9 +60,13 @@ export const createReservationService = async (data, userId) => {
         throw error;
     }
 
+    // Tomamos el restaurante directamente de la mesa para garantizar consistencia
+    const restaurantId = foundTable.restaurant?._id ?? foundTable.restaurant;
+
     const reservation = new Reservation({
         ...data,
-        user: userId
+        user: userId,
+        restaurant: restaurantId,   // ← se guarda automáticamente desde la mesa
     });
 
     await reservation.save();
@@ -73,16 +78,35 @@ export const createReservationService = async (data, userId) => {
 };
 
 
+// ADMIN_ROLE: trae TODAS las reservaciones
 export const getReservationsService = async () => {
     return await Reservation.find()
-        .populate('table')
+        .populate({ path: 'table', populate: { path: 'restaurant' } })
+        .populate('restaurant')
+        .sort({ date: 1 });
+};
+
+
+// ADMIN_RESTAURANT_ROLE: solo reservaciones de su restaurante
+export const getReservationsByRestaurantService = async (restaurantId) => {
+    if (!isValidId(restaurantId)) {
+        const error = new Error('ID de restaurante inválido');
+        error.name = 'ValidationError';
+        throw error;
+    }
+
+    return await Reservation.find({ restaurant: restaurantId })
+        .populate({ path: 'table', populate: { path: 'restaurant' } })
+        .populate('restaurant')
         .sort({ date: 1 });
 };
 
 
 export const getReservationByIdService = async (id) => {
     if (!isValidId(id)) return false;
-    return await Reservation.findById(id).populate('table');
+    return await Reservation.findById(id)
+        .populate({ path: 'table', populate: { path: 'restaurant' } })
+        .populate('restaurant');
 };
 
 
@@ -93,13 +117,24 @@ export const updateReservationService = async (id, data) => {
     const reservation = await Reservation.findById(id);
     if (!reservation) return null;
 
+    // Si cambian la mesa, actualizamos el restaurante en consecuencia
+    if (data.table && data.table !== reservation.table?.toString()) {
+        if (!isValidId(data.table)) {
+            const error = new Error('ID de mesa inválido');
+            error.name = 'ValidationError';
+            throw error;
+        }
+        const newTable = await Table.findById(data.table);
+        if (newTable) {
+            data.restaurant = newTable.restaurant?._id ?? newTable.restaurant;
+        }
+    }
+
     reservation.set(data);
     await reservation.save();
 
     if (reservation.status === 'confirmed') {
-
         const user = await User.findByPk(reservation.user);
-
         if (user) {
             await sendEmail(
                 user.email,
@@ -149,12 +184,15 @@ export const getReservationsByDateService = async (date) => {
 
     return await Reservation.find({
         date: { $gte: startOfDay, $lte: endOfDay }
-    }).populate('table');
+    })
+        .populate({ path: 'table', populate: { path: 'restaurant' } })
+        .populate('restaurant');
 };
 
 
 export const getMyReservationsService = async (userId) => {
     return await Reservation.find({ user: userId })
-        .populate('table')
+        .populate({ path: 'table', populate: { path: 'restaurant' } })
+        .populate('restaurant')
         .sort({ date: -1 });
 };
