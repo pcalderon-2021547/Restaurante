@@ -26,77 +26,68 @@ export const UserOrderDetailsPage = () => {
     if (orderLoading || detailsLoading || !order) return <Spinner />;
 
     return (
-        <div className="p-6">
-            <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 mb-8">
+        <div className="user-page">
+            <header className="user-page-hero compact">
                 <div>
-                    <p className="text-xs uppercase tracking-widest mb-1" style={{ color: "#5a5040" }}>
-                        Detalle de pedido
-                    </p>
-                    <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "2rem", fontWeight: 300, color: "#f0e8d5" }}>
-                        Pedido #{order._id?.slice(-6) || orderId}
-                    </h1>
+                    <p className="user-kicker">Detalle de pedido</p>
+                    <h1>Pedido #{order._id?.slice(-6) || orderId}</h1>
+                    <p>Resumen completo de restaurante, estado, tipo de entrega y platillos solicitados.</p>
                 </div>
-                <button
-                    onClick={() => navigate('/user/orders')}
-                    className="px-4 py-2 rounded-lg text-sm font-medium"
-                    style={{ background: "#1c1a16", color: "#c9a84c", border: "1px solid rgba(201,168,76,0.2)" }}
-                >
+                <button className="user-secondary-btn" onClick={() => navigate("/user/orders")}>
                     Volver a pedidos
                 </button>
-            </div>
+            </header>
 
-            <div className="grid gap-4 md:grid-cols-3 mb-6">
-                <div className="rounded-2xl p-5" style={{ background: "#141210", border: "1px solid rgba(201,168,76,0.12)" }}>
-                    <p className="text-xs uppercase tracking-widest mb-2" style={{ color: "#5a5040" }}>Restaurante</p>
-                    <p style={{ color: "#f0e8d5" }}>{order.restaurant?.name || '—'}</p>
-                    <p className="text-sm mt-3" style={{ color: "#9a8e74" }}>{order.restaurant?.address || 'Dirección no disponible'}</p>
-                </div>
-                <div className="rounded-2xl p-5" style={{ background: "#141210", border: "1px solid rgba(201,168,76,0.12)" }}>
-                    <p className="text-xs uppercase tracking-widest mb-2" style={{ color: "#5a5040" }}>Estado</p>
-                    <p style={{ color: "#f0e8d5" }}>{order.status || '—'}</p>
-                    <p className="mt-3 text-sm" style={{ color: "#9a8e74" }}>{order.type || '—'}</p>
-                </div>
-                <div className="rounded-2xl p-5" style={{ background: "#141210", border: "1px solid rgba(201,168,76,0.12)" }}>
-                    <p className="text-xs uppercase tracking-widest mb-2" style={{ color: "#5a5040" }}>Total</p>
-                    <p style={{ color: "#c9a84c", fontSize: "1.5rem" }}>Q{Number(order.total || 0).toFixed(2)}</p>
-                    <p className="mt-3 text-sm" style={{ color: "#9a8e74" }}>Subtotal: Q{Number(order.subtotal || 0).toFixed(2)}</p>
-                </div>
-            </div>
+            <section className="user-summary-grid">
+                <article>
+                    <span>Restaurante</span>
+                    <strong>{order.restaurant?.name || "-"}</strong>
+                    <p>{order.restaurant?.address || "Direccion no disponible"}</p>
+                </article>
+                <article>
+                    <span>Estado</span>
+                    <strong>{order.status || "-"}</strong>
+                    <p>{order.type || "-"}</p>
+                </article>
+                <article>
+                    <span>Total</span>
+                    <strong>Q{Number(order.total || 0).toFixed(2)}</strong>
+                    <p>Subtotal: Q{Number(order.subtotal || 0).toFixed(2)}</p>
+                </article>
+            </section>
 
-            {order.type === 'delivery' && (
-                <div className="rounded-2xl p-5 mb-6" style={{ background: "#141210", border: "1px solid rgba(201,168,76,0.12)" }}>
-                    <p className="text-xs uppercase tracking-widest mb-2" style={{ color: "#5a5040" }}>Dirección de entrega</p>
-                    <p style={{ color: "#f0e8d5" }}>{order.address || '—'}</p>
-                </div>
+            {order.type === "delivery" && (
+                <section className="user-callout">
+                    <span>Direccion de entrega</span>
+                    <strong>{order.address || "-"}</strong>
+                </section>
             )}
 
-            {order.type === 'dine_in' && order.table && (
-                <div className="rounded-2xl p-5 mb-6" style={{ background: "#141210", border: "1px solid rgba(201,168,76,0.12)" }}>
-                    <p className="text-xs uppercase tracking-widest mb-2" style={{ color: "#5a5040" }}>Mesa</p>
-                    <p style={{ color: "#f0e8d5" }}>Mesa {order.table?.number || order.table || '—'}</p>
-                </div>
+            {order.type === "dine_in" && order.table && (
+                <section className="user-callout">
+                    <span>Mesa</span>
+                    <strong>Mesa {order.table?.number || order.table || "-"}</strong>
+                </section>
             )}
 
-            <div style={{ background: "#141210", border: "1px solid rgba(201,168,76,0.12)", borderRadius: "16px", overflow: 'hidden' }}>
-                <div className="grid grid-cols-12 px-6 py-3 text-xs uppercase tracking-widest" style={{ background: "#1c1a16", color: "#5a5040", borderBottom: "1px solid rgba(201,168,76,0.1)" }}>
-                    <span className="col-span-1">#</span>
-                    <span className="col-span-5">Platillo</span>
-                    <span className="col-span-2">Cantidad</span>
-                    <span className="col-span-2">Precio</span>
-                    <span className="col-span-2 text-right">Subtotal</span>
+            <div className="user-table">
+                <div className="user-table-head">
+                    <span>#</span>
+                    <span>Platillo</span>
+                    <span>Cantidad</span>
+                    <span>Precio</span>
+                    <span>Subtotal</span>
                 </div>
                 {details.length === 0 ? (
-                    <div className="px-6 py-8 text-center" style={{ color: "#9a8e74" }}>
-                        No hay detalles registrados para esta orden.
-                    </div>
+                    <div className="user-table-empty">No hay detalles registrados para esta orden.</div>
                 ) : (
                     details.map((detail, index) => (
-                        <div key={detail._id || detail.id || index} className="grid grid-cols-12 px-6 py-4 items-center" style={{ borderBottom: "1px solid rgba(201,168,76,0.06)", color: "#f0e8d5" }}>
-                            <span className="col-span-1 text-xs" style={{ color: "#5a5040" }}>{index + 1}</span>
-                            <span className="col-span-5 text-sm" style={{ color: "#c9a84c" }}>{detail.dish?.name || detail.dish || '—'}</span>
-                            <span className="col-span-2 text-sm" style={{ color: "#f0e8d5" }}>{detail.quantity}</span>
-                            <span className="col-span-2 text-sm" style={{ color: "#f0e8d5" }}>Q{Number(detail.price || 0).toFixed(2)}</span>
-                            <span className="col-span-2 text-right text-sm" style={{ color: "#f0e8d5" }}>Q{Number((detail.price || 0) * (detail.quantity || 0)).toFixed(2)}</span>
+                        <div key={detail._id || detail.id || index} className="user-table-row">
+                            <span data-label="#">{index + 1}</span>
+                            <strong data-label="Platillo">{detail.dish?.name || detail.dish || "-"}</strong>
+                            <span data-label="Cantidad">{detail.quantity}</span>
+                            <span data-label="Precio">Q{Number(detail.price || 0).toFixed(2)}</span>
+                            <span data-label="Subtotal">Q{Number((detail.price || 0) * (detail.quantity || 0)).toFixed(2)}</span>
                         </div>
                     ))
                 )}

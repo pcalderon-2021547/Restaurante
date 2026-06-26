@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useOrderStore } from "../../order/store/useOrderStore";
 import { useNavigate } from "react-router-dom";
 import { Spinner } from "../../../shared/components/layout/Spinner.jsx";
@@ -7,6 +7,7 @@ import { showError } from "../../../shared/utils/toast.js";
 export const UserOrdersPage = () => {
     const { orders, loading, error, getMyOrders } = useOrderStore();
     const navigate = useNavigate();
+    const [status, setStatus] = useState("");
 
     useEffect(() => {
         getMyOrders();
@@ -16,54 +17,65 @@ export const UserOrdersPage = () => {
         if (error) showError(error);
     }, [error]);
 
+    const filteredOrders = useMemo(() => {
+        return orders.filter((order) => !status || (order.status || "Pendiente") === status);
+    }, [orders, status]);
+
+    const totalSpent = filteredOrders.reduce((sum, order) => sum + Number(order.total || 0), 0);
+    const statuses = [...new Set(orders.map((order) => order.status || "Pendiente"))];
+
     return (
-        <div className="p-6">
-            <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 mb-8">
+        <div className="user-page">
+            <header className="user-page-hero compact">
                 <div>
-                    <p className="text-xs uppercase tracking-widest mb-1" style={{ color: "#5a5040" }}>
-                        Mis pedidos
-                    </p>
-                    <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "2rem", fontWeight: 300, color: "#f0e8d5" }}>
-                        Pedidos <em style={{ color: "#c9a84c", fontStyle: "italic" }}>de usuario</em>
-                    </h1>
+                    <p className="user-kicker">Mis pedidos</p>
+                    <h1>Pedidos <em>de usuario</em></h1>
+                    <p>Consulta estados, fechas y detalles de tus ordenes recientes.</p>
                 </div>
-                <div />
-            </div>
+                <div className="user-hero-stat">
+                    <strong>Q{totalSpent.toFixed(2)}</strong>
+                    <span>total filtrado</span>
+                </div>
+            </header>
+
+            <section className="user-toolbar">
+                <label className="user-select">
+                    <span>Estado</span>
+                    <select value={status} onChange={(event) => setStatus(event.target.value)}>
+                        <option value="">Todos</option>
+                        {statuses.map((item) => (
+                            <option key={item} value={item}>{item}</option>
+                        ))}
+                    </select>
+                </label>
+            </section>
 
             {loading && orders.length === 0 ? (
                 <Spinner />
-            ) : orders.length === 0 ? (
-                <div className="rounded-xl p-6" style={{ background: "#141210", border: "1px solid rgba(201,168,76,0.12)" }}>
-                    <p className="text-lg font-semibold" style={{ color: "#f0e8d5" }}>No tienes pedidos aún</p>
-                    <p className="text-sm mt-2" style={{ color: "#9a8e74" }}>Crea tu primer pedido y consulta su estado aquí.</p>
+            ) : filteredOrders.length === 0 ? (
+                <div className="user-empty">
+                    <strong>No tienes pedidos para este filtro</strong>
+                    <p>Crea tu primer pedido y consulta su estado aqui.</p>
                 </div>
             ) : (
-                <div style={{ background: "#141210", border: "1px solid rgba(201,168,76,0.15)", borderRadius: "12px", overflow: "hidden" }}>
-                    <div className="grid grid-cols-12 px-6 py-3 text-xs uppercase tracking-widest" style={{ background: "#1c1a16", color: "#5a5040", borderBottom: "1px solid rgba(201,168,76,0.1)" }}>
-                        <span className="col-span-1">#</span>
-                        <span className="col-span-3">Restaurante</span>
-                        <span className="col-span-2">Fecha</span>
-                        <span className="col-span-2">Total</span>
-                        <span className="col-span-2">Estado</span>
-                        <span className="col-span-2 text-right">Detalle</span>
+                <div className="user-table">
+                    <div className="user-table-head">
+                        <span>#</span>
+                        <span>Restaurante</span>
+                        <span>Fecha</span>
+                        <span>Total</span>
+                        <span>Estado</span>
+                        <span>Detalle</span>
                     </div>
-                    {orders.map((order, index) => (
-                        <div key={order._id || order.id || index} className="grid grid-cols-12 px-6 py-4 items-center" style={{ borderBottom: "1px solid rgba(201,168,76,0.07)", color: "#f0e8d5" }}>
-                            <span className="col-span-1 text-xs" style={{ color: "#5a5040" }}>{index + 1}</span>
-                            <span className="col-span-3 font-medium text-sm" style={{ color: "#c9a84c" }}>{order.restaurant?.name || order.restaurant || "—"}</span>
-                            <span className="col-span-2 text-sm" style={{ color: "#9a8e74" }}>{order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "—"}</span>
-                            <span className="col-span-2 text-sm" style={{ color: "#f0e8d5" }}>Q{Number(order.total || 0).toFixed(2)}</span>
-                            <span className="col-span-2">
-                                <span className="px-2 py-1 rounded text-xs" style={{ background: "rgba(201,168,76,0.1)", color: "#c9a84c", border: "1px solid rgba(201,168,76,0.3)" }}>
-                                    {order.status || "Pendiente"}
-                                </span>
-                            </span>
-                            <span className="col-span-2 text-right">
-                                <button
-                                    onClick={() => navigate(`/user/orders/${order._id || order.id}`)}
-                                    className="px-3 py-1 rounded text-xs"
-                                    style={{ background: "rgba(201,168,76,0.1)", color: "#c9a84c", border: "1px solid rgba(201,168,76,0.2)" }}
-                                >
+                    {filteredOrders.map((order, index) => (
+                        <div key={order._id || order.id || index} className="user-table-row">
+                            <span data-label="#">{index + 1}</span>
+                            <strong data-label="Restaurante">{order.restaurant?.name || order.restaurant || "-"}</strong>
+                            <span data-label="Fecha">{order.createdAt ? new Date(order.createdAt).toLocaleDateString("es-GT") : "-"}</span>
+                            <span data-label="Total">Q{Number(order.total || 0).toFixed(2)}</span>
+                            <span data-label="Estado"><b className="user-status">{order.status || "Pendiente"}</b></span>
+                            <span data-label="Detalle">
+                                <button className="user-secondary-btn" onClick={() => navigate(`/user/orders/${order._id || order.id}`)}>
                                     Ver
                                 </button>
                             </span>

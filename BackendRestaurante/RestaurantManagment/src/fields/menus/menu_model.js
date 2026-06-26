@@ -31,6 +31,11 @@ const menuSchema = mongoose.Schema({
         default: 'DAILY'
     },
 
+    image: {
+        type: String,
+        default: ''
+    },
+
     validFrom: Date,
     validUntil: Date,
 

@@ -24,6 +24,10 @@ const eventSchema = mongoose.Schema({
         type: Date,
         required: [true, 'La fecha es obligatoria']
     },
+    image: {
+        type: String,
+        default: ''
+    },
     status: {
         type: String,
         enum: ['active', 'finished', 'cancelled'],

@@ -4,18 +4,22 @@ export const UserSidebar = () => {
     const location = useLocation();
 
     const items = [
-        { label: "Inicio", to: "/user" },
-        { label: "Restaurantes", to: "/user/restaurants" },
-        { label: "Menus", to: "/user/menus" },
-        { label: "Eventos", to: "/user/events" },
-        { label: "Resenas", to: "/user/reviews" },
-        { label: "Mis pedidos", to: "/user/orders" },
-        { label: "Mis reservaciones", to: "/user/reservations" },
-        { label: "Perfil", to: "/user/profile" },
+        { label: "Inicio", hint: "Resumen", to: "/user" },
+        { label: "Restaurantes", hint: "Pedir", to: "/user/restaurants" },
+        { label: "Menús", hint: "Cartas", to: "/user/menus" },
+        { label: "Eventos", hint: "Agenda", to: "/user/events" },
+        { label: "Reseñas", hint: "Opiniones", to: "/user/reviews" },
+        { label: "Mis pedidos", hint: "Órdenes", to: "/user/orders" },
+        { label: "Mis reservaciones", hint: "Mesas", to: "/user/reservations" },
+        { label: "Perfil", hint: "Cuenta", to: "/user/profile" },
     ];
 
     return (
         <aside className="dash-sidebar">
+            <div className="user-sidebar-head">
+                <span>Cliente</span>
+                <strong>Tu experiencia</strong>
+            </div>
             {items.map((item) => {
                 const active = item.to === "/user"
                     ? location.pathname === item.to
@@ -27,7 +31,10 @@ export const UserSidebar = () => {
                         to={item.to}
                         className={`dash-sidebar-item${active ? " active" : ""}`}
                     >
-                        {item.label}
+                        <span>
+                            <strong>{item.label}</strong>
+                            <small>{item.hint}</small>
+                        </span>
                     </Link>
                 );
             })}

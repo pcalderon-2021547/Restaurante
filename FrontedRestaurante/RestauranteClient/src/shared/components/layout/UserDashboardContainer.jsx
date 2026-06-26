@@ -3,7 +3,7 @@ import { UserSidebar } from "./UserSidebar";
 
 export const UserDashboardContainer = ({ children }) => {
     return (
-        <div className="dash-root">
+        <div className="dash-root user-shell">
             <Navbar />
             <div className="dash-body">
                 <UserSidebar />

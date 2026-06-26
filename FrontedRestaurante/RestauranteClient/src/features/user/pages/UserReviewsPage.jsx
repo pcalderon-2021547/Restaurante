@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useReviewStore } from "../../reviews/store/useReviewStore";
 import { useRestaurantStore } from "../../restaurants/store/useRestaurantStore";
 import { ReviewModal } from "../../reviews/components/ReviewModal.jsx";
@@ -6,94 +6,92 @@ import { Spinner } from "../../../shared/components/layout/Spinner.jsx";
 import { showError } from "../../../shared/utils/toast.js";
 
 export const UserReviewsPage = () => {
-    const { reviews, loading, error, getReviews, createReview } = useReviewStore();
+    const { reviews, loading, error, getReviews } = useReviewStore();
     const { restaurants, getRestaurants } = useRestaurantStore();
     const [selectedRestaurantId, setSelectedRestaurantId] = useState("");
     const [openModal, setOpenModal] = useState(false);
+    const [minRating, setMinRating] = useState("");
 
     useEffect(() => {
         getRestaurants();
     }, [getRestaurants]);
 
     useEffect(() => {
-        if (selectedRestaurantId) {
-            getReviews(selectedRestaurantId);
-        }
+        if (selectedRestaurantId) getReviews(selectedRestaurantId);
     }, [selectedRestaurantId, getReviews]);
 
     useEffect(() => {
         if (error) showError(error);
     }, [error]);
 
-    const handleRestaurantChange = (event) => {
-        setSelectedRestaurantId(event.target.value);
-    };
+    const visibleReviews = useMemo(() => {
+        return reviews.filter((review) => !minRating || Number(review.rating || 0) >= Number(minRating));
+    }, [reviews, minRating]);
+
+    const average = visibleReviews.length
+        ? visibleReviews.reduce((sum, review) => sum + Number(review.rating || 0), 0) / visibleReviews.length
+        : 0;
 
     return (
-        <div className="p-6">
-            <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 mb-8">
+        <div className="user-page">
+            <header className="user-page-hero compact">
                 <div>
-                    <p className="text-xs uppercase tracking-widest mb-1" style={{ color: "#5a5040" }}>
-                        Reseñas de usuario
-                    </p>
-                    <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "2rem", fontWeight: 300, color: "#f0e8d5" }}>
-                        Reseñas <em style={{ color: "#c9a84c", fontStyle: "italic" }}>para restaurantes</em>
-                    </h1>
+                    <p className="user-kicker">Resenas de usuario</p>
+                    <h1>Resenas <em>para restaurantes</em></h1>
+                    <p>Lee opiniones por restaurante y comparte tu experiencia con una calificacion clara.</p>
                 </div>
-                <button
-                    onClick={() => setOpenModal(true)}
-                    className="px-5 py-2 rounded-lg text-sm font-medium"
-                    style={{ background: "linear-gradient(90deg, #c9a84c, #e8c96e)", color: "#0a0906" }}
-                >
-                    + Nueva reseña
+                <button className="user-primary-btn" onClick={() => setOpenModal(true)}>
+                    Nueva resena
                 </button>
-            </div>
+            </header>
 
-            <div className="mb-6" style={{ maxWidth: "360px" }}>
-                <label className="block text-xs uppercase tracking-widest mb-2" style={{ color: "#5a5040" }}>
-                    Selecciona un restaurante
+            <section className="user-toolbar">
+                <label className="user-select wide">
+                    <span>Restaurante</span>
+                    <select value={selectedRestaurantId} onChange={(event) => setSelectedRestaurantId(event.target.value)}>
+                        <option value="">Elige un restaurante</option>
+                        {restaurants.filter((item) => item.isActive !== false).map((restaurant) => (
+                            <option key={restaurant._id} value={restaurant._id}>{restaurant.name}</option>
+                        ))}
+                    </select>
                 </label>
-                <select
-                    value={selectedRestaurantId}
-                    onChange={handleRestaurantChange}
-                    className="w-full rounded-lg p-3"
-                    style={{ background: "#1c1a16", border: "1px solid rgba(201,168,76,0.2)", color: "#f0e8d5" }}
-                >
-                    <option value="">— Elige un restaurante —</option>
-                    {restaurants.filter((r) => r.isActive !== false).map((restaurant) => (
-                        <option key={restaurant._id} value={restaurant._id}>
-                            {restaurant.name}
-                        </option>
-                    ))}
-                </select>
-            </div>
+                <label className="user-select">
+                    <span>Rating minimo</span>
+                    <select value={minRating} onChange={(event) => setMinRating(event.target.value)}>
+                        <option value="">Todos</option>
+                        <option value="5">5 estrellas</option>
+                        <option value="4">4+</option>
+                        <option value="3">3+</option>
+                    </select>
+                </label>
+                <div className="user-mini-metric">
+                    <strong>{average ? average.toFixed(1) : "-"}</strong>
+                    <span>promedio</span>
+                </div>
+            </section>
 
             {loading && reviews.length === 0 ? (
                 <Spinner />
             ) : !selectedRestaurantId ? (
-                <div className="rounded-xl p-6" style={{ background: "#141210", border: "1px solid rgba(201,168,76,0.12)" }}>
-                    <p className="text-lg font-semibold" style={{ color: "#f0e8d5" }}>Selecciona un restaurante para ver sus reseñas</p>
-                    <p className="text-sm mt-2" style={{ color: "#9a8e74" }}>También puedes crear una reseña para compartir tu experiencia.</p>
+                <div className="user-empty">
+                    <strong>Selecciona un restaurante para ver sus resenas</strong>
+                    <p>Tambien puedes crear una resena para compartir tu experiencia.</p>
                 </div>
-            ) : reviews.length === 0 ? (
-                <div className="rounded-xl p-6" style={{ background: "#141210", border: "1px solid rgba(201,168,76,0.12)" }}>
-                    <p className="text-lg font-semibold" style={{ color: "#f0e8d5" }}>No hay reseñas aún</p>
-                    <p className="text-sm mt-2" style={{ color: "#9a8e74" }}>Sé el primero en opinar sobre este restaurante.</p>
+            ) : visibleReviews.length === 0 ? (
+                <div className="user-empty">
+                    <strong>No hay resenas para este filtro</strong>
+                    <p>Se el primero en opinar sobre este restaurante.</p>
                 </div>
             ) : (
-                <div className="space-y-4">
-                    {reviews.map((review) => (
-                        <div key={review._id} className="rounded-2xl p-6" style={{ background: "#141210", border: "1px solid rgba(201,168,76,0.12)" }}>
-                            <div className="flex items-center justify-between gap-3">
-                                <span className="text-sm font-semibold" style={{ color: "#c9a84c" }}>
-                                    {review.rating} ⭐
-                                </span>
-                                <span className="text-xs uppercase tracking-widest" style={{ color: "#5a5040" }}>
-                                    {new Date(review.createdAt).toLocaleDateString("es-GT")}
-                                </span>
+                <div className="user-review-list">
+                    {visibleReviews.map((review) => (
+                        <article key={review._id} className="user-review-card">
+                            <div className="user-card-topline">
+                                <span>{review.createdAt ? new Date(review.createdAt).toLocaleDateString("es-GT") : "Sin fecha"}</span>
+                                <b>{renderStars(review.rating)}</b>
                             </div>
-                            <p className="mt-4 text-sm" style={{ color: "#f0e8d5" }}>{review.comment || "Sin comentario"}</p>
-                        </div>
+                            <p>{review.comment || "Sin comentario."}</p>
+                        </article>
                     ))}
                 </div>
             )}
@@ -102,9 +100,14 @@ export const UserReviewsPage = () => {
                 isOpen={openModal}
                 onClose={() => setOpenModal(false)}
                 review={null}
-                restaurants={restaurants.filter((r) => r.isActive !== false)}
+                restaurants={restaurants.filter((item) => item.isActive !== false)}
                 defaultRestaurantId={selectedRestaurantId}
             />
         </div>
     );
+};
+
+const renderStars = (rating) => {
+    const value = Math.max(0, Math.min(5, Number(rating || 0)));
+    return `${"★".repeat(value)}${"☆".repeat(5 - value)}`;
 };

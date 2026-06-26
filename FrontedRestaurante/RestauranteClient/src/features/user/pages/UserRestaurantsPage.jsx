@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useRestaurantStore } from "../../restaurants/store/useRestaurantStore";
 import { Spinner } from "../../../shared/components/layout/Spinner.jsx";
@@ -6,6 +6,8 @@ import { showError } from "../../../shared/utils/toast.js";
 
 export const UserRestaurantsPage = () => {
     const { restaurants, loading, error, getRestaurants } = useRestaurantStore();
+    const [query, setQuery] = useState("");
+    const [onlyOpen, setOnlyOpen] = useState(false);
 
     useEffect(() => {
         getRestaurants();
@@ -15,29 +17,65 @@ export const UserRestaurantsPage = () => {
         if (error) showError(error);
     }, [error]);
 
+    const activeRestaurants = useMemo(() => {
+        const now = new Date();
+        const current = now.getHours() * 60 + now.getMinutes();
+
+        return restaurants
+            .filter((restaurant) => restaurant.isActive !== false)
+            .filter((restaurant) => {
+                const text = `${restaurant.name || ""} ${restaurant.description || ""} ${restaurant.address || ""}`.toLowerCase();
+                return text.includes(query.toLowerCase().trim());
+            })
+            .filter((restaurant) => {
+                if (!onlyOpen) return true;
+                const open = parseHour(restaurant.openingHour);
+                const close = parseHour(restaurant.closingHour);
+                if (open === null || close === null) return false;
+                return open <= close ? current >= open && current <= close : current >= open || current <= close;
+            });
+    }, [restaurants, query, onlyOpen]);
+
     return (
-        <div className="p-6">
-            <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4 mb-8">
+        <div className="user-page">
+            <header className="user-page-hero compact">
                 <div>
-                    <p className="text-xs uppercase tracking-widest mb-1" style={{ color: "#5a5040" }}>
-                        Restaurantes disponibles
-                    </p>
-                    <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: "2rem", fontWeight: 300, color: "#f0e8d5" }}>
-                        Restaurantes <em style={{ color: "#c9a84c", fontStyle: "italic" }}>para ti</em>
-                    </h1>
+                    <p className="user-kicker">Restaurantes disponibles</p>
+                    <h1>Restaurantes <em>para ti</em></h1>
+                    <p>Explora opciones activas, revisa horarios y empieza un pedido sin salir de esta vista.</p>
                 </div>
-            </div>
+                <div className="user-hero-stat">
+                    <strong>{activeRestaurants.length}</strong>
+                    <span>opciones</span>
+                </div>
+            </header>
+
+            <section className="user-toolbar">
+                <label className="user-search">
+                    <span>Buscar</span>
+                    <input
+                        value={query}
+                        onChange={(event) => setQuery(event.target.value)}
+                        placeholder="Nombre, direccion o descripcion"
+                    />
+                </label>
+                <label className="user-toggle">
+                    <input
+                        type="checkbox"
+                        checked={onlyOpen}
+                        onChange={(event) => setOnlyOpen(event.target.checked)}
+                    />
+                    <span>Abiertos ahora</span>
+                </label>
+            </section>
 
             {loading && restaurants.length === 0 ? (
                 <Spinner />
-            ) : restaurants.filter((r) => r.isActive !== false).length === 0 ? (
-                <div className="rounded-xl p-6" style={{ background: "#141210", border: "1px solid rgba(201,168,76,0.12)" }}>
-                    <p className="text-lg font-semibold" style={{ color: "#f0e8d5" }}>No hay restaurantes activos</p>
-                    <p className="text-sm mt-2" style={{ color: "#9a8e74" }}>Pronto volverán las mejores opciones.</p>
-                </div>
+            ) : activeRestaurants.length === 0 ? (
+                <EmptyState title="No hay restaurantes para este filtro" text="Prueba cambiando la busqueda o mostrando todos los horarios." />
             ) : (
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                    {restaurants.filter((r) => r.isActive !== false).map((restaurant) => (
+                <div className="user-card-grid">
+                    {activeRestaurants.map((restaurant) => (
                         <RestaurantCard key={restaurant._id} restaurant={restaurant} />
                     ))}
                 </div>
@@ -48,18 +86,39 @@ export const UserRestaurantsPage = () => {
 
 const RestaurantCard = ({ restaurant }) => {
     const navigate = useNavigate();
+    const schedule = `${restaurant.openingHour || "--"} - ${restaurant.closingHour || "--"}`;
+
     return (
-        <div className="rounded-2xl p-6" style={{ background: "#141210", border: "1px solid rgba(201,168,76,0.12)" }}>
-            <h2 className="text-xl font-semibold" style={{ color: "#c9a84c" }}>{restaurant.name}</h2>
-            <p className="text-sm mt-2" style={{ color: "#9a8e74" }}>{restaurant.description || "Sin descripción"}</p>
-            <div className="mt-4 text-sm space-y-2" style={{ color: "#f0e8d5" }}>
-                <p><strong>Teléfono:</strong> {restaurant.phone || "N/A"}</p>
-                <p><strong>Horario:</strong> {restaurant.openingHour || "--"} - {restaurant.closingHour || "--"}</p>
-                <p><strong>Dirección:</strong> {restaurant.address || "No registrada"}</p>
+        <article className="user-restaurant-card">
+            <div className="user-card-topline">
+                <span>Restaurante</span>
+                <b>{schedule}</b>
             </div>
-            <div className="mt-4 flex gap-2">
-                <button onClick={() => navigate(`/user/order/create/${restaurant._id}`)} className="px-4 py-2 rounded" style={{ background: "linear-gradient(90deg, #c9a84c, #e8c96e)", color: "#0a0906" }}>Pedir</button>
+            <h2>{restaurant.name}</h2>
+            <p>{restaurant.description || "Sin descripcion disponible."}</p>
+            <div className="user-info-list">
+                <span><strong>Telefono</strong>{restaurant.phone || "N/A"}</span>
+                <span><strong>Direccion</strong>{restaurant.address || "No registrada"}</span>
             </div>
-        </div>
+            <button className="user-primary-btn" onClick={() => navigate(`/user/order/create/${restaurant._id}`)}>
+                Pedir ahora
+            </button>
+        </article>
     );
+};
+
+const EmptyState = ({ title, text }) => (
+    <div className="user-empty">
+        <strong>{title}</strong>
+        <p>{text}</p>
+    </div>
+);
+
+const parseHour = (value) => {
+    if (!value || typeof value !== "string") return null;
+    const [hours, minutes = "0"] = value.split(":");
+    const parsedHours = Number(hours);
+    const parsedMinutes = Number(minutes);
+    if (Number.isNaN(parsedHours) || Number.isNaN(parsedMinutes)) return null;
+    return parsedHours * 60 + parsedMinutes;
 };
