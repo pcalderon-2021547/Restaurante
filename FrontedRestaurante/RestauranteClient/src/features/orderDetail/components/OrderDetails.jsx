@@ -13,11 +13,18 @@ export const OrderDetails = () => {
 
     useEffect(() => {
         getOrderDetails();
-    }, [getOrderDetails]);
+    }, []);
 
     useEffect(() => {
         if (error) showError(error);
     }, [error]);
+
+    // Cierra el modal y refresca la lista desde el servidor
+    const handleClose = () => {
+        setOpenModal(false);
+        setSelectedDetail(null);
+        getOrderDetails();
+    };
 
     if (loading && orderDetails.length === 0) return <Spinner />;
 
@@ -51,7 +58,7 @@ export const OrderDetails = () => {
                     <span className="col-span-3">Plato</span>
                     <span className="col-span-2">Cantidad</span>
                     <span className="col-span-2">Precio</span>
-                    <span className="col-span-2 text-right">Total</span>
+                    <span className="col-span-2 text-right">Acciones</span>
                 </div>
 
                 {orderDetails.length === 0 ? (
@@ -71,10 +78,16 @@ export const OrderDetails = () => {
                             onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                         >
                             <span className="col-span-1 text-xs" style={{ color: "#5a5040" }}>{index + 1}</span>
-                            <span className="col-span-2 text-sm" style={{ color: "#c9a84c" }}>{detail.order?.type ? `${detail.order.type} (${detail.order._id ?? detail.order})` : detail.order?._id || detail.order || "—"}</span>
-                            <span className="col-span-3 text-sm" style={{ color: "#9a8e74" }}>{detail.dish?.name || detail.dish || "—"}</span>
-                            <span className="col-span-2 text-sm" style={{ color: "#f0e8d5" }}>{detail.quantity}</span>
-                            <span className="col-span-2 text-sm" style={{ color: "#f0e8d5" }}>Q{Number(detail.price || 0).toFixed(2)}</span>
+                            <span className="col-span-2 text-sm" style={{ color: "#c9a84c" }}>
+                                {detail.order?.type
+                                    ? `${detail.order.type} (${detail.order._id ?? detail.order})`
+                                    : detail.order?._id || detail.order || "—"}
+                            </span>
+                            <span className="col-span-3 text-sm" style={{ color: "#9a8e74" }}>
+                                {detail.dish?.name || detail.dishName || detail.dish || "—"}
+                            </span>
+                            <span className="col-span-2 text-sm">{detail.quantity}</span>
+                            <span className="col-span-2 text-sm">Q{Number(detail.price || 0).toFixed(2)}</span>
                             <div className="col-span-2 flex justify-end gap-2">
                                 <button
                                     onClick={() => {
@@ -90,8 +103,11 @@ export const OrderDetails = () => {
                                     onClick={() =>
                                         openConfirm({
                                             title: "Eliminar detalle",
-                                            message: `¿Eliminar el detalle de ${detail.dish || "este pedido"}?`,
-                                            onConfirm: () => deleteOrderDetail(detail._id || detail.id),
+                                            message: `¿Eliminar el detalle de ${detail.dish?.name || detail.dishName || "este pedido"}?`,
+                                            onConfirm: async () => {
+                                                await deleteOrderDetail(detail._id || detail.id);
+                                                getOrderDetails();
+                                            },
                                         })
                                     }
                                     className="px-3 py-1 rounded text-xs"
@@ -105,7 +121,11 @@ export const OrderDetails = () => {
                 )}
             </div>
 
-            <OrderDetailModal isOpen={openModal} onClose={() => { setOpenModal(false); setSelectedDetail(null); }} detail={selectedDetail} />
+            <OrderDetailModal
+                isOpen={openModal}
+                onClose={handleClose}
+                detail={selectedDetail}
+            />
         </div>
     );
 };
