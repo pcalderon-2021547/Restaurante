@@ -1,5 +1,6 @@
 'use strict';
 import Dish from './dish.js';
+import Product from '../product/product.js';
 import mongoose from 'mongoose';
 import { ensureOwnedRestaurant, forceOwnedRestaurantInBody, getRestaurantFilter } from '../../../helpers/ownership.js';
 
@@ -26,23 +27,105 @@ const handleDishError = (res, error, defaultMessage) => {
     });
 };
 
-export const createDish=async(req,res)=>{
+/**
+ * Verifica si los productos de un platillo tienen stock suficiente.
+ * Retorna null si todo está bien, o un objeto { message, details } si falta stock.
+ * Compatible con React Native: solo retorna datos, no toca res.
+ */
+const checkDishStock = async (products = []) => {
+    if (!products.length) return null;
+
+    const shortages = [];
+
+    for (const item of products) {
+        const productId = item.product?._id || item.product;
+        const required = Number(item.quantity) || 1;
+
+        if (!productId || !mongoose.Types.ObjectId.isValid(productId)) continue;
+
+        const product = await Product.findById(productId);
+        if (!product) {
+            shortages.push({ productId, issue: 'Producto no encontrado' });
+            continue;
+        }
+
+        if (!product.isActive) {
+            shortages.push({ name: product.name, issue: 'Producto inactivo' });
+            continue;
+        }
+
+        if (product.stock < required) {
+            shortages.push({
+                name: product.name,
+                required,
+                available: product.stock,
+                issue: `Stock insuficiente (disponible: ${product.stock}, requerido: ${required})`
+            });
+        }
+    }
+
+    return shortages.length ? shortages : null;
+};
+
+/**
+ * Actualiza isAvailable del platillo según el stock actual de sus productos.
+ * Se llama después de crear/actualizar el plato para mantener coherencia.
+ */
+const syncDishAvailability = async (dishId) => {
+    const dish = await Dish.findById(dishId).populate('products.product');
+    if (!dish) return;
+
+    const hasStock = dish.products.every((item) => {
+        const product = item.product;
+        if (!product) return true;           // producto sin referencia → no bloquear
+        if (!product.isActive) return false;
+        return product.stock >= (item.quantity || 1);
+    });
+
+    // Solo guardar si realmente cambió para evitar writes innecesarios
+    if (dish.isAvailable !== hasStock) {
+        dish.isAvailable = hasStock;
+        await dish.save();
+    }
+
+    return dish;
+};
+
+export const createDish = async (req, res) => {
     try {
         forceOwnedRestaurantInBody(req);
-        const dish=new Dish(req.body);
+
+        // Validar stock antes de crear si viene con productos
+        const products = req.body.products || [];
+        const shortages = await checkDishStock(products);
+        if (shortages) {
+            return res.status(400).json({
+                success: false,
+                message: 'No se puede crear el platillo: stock insuficiente en uno o más insumos',
+                stockIssues: shortages
+            });
+        }
+
+        const dish = new Dish(req.body);
         await dish.save();
+
+        // Sincronizar isAvailable según stock real
+        const updatedDish = await syncDishAvailability(dish._id);
+
         return res.status(201).json({
             success: true,
-            dish
+            dish: updatedDish || dish
         });
     } catch (error) {
         return handleDishError(res, error, 'Error al crear el platillo');
     }
 };
 
-export const getDishes=async(req,res)=>{
+export const getDishes = async (req, res) => {
     try {
-        const dishes = await Dish.find(getRestaurantFilter(req)).populate('category').populate('products.product');
+        const dishes = await Dish.find(getRestaurantFilter(req))
+            .populate('category')
+            .populate('products.product');
         return res.status(200).json({
             success: true,
             dishes
@@ -52,7 +135,7 @@ export const getDishes=async(req,res)=>{
     }
 };
 
-export const updateDish=async(req,res)=>{
+export const updateDish = async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -81,7 +164,20 @@ export const updateDish=async(req,res)=>{
 
         delete req.body.restaurant;
 
-        const dish=await Dish.findByIdAndUpdate(id,req.body,{new:true,runValidators:true});
+        // Si el body trae productos nuevos, validar stock antes de actualizar
+        const incomingProducts = req.body.products;
+        if (Array.isArray(incomingProducts)) {
+            const shortages = await checkDishStock(incomingProducts);
+            if (shortages) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'No se puede actualizar el platillo: stock insuficiente en uno o más insumos',
+                    stockIssues: shortages
+                });
+            }
+        }
+
+        const dish = await Dish.findByIdAndUpdate(id, req.body, { new: true, runValidators: true });
 
         if (!dish) {
             return res.status(404).json({
@@ -90,16 +186,19 @@ export const updateDish=async(req,res)=>{
             });
         }
 
+        // Sincronizar disponibilidad después de actualizar
+        const updatedDish = await syncDishAvailability(dish._id);
+
         return res.status(200).json({
             success: true,
-            dish
+            dish: updatedDish || dish
         });
     } catch (error) {
         return handleDishError(res, error, 'Error al actualizar el platillo');
     }
 };
 
-export const deleteDish=async(req,res)=>{
+export const deleteDish = async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -121,9 +220,12 @@ export const deleteDish=async(req,res)=>{
 
         return res.status(200).json({
             success: true,
-            message:'Platillo eliminado'
+            message: 'Platillo eliminado'
         });
     } catch (error) {
         return handleDishError(res, error, 'Error al eliminar el platillo');
     }
 };
+
+// Exportar helpers para que orderDetailController los reutilice
+export { checkDishStock, syncDishAvailability };

@@ -2,9 +2,10 @@
 
 import mongoose from 'mongoose';
 import Order from './order_model.js';
-import User from '../user/user.js'; 
+import User from '../user/user.js';
 import OrderDetail from '../orderDetail/orderDetail.js';
 import Dish from '../dish/dish.js';
+import Product from '../product/product.js';
 import { sendEmail } from '../../../utils/send-email.js';
 import { EmailPDFService } from '../services/EmailPDFService.js';
 import { ensureOwnedRestaurant, forceOwnedRestaurantInBody, getRestaurantFilter } from '../../../helpers/ownership.js';
@@ -24,7 +25,6 @@ const ORDER_FIELDS = [
     { label: 'Actualizado en', key: 'updatedAt' },
 ];
 
-// manejo centralizado de errores para las operaciones de orden
 const handleOrderError = (res, error, defaultMessage) => {
     if (error?.name === 'ValidationError') {
         return res.status(400).json({
@@ -41,6 +41,74 @@ const handleOrderError = (res, error, defaultMessage) => {
     });
 };
 
+const calculateOrderTotals = (details) => {
+    const subtotal = details.reduce((acc, item) => acc + item.subtotal, 0);
+    const tax = Number((subtotal * 0.12).toFixed(2));
+    const total = Number((subtotal + tax).toFixed(2));
+    return { subtotal, tax, total };
+};
+
+/**
+ * Verifica stock disponible para ordenar un platillo N veces.
+ * Retorna null si todo OK, arreglo de problemas si hay escasez.
+ * Reutilizable desde React Native.
+ */
+const checkStockForOrderItem = async (dishId, orderQuantity) => {
+    const dish = await Dish.findById(dishId).populate('products.product');
+    if (!dish) return [{ issue: 'Platillo no encontrado' }];
+
+    if (!dish.isAvailable) {
+        return [{ dish: dish.name, issue: 'El platillo no está disponible actualmente' }];
+    }
+
+    if (!dish.products.length) return null;
+
+    const shortages = [];
+    for (const item of dish.products) {
+        const product = item.product;
+        if (!product) continue;
+        if (!product.isActive) {
+            shortages.push({ name: product.name, issue: 'Insumo inactivo' });
+            continue;
+        }
+        const required = (item.quantity || 1) * orderQuantity;
+        if (product.stock < required) {
+            shortages.push({
+                name: product.name,
+                required,
+                available: product.stock,
+                issue: `Stock insuficiente (disponible: ${product.stock}, requerido: ${required})`
+            });
+        }
+    }
+
+    return shortages.length ? shortages : null;
+};
+
+/**
+ * Descuenta stock y actualiza isAvailable del plato tras confirmar la orden.
+ */
+const deductStockForDish = async (dishId, orderQuantity) => {
+    const dish = await Dish.findById(dishId).populate('products.product');
+    if (!dish || !dish.products.length) return;
+
+    for (const item of dish.products) {
+        const product = item.product;
+        if (!product) continue;
+        const totalConsumed = (item.quantity || 1) * orderQuantity;
+        product.stock = Math.max(0, product.stock - totalConsumed);
+        await product.save();
+    }
+
+    const stillAvailable = dish.products.every((item) => {
+        const p = item.product;
+        return p && p.isActive && p.stock >= (item.quantity || 1);
+    });
+    if (dish.isAvailable !== stillAvailable) {
+        dish.isAvailable = stillAvailable;
+        await dish.save();
+    }
+};
 
 export const createOrder = async (req, res) => {
     try {
@@ -52,7 +120,7 @@ export const createOrder = async (req, res) => {
 
         let details = [];
         if (Array.isArray(items) && items.length > 0) {
-            details = [];
+            // Validar stock de todos los items antes de procesar
             for (const item of items) {
                 const { dish, quantity } = item;
 
@@ -64,6 +132,19 @@ export const createOrder = async (req, res) => {
                     return res.status(400).json({ success: false, message: `ID de platillo inválido: ${dish}` });
                 }
 
+                const stockIssues = await checkStockForOrderItem(dish, quantity);
+                if (stockIssues) {
+                    return res.status(400).json({
+                        success: false,
+                        message: `Stock insuficiente para el platillo solicitado`,
+                        stockIssues
+                    });
+                }
+            }
+
+            // Crear detalles y descontar stock
+            for (const item of items) {
+                const { dish, quantity } = item;
                 const dishData = await Dish.findById(dish);
                 if (!dishData) {
                     return res.status(404).json({ success: false, message: `Platillo no encontrado: ${dish}` });
@@ -74,6 +155,8 @@ export const createOrder = async (req, res) => {
                 const detail = new OrderDetail({ order: order._id, dish, quantity, price, subtotal });
                 await detail.save();
                 details.push(detail);
+
+                await deductStockForDish(dish, quantity);
             }
 
             const totals = calculateOrderTotals(details);
@@ -94,7 +177,6 @@ export const createOrder = async (req, res) => {
         return handleOrderError(res, error, 'Error al crear orden');
     }
 };
-
 
 export const getOrders = async (req, res) => {
     try {
@@ -172,16 +254,11 @@ export const updateOrder = async (req, res) => {
         const order = await Order.findByIdAndUpdate(
             id,
             req.body,
-            {
-                new: true,
-                runValidators: true
-            }
+            { new: true, runValidators: true }
         );
 
         if (req.body.status && req.body.status !== existingOrder.status) {
-
             const user = await User.findByPk(order.user);
-
             if (user) {
                 await sendEmail(
                     user.email,
@@ -201,7 +278,6 @@ export const updateOrder = async (req, res) => {
         return handleOrderError(res, error, 'Error al actualizar orden');
     }
 };
-
 
 export const deleteOrder = async (req, res) => {
     try {
@@ -226,13 +302,6 @@ export const deleteOrder = async (req, res) => {
     }
 };
 
-const calculateOrderTotals = (details) => {
-    const subtotal = details.reduce((acc, item) => acc + item.subtotal, 0);
-    const tax = Number((subtotal * 0.12).toFixed(2));
-    const total = Number((subtotal + tax).toFixed(2));
-    return { subtotal, tax, total };
-};
-
 export const createOrderWithDetails = async (req, res) => {
     try {
         forceOwnedRestaurantInBody(req);
@@ -243,6 +312,23 @@ export const createOrderWithDetails = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Debe enviar al menos un platillo' });
         }
 
+        // Validar stock de todos los items antes de crear la orden
+        for (const item of items) {
+            const { dish, quantity } = item;
+            if (!dish || !quantity || quantity <= 0) {
+                return res.status(400).json({ success: false, message: 'Cada item debe incluir dish y quantity válidos' });
+            }
+
+            const stockIssues = await checkStockForOrderItem(dish, quantity);
+            if (stockIssues) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Stock insuficiente para completar la orden',
+                    stockIssues
+                });
+            }
+        }
+
         const order = new Order({ user: req.body.user, restaurant, type, address, table });
         await order.save();
 
@@ -250,10 +336,6 @@ export const createOrderWithDetails = async (req, res) => {
 
         for (const item of items) {
             const { dish, quantity } = item;
-            if (!dish || !quantity || quantity <= 0) {
-                return res.status(400).json({ success: false, message: 'Cada item debe incluir dish y quantity válidos' });
-            }
-
             const dishData = await Dish.findById(dish);
             if (!dishData) {
                 return res.status(404).json({ success: false, message: `Platillo no encontrado: ${dish}` });
@@ -264,6 +346,8 @@ export const createOrderWithDetails = async (req, res) => {
             const detail = new OrderDetail({ order: order._id, dish, quantity, price, subtotal });
             await detail.save();
             details.push(detail);
+
+            await deductStockForDish(dish, quantity);
         }
 
         const totals = calculateOrderTotals(details);
@@ -284,7 +368,6 @@ export const createOrderWithDetails = async (req, res) => {
 };
 
 // ── PDF: TODAS LAS ÓRDENES ────────────────────────────────────────────────────
-// GET /order/send-pdf/all/:email
 export const sendAllOrdersPDF = async (req, res) => {
     try {
         const { email } = req.params;
@@ -316,7 +399,6 @@ export const sendAllOrdersPDF = async (req, res) => {
 };
 
 // ── PDF: ÓRDENES POR RESTAURANTE ──────────────────────────────────────────────
-// GET /order/send-pdf/restaurant/:restaurantId/:email
 export const sendOrdersByRestaurantPDF = async (req, res) => {
     try {
         const { restaurantId, email } = req.params;
@@ -349,7 +431,6 @@ export const sendOrdersByRestaurantPDF = async (req, res) => {
 };
 
 // ── PDF: ÓRDENES POR ESTADO ───────────────────────────────────────────────────
-// GET /order/send-pdf/status/:status/:email
 export const sendOrdersByStatusPDF = async (req, res) => {
     try {
         const { status, email } = req.params;
@@ -390,7 +471,6 @@ export const sendOrdersByStatusPDF = async (req, res) => {
 };
 
 // ── PDF: UNA ORDEN ESPECÍFICA ─────────────────────────────────────────────────
-// GET /order/send-pdf/:id/:email
 export const sendOrderByIdPDF = async (req, res) => {
     try {
         const { id, email } = req.params;
@@ -420,4 +500,3 @@ export const sendOrderByIdPDF = async (req, res) => {
         return res.status(500).json({ success: false, message: 'Error al enviar el PDF', error: error.message });
     }
 };
-
