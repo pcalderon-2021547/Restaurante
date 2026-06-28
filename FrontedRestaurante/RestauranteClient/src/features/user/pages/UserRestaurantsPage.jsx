@@ -9,28 +9,23 @@ export const UserRestaurantsPage = () => {
     const [query, setQuery] = useState("");
     const [onlyOpen, setOnlyOpen] = useState(false);
 
-    useEffect(() => {
-        getRestaurants();
-    }, [getRestaurants]);
-
-    useEffect(() => {
-        if (error) showError(error);
-    }, [error]);
+    useEffect(() => { getRestaurants(); }, [getRestaurants]);
+    useEffect(() => { if (error) showError(error); }, [error]);
 
     const activeRestaurants = useMemo(() => {
         const now = new Date();
         const current = now.getHours() * 60 + now.getMinutes();
 
         return restaurants
-            .filter((restaurant) => restaurant.isActive !== false)
-            .filter((restaurant) => {
-                const text = `${restaurant.name || ""} ${restaurant.description || ""} ${restaurant.address || ""}`.toLowerCase();
+            .filter((r) => r.isActive !== false)
+            .filter((r) => {
+                const text = `${r.name || ""} ${r.description || ""} ${r.address || ""}`.toLowerCase();
                 return text.includes(query.toLowerCase().trim());
             })
-            .filter((restaurant) => {
+            .filter((r) => {
                 if (!onlyOpen) return true;
-                const open = parseHour(restaurant.openingHour);
-                const close = parseHour(restaurant.closingHour);
+                const open = parseHour(r.openingHour);
+                const close = parseHour(r.closingHour);
                 if (open === null || close === null) return false;
                 return open <= close ? current >= open && current <= close : current >= open || current <= close;
             });
@@ -53,18 +48,10 @@ export const UserRestaurantsPage = () => {
             <section className="user-toolbar">
                 <label className="user-search">
                     <span>Buscar</span>
-                    <input
-                        value={query}
-                        onChange={(event) => setQuery(event.target.value)}
-                        placeholder="Nombre, direccion o descripcion"
-                    />
+                    <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Nombre, dirección o descripción" />
                 </label>
                 <label className="user-toggle">
-                    <input
-                        type="checkbox"
-                        checked={onlyOpen}
-                        onChange={(event) => setOnlyOpen(event.target.checked)}
-                    />
+                    <input type="checkbox" checked={onlyOpen} onChange={(e) => setOnlyOpen(e.target.checked)} />
                     <span>Abiertos ahora</span>
                 </label>
             </section>
@@ -72,7 +59,10 @@ export const UserRestaurantsPage = () => {
             {loading && restaurants.length === 0 ? (
                 <Spinner />
             ) : activeRestaurants.length === 0 ? (
-                <EmptyState title="No hay restaurantes para este filtro" text="Prueba cambiando la busqueda o mostrando todos los horarios." />
+                <div className="user-empty">
+                    <strong>No hay restaurantes para este filtro</strong>
+                    <p>Prueba cambiando la búsqueda o mostrando todos los horarios.</p>
+                </div>
             ) : (
                 <div className="user-card-grid">
                     {activeRestaurants.map((restaurant) => (
@@ -87,18 +77,38 @@ export const UserRestaurantsPage = () => {
 const RestaurantCard = ({ restaurant }) => {
     const navigate = useNavigate();
     const schedule = `${restaurant.openingHour || "--"} - ${restaurant.closingHour || "--"}`;
+    const imgSrc = restaurant.imageUrl || restaurant.image || null;
 
     return (
-        <article className="user-restaurant-card">
+        <article className="user-restaurant-card" style={{ overflow: "hidden" }}>
+            {/* Imagen del restaurante */}
+            {imgSrc ? (
+                <div style={{ width: "100%", height: "140px", borderRadius: "8px", overflow: "hidden", marginBottom: "12px" }}>
+                    <img
+                        src={imgSrc}
+                        alt={restaurant.name}
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        onError={(e) => { e.target.style.display = "none"; }}
+                    />
+                </div>
+            ) : (
+                <div style={{
+                    width: "100%", height: "80px", borderRadius: "8px", marginBottom: "12px",
+                    background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.08)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: "2rem", opacity: 0.3
+                }}>🍽</div>
+            )}
+
             <div className="user-card-topline">
                 <span>Restaurante</span>
                 <b>{schedule}</b>
             </div>
             <h2>{restaurant.name}</h2>
-            <p>{restaurant.description || "Sin descripcion disponible."}</p>
+            <p>{restaurant.description || "Sin descripción disponible."}</p>
             <div className="user-info-list">
-                <span><strong>Telefono</strong>{restaurant.phone || "N/A"}</span>
-                <span><strong>Direccion</strong>{restaurant.address || "No registrada"}</span>
+                <span><strong>Teléfono</strong>{restaurant.phone || "N/A"}</span>
+                <span><strong>Dirección</strong>{restaurant.address || "No registrada"}</span>
             </div>
             <button className="user-primary-btn" onClick={() => navigate(`/user/order/create/${restaurant._id}`)}>
                 Pedir ahora
@@ -107,18 +117,10 @@ const RestaurantCard = ({ restaurant }) => {
     );
 };
 
-const EmptyState = ({ title, text }) => (
-    <div className="user-empty">
-        <strong>{title}</strong>
-        <p>{text}</p>
-    </div>
-);
-
 const parseHour = (value) => {
     if (!value || typeof value !== "string") return null;
     const [hours, minutes = "0"] = value.split(":");
-    const parsedHours = Number(hours);
-    const parsedMinutes = Number(minutes);
-    if (Number.isNaN(parsedHours) || Number.isNaN(parsedMinutes)) return null;
-    return parsedHours * 60 + parsedMinutes;
+    const h = Number(hours), m = Number(minutes);
+    if (Number.isNaN(h) || Number.isNaN(m)) return null;
+    return h * 60 + m;
 };

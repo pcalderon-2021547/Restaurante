@@ -151,6 +151,17 @@ export const UserMenusPage = () => {
                                 const menuDishes = resolveMenuDishes(menu);
                                 return (
                                     <article key={menu._id} className="user-menu-card interactive" onClick={() => setSelectedMenu(menu)}>
+                                        {/* Imagen del menú */}
+                                        {(menu.imageUrl || menu.image) && (
+                                            <div style={{ width: "100%", height: "120px", borderRadius: "8px", overflow: "hidden", marginBottom: "10px" }}>
+                                                <img
+                                                    src={menu.imageUrl || menu.image}
+                                                    alt={menu.name}
+                                                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                                    onError={(e) => { e.target.parentElement.style.display = "none"; }}
+                                                />
+                                            </div>
+                                        )}
                                         <div className="user-card-topline">
                                             <span>{menu.type || "General"}</span>
                                             <b>{menuDishes.length || menu.dishes?.length || 0} platos</b>
@@ -246,6 +257,15 @@ const MenuDetailModal = ({ menu, restaurantName, dishes, onClose, onAddDish, onO
         <div className="user-modal-backdrop" onClick={onClose}>
             <section className="menu-detail-modal" onClick={(event) => event.stopPropagation()}>
                 <header>
+                    {(menu.imageUrl || menu.image) && (
+                        <div style={{ width: "100%", height: "160px", borderRadius: "10px", overflow: "hidden", marginBottom: "16px" }}>
+                            <img
+                                src={menu.imageUrl || menu.image}
+                                alt={menu.name}
+                                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                            />
+                        </div>
+                    )}
                     <div>
                         <p className="user-kicker">{restaurantName}</p>
                         <h2>{menu.name}</h2>

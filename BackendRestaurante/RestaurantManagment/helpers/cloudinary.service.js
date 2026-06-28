@@ -8,17 +8,23 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-export const uploadImage = async (filePath, publicId) => {
+export const uploadImage = async (filePath, publicId, extraOptions = {}) => {
   try {
-  const folder = process.env.CLOUDINARY_FOLDER;
+    const folder = process.env.CLOUDINARY_FOLDER;
     const options = {
       public_id: publicId,
       folder,
       resource_type: 'image',
-      transformation: [
-        { width: 400, height: 400, crop: 'fill', gravity: 'face' },
-        { quality: 'auto', fetch_format: 'auto' },
-      ],
+      transformation: extraOptions.isAvatar
+        ? [
+            { width: 400, height: 400, crop: 'fill', gravity: 'face' },
+            { quality: 'auto', fetch_format: 'auto' },
+          ]
+        : [
+            { width: 800, height: 600, crop: 'limit' },
+            { quality: 'auto', fetch_format: 'auto' },
+          ],
+      ...extraOptions,
     };
 
     const result = await cloudinary.uploader.upload(filePath, options);

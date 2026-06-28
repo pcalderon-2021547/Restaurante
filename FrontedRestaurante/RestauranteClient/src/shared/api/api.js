@@ -12,9 +12,6 @@ const axiosAuth = axios.create({
 const axiosAdmin = axios.create({
     baseURL: import.meta.env.VITE_ADMIN_URL,
     timeout: 8000,
-    headers: {
-        "Content-Type": "application/json"
-    }
 });
 
 axiosAuth.interceptors.request.use((config) => {
