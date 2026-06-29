@@ -100,4 +100,4 @@ C:\Restaurante\tmp\auth-build-check\AuthService.Persistence.deps.json
 C:\Restaurante\tmp\auth-build-check\AuthService.Persistence.runtimeconfig.json
 C:\Restaurante\tmp\auth-build-check\AuthService.Persistence.dll
 C:\Restaurante\tmp\auth-build-check\AuthService.Persistence.pdb
-C:\Restaurante\authentication-service\auth-service\src\AuthService.Persistence\obj\Debug\net8.0\AuthServ.5D1D95C4.Up2Date
+C:\Restaurante\authentication-service\auth-service\src\AuthService.Persistence\obj\Debug\net8.0\AuthService.Persistence.csproj.CopyComplete

@@ -49,13 +49,14 @@ public static class SecurityExtensions
         }
 
         var dataProtectionBuilder = services.AddDataProtection()
-                .PersistKeysToFileSystem(keysDirectory)
                 .SetApplicationName("AuthDotnetApi")
                 .SetDefaultKeyLifetime(TimeSpan.FromDays(90));
 
         // En producción, configurar encriptación con certificado
         if (environment.IsProduction())
         {
+            dataProtectionBuilder.PersistKeysToFileSystem(keysDirectory);
+
             // En producción deberías usar un certificado real
             // dataProtectionBuilder.ProtectKeysWithCertificate("thumbprint");
             if (OperatingSystem.IsWindows())
@@ -66,9 +67,18 @@ public static class SecurityExtensions
         }
         else
         {
-            // En desarrollo, usar DPAPI (solo Windows) o sin encriptación
-            // En desarrollo se usan claves locales sin DPAPI para evitar llaves rotas
-            // cuando el proyecto se ejecuta con otro usuario o contexto de Windows.
+            // En desarrollo se limpian las claves persistidas previas para evitar
+            // fallos al intentar descifrar archivos generados con otro usuario o contexto de Windows.
+            if (keysDirectory.Exists)
+            {
+                foreach (var file in keysDirectory.GetFiles("*.xml", SearchOption.TopDirectoryOnly))
+                {
+                    file.Delete();
+                }
+            }
+
+            dataProtectionBuilder.PersistKeysToFileSystem(keysDirectory);
+
             if (OperatingSystem.IsWindows())
             {
                 dataProtectionBuilder.ProtectKeysWithDpapi();

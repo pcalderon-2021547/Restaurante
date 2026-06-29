@@ -9,6 +9,14 @@ using Microsoft.AspNetCore.Hosting.Server.Features;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var configuredUrls = builder.Configuration["Urls"];
+if (string.IsNullOrWhiteSpace(configuredUrls))
+{
+    configuredUrls = "http://127.0.0.1:5199";
+}
+
+builder.WebHost.UseUrls(configuredUrls);
+
 // FIX: Bypass SSL (Cloudinary, etc.)
 System.Net.ServicePointManager.ServerCertificateValidationCallback += (sender, certificate, chain, sslPolicyErrors) => true;
 
