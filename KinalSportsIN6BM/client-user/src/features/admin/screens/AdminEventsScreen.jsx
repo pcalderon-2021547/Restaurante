@@ -1,25 +1,38 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Modal, TextInput, Alert } from "react-native";
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Modal, TextInput, Alert, ScrollView } from "react-native";
 import { COLORS, SPACING, FONT_SIZE } from "../../../shared/constants/theme";
 import { Card, LoadingSpinner, EmptyState } from "../../../shared/components/Common";
 import Button from "../../../shared/components/Button";
 import userClient from "../../../shared/api/userClient";
 import { MaterialIcons } from "@expo/vector-icons";
 
+const STATUSES = [
+  { key: "active", label: "Activo" },
+  { key: "finished", label: "Finalizado" },
+  { key: "cancelled", label: "Cancelado" },
+];
+
 const AdminEventsScreen = () => {
   const [items, setItems] = useState([]);
+  const [restaurants, setRestaurants] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editing, setEditing] = useState(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState("");
+  const [restaurantId, setRestaurantId] = useState("");
+  const [status, setStatus] = useState("active");
 
   const fetch = useCallback(async () => {
     setLoading(true);
     try {
-      const { data } = await userClient.get("/event");
-      if (data.success) setItems(data.events);
+      const [eRes, rRes] = await Promise.all([
+        userClient.get("/event"),
+        userClient.get("/restaurant"),
+      ]);
+      if (eRes.data.success) setItems(eRes.data.events);
+      if (rRes.data.success) setRestaurants(rRes.data.restaurants);
     } catch (err) {
       Alert.alert("Error", err.response?.data?.message || "Error al cargar");
     } finally {
@@ -30,19 +43,30 @@ const AdminEventsScreen = () => {
   useEffect(() => { fetch(); }, [fetch]);
 
   const openCreate = () => {
-    setEditing(null); setName(""); setDescription(""); setDate("");
+    setEditing(null);
+    setName(""); setDescription(""); setDate(""); setRestaurantId(""); setStatus("active");
     setModalVisible(true);
   };
 
   const openEdit = (item) => {
-    setEditing(item); setName(item.name); setDescription(item.description || "");
+    setEditing(item);
+    setName(item.name); setDescription(item.description || "");
     setDate(item.date ? new Date(item.date).toISOString().slice(0, 16) : "");
+    setRestaurantId(item.restaurant?._id || item.restaurant || "");
+    setStatus(item.status || "active");
     setModalVisible(true);
   };
 
   const handleSave = async () => {
     if (!name.trim() || !date) { Alert.alert("Error", "Nombre y fecha obligatorios"); return; }
-    const body = { name: name.trim(), description: description.trim(), date: new Date(date).toISOString() };
+    if (!restaurantId) { Alert.alert("Error", "Debes seleccionar un restaurante"); return; }
+    const body = {
+      name: name.trim(),
+      description: description.trim(),
+      date: new Date(date).toISOString(),
+      restaurant: restaurantId,
+      status,
+    };
     try {
       if (editing) {
         await userClient.put(`/event/${editing._id}`, body);
@@ -72,6 +96,8 @@ const AdminEventsScreen = () => {
     return dt.toLocaleDateString("es-GT", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
   };
 
+  const restName = (id) => restaurants.find(r => r._id === id)?.name || "—";
+
   if (loading && !items.length) return <LoadingSpinner />;
 
   return (
@@ -87,11 +113,12 @@ const AdminEventsScreen = () => {
               </View>
               <View style={styles.info}>
                 <Text style={styles.name}>{item.name}</Text>
+                <Text style={styles.restLabel}>{restName(item.restaurant?._id || item.restaurant)}</Text>
                 <Text style={styles.date}>{fmtDate(item.date)}</Text>
                 {item.description && <Text style={styles.desc} numberOfLines={2}>{item.description}</Text>}
-                <View style={[styles.statusBadge, item.status === "active" ? styles.active : styles.inactive]}>
-                  <Text style={[styles.statusText, { color: item.status === "active" ? COLORS.success : COLORS.error }]}>
-                    {item.status === "active" ? "Activo" : "Inactivo"}
+                <View style={[styles.statusBadge, { backgroundColor: item.status === "active" ? COLORS.success + "20" : item.status === "finished" ? COLORS.secondary + "20" : COLORS.error + "20" }]}>
+                  <Text style={[styles.statusText, { color: item.status === "active" ? COLORS.success : item.status === "finished" ? COLORS.secondary : COLORS.error }]}>
+                    {item.status === "active" ? "Activo" : item.status === "finished" ? "Finalizado" : "Cancelado"}
                   </Text>
                 </View>
               </View>
@@ -119,19 +146,51 @@ const AdminEventsScreen = () => {
 
       <Modal visible={modalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <View style={styles.modal}>
+          <ScrollView style={styles.modal}>
             <Text style={styles.modalTitle}>{editing ? "Editar" : "Nuevo"} evento</Text>
-            <Text style={styles.label}>Nombre</Text>
+
+            <Text style={styles.label}>Restaurante *</Text>
+            {restaurants.length === 0 ? (
+              <Text style={styles.loadingText}>Cargando restaurantes...</Text>
+            ) : (
+              <View style={styles.chipRow}>
+                {restaurants.map(r => (
+                  <TouchableOpacity
+                    key={r._id}
+                    style={[styles.chip, restaurantId === r._id && styles.chipActive]}
+                    onPress={() => setRestaurantId(r._id)}
+                  >
+                    <Text style={[styles.chipText, restaurantId === r._id && styles.chipTextActive]}>{r.name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+
+            <Text style={styles.label}>Nombre *</Text>
             <TextInput style={styles.input} value={name} onChangeText={setName} />
-            <Text style={styles.label}>Descripción</Text>
+            <Text style={styles.label}>Descripción *</Text>
             <TextInput style={[styles.input, { minHeight: 60 }]} value={description} onChangeText={setDescription} multiline />
-            <Text style={styles.label}>Fecha y hora</Text>
+            <Text style={styles.label}>Fecha y hora *</Text>
             <TextInput style={styles.input} value={date} onChangeText={setDate} placeholder="2026-07-15T19:00" />
+
+            <Text style={styles.label}>Estado</Text>
+            <View style={styles.chipRow}>
+              {STATUSES.map(s => (
+                <TouchableOpacity
+                  key={s.key}
+                  style={[styles.chip, status === s.key && styles.chipActive]}
+                  onPress={() => setStatus(s.key)}
+                >
+                  <Text style={[styles.chipText, status === s.key && styles.chipTextActive]}>{s.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
             <View style={styles.modalBtns}>
               <Button title="Cancelar" variant="secondary" onPress={() => setModalVisible(false)} style={{ flex: 1 }} />
               <Button title="Guardar" onPress={handleSave} style={{ flex: 1 }} />
             </View>
-          </View>
+          </ScrollView>
         </View>
       </Modal>
     </View>
@@ -148,20 +207,25 @@ const styles = StyleSheet.create({
   iconBox: { width: 44, height: 44, borderRadius: 10, backgroundColor: COLORS.primary + "15", justifyContent: "center", alignItems: "center" },
   info: { flex: 1 },
   name: { fontSize: FONT_SIZE.md, fontWeight: "700", color: COLORS.text },
+  restLabel: { fontSize: 11, color: COLORS.primary, fontWeight: "600", marginTop: 2 },
   date: { fontSize: FONT_SIZE.sm, color: COLORS.secondary, marginTop: 2 },
   desc: { fontSize: FONT_SIZE.sm, color: COLORS.text, marginTop: 4 },
   statusBadge: { alignSelf: "flex-start", paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4, marginTop: 4 },
-  active: { backgroundColor: COLORS.success + "20" },
-  inactive: { backgroundColor: COLORS.error + "20" },
   statusText: { fontSize: 11, fontWeight: "600" },
   actions: { gap: 8 },
   actionBtn: { padding: 6 },
   modalOverlay: { flex: 1, justifyContent: "center", backgroundColor: "rgba(0,0,0,0.5)", padding: SPACING.lg },
   modal: { backgroundColor: COLORS.surface, borderRadius: 16, padding: SPACING.lg },
   modalTitle: { fontSize: FONT_SIZE.xl, fontWeight: "700", color: COLORS.text, marginBottom: SPACING.lg },
-  label: { fontSize: FONT_SIZE.sm, fontWeight: "600", color: COLORS.text, marginTop: SPACING.sm, marginBottom: 4 },
+  label: { fontSize: FONT_SIZE.sm, fontWeight: "600", color: COLORS.text, marginTop: SPACING.md, marginBottom: 4 },
   input: { backgroundColor: COLORS.background, borderWidth: 1, borderColor: COLORS.border, borderRadius: 8, padding: SPACING.md, fontSize: FONT_SIZE.md, color: COLORS.text },
-  modalBtns: { flexDirection: "row", gap: SPACING.md, marginTop: SPACING.lg },
+  loadingText: { fontSize: FONT_SIZE.sm, color: COLORS.secondary, fontStyle: "italic" },
+  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+  chip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: COLORS.background, borderWidth: 1, borderColor: COLORS.border },
+  chipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  chipText: { fontSize: 12, color: COLORS.text, fontWeight: "500" },
+  chipTextActive: { color: "#fff", fontWeight: "700" },
+  modalBtns: { flexDirection: "row", gap: SPACING.md, marginTop: SPACING.xl, marginBottom: SPACING.lg },
 });
 
 export default AdminEventsScreen;
