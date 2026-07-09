@@ -55,7 +55,7 @@ const LoginScreen = ({ navigation }) => {
                 keyboardShouldPersistTaps="handled"
             >
                 <AuthHeader
-                    eyebrow="Panel del jugador"
+                    eyebrow="Sistema de administración"
                     title={"Bienvenido\nde nuevo."}
                 />
 

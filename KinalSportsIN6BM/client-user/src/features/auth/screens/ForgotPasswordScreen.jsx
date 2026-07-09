@@ -23,13 +23,19 @@ const ForgotPasswordScreen = ({ navigation }) => {
 
     const onSubmit = async ({ email }) => {
         try {
-            await handleForgotPassword(email);
-            Alert.alert(
-                "Correo enviado",
-                "Si el correo existe, recibiras instrucciones para restablecer tu contrasena.",
-                [{ text: "OK", onPress: () => navigation.navigate("Login") }]
-            );
-            reset();
+            const response = await handleForgotPassword(email);
+            if (response?.success) {
+                Alert.alert(
+                    "Correo de recuperación enviado",
+                    "Revisa tu bandeja para continuar.",
+                    [{ text: "OK", onPress: () => {
+                        reset();
+                        navigation.navigate("Login");
+                    } }]
+                );
+            } else {
+                Alert.alert("Error", response?.message || "Error al enviar correo");
+            }
         } catch (error) {
             const message = extractErrorMessage(error, "Error al enviar el correo");
             Alert.alert("Error", message);
@@ -46,8 +52,8 @@ const ForgotPasswordScreen = ({ navigation }) => {
                 keyboardShouldPersistTaps="handled"
             >
                 <AuthHeader
-                    eyebrow="Recuperacion de acceso"
-                    title={"Restablecer\ncontrasena."}
+                    eyebrow="Recuperación de acceso"
+                    title={"Restablecer\ncontraseña."}
                 />
 
                 <View style={styles.card}>
@@ -58,7 +64,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
                             required: "El correo es obligatorio",
                             pattern: {
                                 value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                                message: "Ingresa un correo valido",
+                                message: "Ingresa un correo válido",
                             },
                         }}
                         render={({ field: { onChange, value } }) => (

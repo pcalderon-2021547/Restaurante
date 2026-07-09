@@ -24,27 +24,38 @@ const RegisterScreen = ({ navigation }) => {
     const {
         control,
         handleSubmit,
+        watch,
         formState: { errors },
+        reset,
     } = useForm({
         defaultValues: {
             name: "",
             surname: "",
             username: "",
             email: "",
-            password: "",
             phone: "",
+            password: "",
+            confirmPassword: "",
         },
     });
 
+    const password = watch("password");
+
     const onSubmit = async (data) => {
         try {
-            await handleRegister(data);
-
-            Alert.alert(
-                "Registro exitoso",
-                "Tu cuenta ha sido creada. Ahora puedes iniciar sesion",
-                [{ text: "OK", onPress: () => navigation.navigate("Login") }]
-            );
+            const response = await handleRegister(data);
+            if (response?.success) {
+                Alert.alert(
+                    "Cuenta creada",
+                    "Revisa tu correo para verificarla.",
+                    [{ text: "OK", onPress: () => {
+                        reset();
+                        navigation.navigate("Login");
+                    } }]
+                );
+            } else {
+                Alert.alert("Error", response?.message || "Error al registrarse");
+            }
         } catch (error) {
             console.error(error);
             const message = extractErrorMessage(error, "Error al registrarse");
@@ -61,13 +72,13 @@ const RegisterScreen = ({ navigation }) => {
                 contentContainerStyle={styles.scrollContent}
                 keyboardShouldPersistTaps="handled"
             >
-                <AuthHeader eyebrow="Unete al sistema" title={"Crea tu\ncuenta."} />
+                <AuthHeader eyebrow="Únete al sistema" title={"Crea tu\ncuenta."} />
 
                 <View style={styles.card}>
                     <Controller
                         control={control}
                         name="name"
-                        rules={{ required: "Nombre requerido" }}
+                        rules={{ required: "Requerido" }}
                         render={({ field: { onChange, value } }) => (
                             <AuthInput
                                 label="Nombre"
@@ -82,7 +93,7 @@ const RegisterScreen = ({ navigation }) => {
                     <Controller
                         control={control}
                         name="surname"
-                        rules={{ required: "Apellido requerido" }}
+                        rules={{ required: "Requerido" }}
                         render={({ field: { onChange, value } }) => (
                             <AuthInput
                                 label="Apellido"
@@ -97,7 +108,10 @@ const RegisterScreen = ({ navigation }) => {
                     <Controller
                         control={control}
                         name="username"
-                        rules={{ required: "Usuario requerido" }}
+                        rules={{
+                            required: "El usuario es requerido",
+                            minLength: { value: 3, message: "Mínimo 3 caracteres" },
+                        }}
                         render={({ field: { onChange, value } }) => (
                             <AuthInput
                                 label="Usuario"
@@ -114,10 +128,10 @@ const RegisterScreen = ({ navigation }) => {
                         control={control}
                         name="phone"
                         rules={{
-                            required: "Telefono requerido",
+                            required: "El teléfono es requerido",
                             pattern: {
                                 value: /^\d{8}$/,
-                                message: "Debe tener exactamente 8 digitos",
+                                message: "Debe tener 8 dígitos",
                             },
                         }}
                         render={({ field: { onChange, value } }) => (
@@ -136,10 +150,10 @@ const RegisterScreen = ({ navigation }) => {
                         control={control}
                         name="email"
                         rules={{
-                            required: "Email requerido",
+                            required: "El correo es requerido",
                             pattern: {
-                                value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                                message: "Email invalido",
+                                value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                                message: "Correo inválido",
                             },
                         }}
                         render={({ field: { onChange, value } }) => (
@@ -159,8 +173,8 @@ const RegisterScreen = ({ navigation }) => {
                         control={control}
                         name="password"
                         rules={{
-                            required: "Contrasena requerida",
-                            minLength: { value: 8, message: "Minimo 8 caracteres" },
+                            required: "La contraseña es requerida",
+                            minLength: { value: 8, message: "Mínimo 8 caracteres" },
                         }}
                         render={({ field: { onChange, value } }) => (
                             <AuthInput
@@ -175,8 +189,28 @@ const RegisterScreen = ({ navigation }) => {
                         )}
                     />
 
+                    <Controller
+                        control={control}
+                        name="confirmPassword"
+                        rules={{
+                            required: "Confirma tu contraseña",
+                            validate: (value) => value === password || "Las contraseñas no coinciden",
+                        }}
+                        render={({ field: { onChange, value } }) => (
+                            <AuthInput
+                                label="Confirmar"
+                                placeholder="••••••••"
+                                secureTextEntry
+                                autoCapitalize="none"
+                                value={value}
+                                onChangeText={onChange}
+                                error={errors.confirmPassword?.message}
+                            />
+                        )}
+                    />
+
                     <AuthButton
-                        title={loading ? "Creando cuenta..." : "Registrarse"}
+                        title={loading ? "Creando cuenta..." : "Crear cuenta"}
                         onPress={handleSubmit(onSubmit)}
                         loading={loading}
                         style={styles.submitButton}

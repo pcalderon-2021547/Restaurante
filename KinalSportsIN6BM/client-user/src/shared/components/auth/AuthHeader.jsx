@@ -13,7 +13,7 @@ const AuthHeader = ({ eyebrow, title }) => (
     <View style={styles.container}>
         <View style={styles.brandRow}>
             <Image source={kinalSportsLogo} style={styles.logo} resizeMode="contain" />
-            <Text style={styles.brand}>Kinal Sports</Text>
+            <Text style={styles.brand}>Gestión Restaurante</Text>
         </View>
 
         <Text style={styles.eyebrow}>{eyebrow}</Text>
@@ -21,7 +21,7 @@ const AuthHeader = ({ eyebrow, title }) => (
 
         <View style={styles.ruleRow}>
             <View style={styles.rule} />
-            <Text style={styles.ruleLabel}>Acceso de jugadores</Text>
+            <Text style={styles.ruleLabel}>Acceso restringido</Text>
         </View>
     </View>
 );

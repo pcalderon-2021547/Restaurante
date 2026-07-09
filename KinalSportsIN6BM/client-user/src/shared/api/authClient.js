@@ -39,6 +39,7 @@ authClient.interceptors.response.use(
         const isAuthEndpoint =
             requestUrl.includes("/login") ||
             requestUrl.includes("/register") ||
+            requestUrl.includes("/request-reset") ||
             requestUrl.includes("/forgot-password") ||
             requestUrl.includes("/reset-password") ||
             requestUrl.includes("/verify-email") ||
