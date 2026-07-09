@@ -3,11 +3,13 @@ import { View, ActivityIndicator, StyleSheet } from "react-native"
 import { COLORS } from "../shared/constants/theme"
 import AuthStack from "./AuthStack"
 import MainTabs from "./MainTabs"
+import AdminTabs from "./AdminTabs"
 import { useAuthStore } from "../shared/store/authStore"
 
 const AppNavigator = () => {
 
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+    const user = useAuthStore((state) => state.user);
     const isHydrated = useAuthStore((state) => state._hasHydrated)
 
     if(!isHydrated) {
@@ -18,9 +20,11 @@ const AppNavigator = () => {
         )
     }
 
+    const isAdmin = user?.role === 'ADMIN_ROLE';
+
     return (
         <NavigationContainer>
-            {isAuthenticated ? <MainTabs /> : <AuthStack />}
+            {isAuthenticated ? (isAdmin ? <AdminTabs /> : <MainTabs />) : <AuthStack />}
         </NavigationContainer>
     )
 }

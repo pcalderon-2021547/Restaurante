@@ -25,10 +25,13 @@ export const useAuth = () => {
             const rawIdentifier = data.emailOrUsername || data.email || data.username || "";
             const normalizedEmail = rawIdentifier.includes("@") ? rawIdentifier : "";
 
-            const response = await authClient.post("/login", {
+            const body = {
                 emailOrUsername: rawIdentifier,
                 password: data.password,
-            });
+            };
+            if (data.emailToken) body.emailToken = data.emailToken;
+
+            const response = await authClient.post("/login", body);
 
             const { token, accessToken, refreshToken, userDetails, user } = response.data;
             const mappedAccessToken = token || accessToken;

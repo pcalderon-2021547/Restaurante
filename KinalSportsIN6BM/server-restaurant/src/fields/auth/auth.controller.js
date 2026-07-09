@@ -127,6 +127,9 @@ export const register = async (req, res) => {
       avatar: avatarPublicId
     });
 
+    const origin = process.env.NODE_ENV === 'development' ? 'http://192.168.1.24:3010' : 'https://tudominio.com';
+    const verifyLink = `${origin}/restaurantManagement/v1/auth/verify-email?token=${emailToken}`;
+
     try {
       await sendEmail(
         email,
@@ -139,14 +142,16 @@ export const register = async (req, res) => {
         message: 'Usuario creado. Revisa tu correo para verificar tu cuenta.'
       });
     } catch (mailError) {
-      console.warn('Unable to send verification email, auto-verifying local account:', mailError.message || mailError);
-      user.emailVerified = true;
-      user.emailToken = null;
-      await user.save();
+      console.warn('Unable to send verification email:', mailError.message || mailError);
+      console.log('--- EMAIL TOKEN FOR DEV ---');
+      console.log(`Email: ${email}, Token: ${emailToken}`);
+      console.log('Use this token in the login screen to verify your email.');
 
       return res.status(201).json({
         success: true,
-        message: 'Usuario creado y verificado automáticamente para pruebas locales.'
+        message: 'Usuario creado. El envío de correo falló — usa el token devuelto.',
+        devToken: emailToken,
+        email: email
       });
     }
   } catch (error) {
@@ -161,7 +166,7 @@ export const login = async (req, res) => {
     try {
 
         const identifier = (req.body.emailOrUsername || req.body.email || req.body.username || '').trim();
-        const { password } = req.body;
+        const { password, emailToken } = req.body;
 
         if (!identifier || !password) {
             return res.status(400).json({
@@ -183,11 +188,17 @@ export const login = async (req, res) => {
             });
         }
 
-        if (!user.emailVerified) {
-            return res.status(403).json({
-                success: false,
-                message: 'Debes verificar tu correo primero'
-            });
+        if (user.role !== 'ADMIN_ROLE' && !user.emailVerified) {
+            if (emailToken && user.emailToken === emailToken) {
+                user.emailVerified = true;
+                user.emailToken = null;
+                await user.save();
+            } else {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Debes verificar tu correo primero. Ingresa el token de verificación.'
+                });
+            }
         }
 
         const validPassword = await bcrypt.compare(password, user.password);
