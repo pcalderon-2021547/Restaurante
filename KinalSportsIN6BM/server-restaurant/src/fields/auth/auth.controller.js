@@ -127,23 +127,12 @@ export const register = async (req, res) => {
       avatar: avatarPublicId
     });
 
-    const verifyLink = `http://localhost:${process.env.PORT}/restaurantManagement/v1/auth/verify-email?token=${emailToken}`;
-
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      },
-      tls: { rejectUnauthorized: false }
-    });
-
     try {
-      await transporter.sendMail({
-        to: email,
-        subject: 'Verifica tu cuenta — Gestión Restaurante',
-        html: verifyEmailTemplate(verifyLink)
-      });
+      await sendEmail(
+        email,
+        'Verifica tu cuenta — Gestión Restaurante',
+        verifyEmailTemplate(verifyLink)
+      );
 
       return res.status(201).json({
         success: true,

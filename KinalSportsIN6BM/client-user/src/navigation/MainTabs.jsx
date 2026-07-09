@@ -4,25 +4,23 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { COLORS } from "../shared/constants/theme";
 import { MaterialIcons } from "@expo/vector-icons";
 
-// Screen imports
-import FieldsScreen from "../features/fields/screens/FieldsScreen";
+import HomeScreen from "../features/home/screens/HomeScreen";
+import RestaurantDetailScreen from "../features/home/screens/RestaurantDetailScreen";
 import ProfileScreen from "../features/profile/screens/ProfileScreen";
-import FieldDetailScreen from "../features/fields/screens/FieldDetailScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
-// Stacks for nested navigation
-const FieldsStack = () => (
+const HomeStack = () => (
     <Stack.Navigator>
         <Stack.Screen
-            name="FieldsList"
-            component={FieldsScreen}
-            options={{ title: "Canchas" }}
+            name="HomeList"
+            component={HomeScreen}
+            options={{ title: "Restaurantes" }}
         />
         <Stack.Screen
-            name="FieldDetail"
-            component={FieldDetailScreen}
+            name="RestaurantDetail"
+            component={RestaurantDetailScreen}
             options={{ title: "Detalle" }}
         />
     </Stack.Navigator>
@@ -45,10 +43,7 @@ const MainTabs = () => {
                 },
                 tabBarIcon: ({ color, size }) => {
                     let iconName;
-                    if (route.name === "Fields") iconName = "sports-soccer";
-                    else if (route.name === "Teams") iconName = "groups";
-                    else if (route.name === "Tournaments") iconName = "emoji-events";
-                    else if (route.name === "Reservations") iconName = "event";
+                    if (route.name === "Home") iconName = "restaurant";
                     else if (route.name === "Profile") iconName = "person";
 
                     return <MaterialIcons name={iconName} size={size} color={color} />;
@@ -56,9 +51,9 @@ const MainTabs = () => {
             })}
         >
             <Tab.Screen
-                name="Fields"
-                component={FieldsStack}
-                options={{ title: "Canchas" }}
+                name="Home"
+                component={HomeStack}
+                options={{ title: "Inicio" }}
             />
             <Tab.Screen
                 name="Profile"

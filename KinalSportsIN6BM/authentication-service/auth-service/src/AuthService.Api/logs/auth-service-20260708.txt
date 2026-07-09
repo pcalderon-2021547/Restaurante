@@ -313,3 +313,10 @@ System.UnauthorizedAccessException: Invalid credentials
 [2026-07-08 19:35:08 INF] Database initialization completed successfully {"SourceContext":"Program"}
 [2026-07-08 19:35:08 INF] AuthService API is running at http://0.0.0.0:5156. Health endpoint: http://0.0.0.0:5156/health {"SourceContext":"Program"}
 [2026-07-08 19:38:17 INF] HTTP GET /health responded 200 in 59.0572 ms {"SourceContext":"Serilog.AspNetCore.RequestLoggingMiddleware","RequestId":"0HNMTBB02RGRO:00000001","ConnectionId":"0HNMTBB02RGRO"}
+[2026-07-08 19:50:48 INF] Checking database connection... {"SourceContext":"Program"}
+[2026-07-08 19:50:48 INF] Database ready. Running seed data... {"SourceContext":"Program"}
+[2026-07-08 19:50:48 INF] Database initialization completed successfully {"SourceContext":"Program"}
+[2026-07-08 19:50:48 INF] AuthService API is running at http://0.0.0.0:5156. Health endpoint: http://0.0.0.0:5156/health {"SourceContext":"Program"}
+[2026-07-08 19:51:27 INF] User login succeeded {"EventId":{"Id":1002,"Name":"LogUserLoggedIn"},"SourceContext":"AuthService.Application.Services.AuthService","ActionId":"0000a5a5-d61a-4503-a110-b31f0dcff390","ActionName":"AuthService.Api.Controllers.AuthController.Login (AuthService.Api)","RequestId":"0HNMTBIBA2LVB:00000001","RequestPath":"/api/v1/auth/login","ConnectionId":"0HNMTBIBA2LVB"}
+[2026-07-08 19:51:27 INF] HTTP POST /api/v1/auth/login responded 200 in 570.9765 ms {"SourceContext":"Serilog.AspNetCore.RequestLoggingMiddleware","RequestId":"0HNMTBIBA2LVB:00000001","ConnectionId":"0HNMTBIBA2LVB"}
+[2026-07-08 20:54:40 INF] HTTP POST /api/v1/auth/refresh responded 200 in 95.3716 ms {"SourceContext":"Serilog.AspNetCore.RequestLoggingMiddleware","RequestId":"0HNMTBIBA2LVC:00000001","ConnectionId":"0HNMTBIBA2LVC"}

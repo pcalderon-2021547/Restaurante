@@ -39,21 +39,24 @@ export const validateRegister = (req, res, next) => {
 };
 
 export const validateLogin = (req, res, next) => {
-    const { email, password } = req.body;
+    const identifier = req.body.emailOrUsername || req.body.email || req.body.username || '';
+    const { password } = req.body;
 
-    if (!email || !password) {
+    if (!identifier || !password) {
         return res.status(400).json({
             success: false,
-            message: 'email y password son obligatorios'
+            message: 'email o usuario y password son obligatorios'
         });
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-        return res.status(400).json({
-            success: false,
-            message: 'Formato de email inválido'
-        });
+    if (identifier.includes('@')) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(identifier)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Formato de email inválido'
+            });
+        }
     }
 
     next();
