@@ -1,195 +1,264 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
-    View,
-    Text,
-    StyleSheet,
-    ScrollView,
-    Alert,
-    Image,
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  Image,
+  TextInput,
+  TouchableOpacity,
 } from "react-native";
 import { COLORS, SPACING, FONT_SIZE } from "../../../shared/constants/theme";
 import Button from "../../../shared/components/Button";
-import { Card } from "../../../shared/components/Common";
+import { Card, LoadingSpinner } from "../../../shared/components/Common";
 import { useAuthStore } from "../../../shared/store/authStore";
 import { useProfile } from "../../home/hooks/useProfile";
-import { LoadingSpinner } from "../../../shared/components/Common";
+import authClient from "../../../shared/api/authClient";
+import { MaterialIcons } from "@expo/vector-icons";
 import avatarDefault from "../../../../assets/avatarDefault.png";
 
-const ProfileScreen = () => {
-    const { user, logout } = useAuthStore();
-    const { profile, loading, error, getProfile } = useProfile();
+const ProfileScreen = ({ navigation }) => {
+  const { user, logout } = useAuthStore();
+  const { profile, loading, getProfile } = useProfile();
 
-    useEffect(() => {
-        getProfile();
-    }, [getProfile]);
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState("");
+  const [surname, setSurname] = useState("");
+  const [phone, setPhone] = useState("");
+  const [saving, setSaving] = useState(false);
 
-    const handleLogout = () => {
-        Alert.alert("Cerrar Sesión", "¿Estás seguro que deseas salir?", [
-            { text: "Cancelar", style: "cancel" },
-            { text: "Aceptar", onPress: () => logout() },
-        ]);
-    };
+  useEffect(() => {
+    getProfile();
+  }, [getProfile]);
 
-    const p = profile || user;
+  useEffect(() => {
+    if (profile) {
+      setName(profile.name || "");
+      setSurname(profile.surname || "");
+      setPhone(profile.phone || "");
+    }
+  }, [profile]);
 
-    if (loading && !p) return <LoadingSpinner />;
+  const handleLogout = () => {
+    Alert.alert("Cerrar Sesión", "¿Estás seguro que deseas salir?", [
+      { text: "Cancelar", style: "cancel" },
+      { text: "Aceptar", onPress: () => logout() },
+    ]);
+  };
 
-    return (
-        <ScrollView style={styles.container}>
-            <View style={styles.header}>
-                <Image
-                    source={p?.avatar ? { uri: p.avatar } : avatarDefault}
-                    style={styles.avatarImage}
-                />
-                <Text style={styles.userName}>
-                    {p?.name || ""} {p?.surname || ""}
+  const handleSave = async () => {
+    if (!name.trim() || !surname.trim()) {
+      Alert.alert("Error", "Nombre y apellidos son obligatorios");
+      return;
+    }
+    setSaving(true);
+    try {
+      await authClient.put("/profile", { name: name.trim(), surname: surname.trim(), phone: phone.trim() });
+      Alert.alert("Guardado", "Perfil actualizado correctamente");
+      setEditing(false);
+      getProfile();
+    } catch (err) {
+      Alert.alert("Error", err.response?.data?.message || "No se pudo actualizar");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const p = profile || user;
+
+  if (loading && !p) return <LoadingSpinner />;
+
+  return (
+    <ScrollView style={styles.container}>
+      <View style={styles.header}>
+        <Image
+          source={p?.avatar ? { uri: p.avatar } : avatarDefault}
+          style={styles.avatarImage}
+        />
+        <Text style={styles.userName}>
+          {p?.name || ""} {p?.surname || ""}
+        </Text>
+        <Text style={styles.userHandle}>@{p?.username || ""}</Text>
+        <Text style={styles.userEmail}>{p?.email || ""}</Text>
+        <View style={styles.roleBadge}>
+          <Text style={styles.roleText}>
+            {p?.role === "ADMIN_ROLE"
+              ? "Administrador"
+              : p?.role === "ADMIN_RESTAURANT_ROLE"
+                ? "Admin. Restaurante"
+                : "Usuario"}
+          </Text>
+        </View>
+
+        <TouchableOpacity style={styles.editToggle} onPress={() => setEditing(!editing)}>
+          <MaterialIcons name={editing ? "close" : "edit"} size={18} color={COLORS.primary} />
+          <Text style={styles.editToggleText}>{editing ? "Cancelar" : "Editar perfil"}</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.content}>
+        <Card style={styles.profileCard}>
+          <Text style={styles.sectionTitle}>
+            {editing ? "Editar información" : "Información"}
+          </Text>
+
+          {editing ? (
+            <>
+              <Text style={styles.label}>Nombres</Text>
+              <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="Nombres" />
+
+              <Text style={styles.label}>Apellidos</Text>
+              <TextInput style={styles.input} value={surname} onChangeText={setSurname} placeholder="Apellidos" />
+
+              <Text style={styles.label}>Teléfono</Text>
+              <TextInput style={styles.input} value={phone} onChangeText={setPhone} placeholder="Teléfono" keyboardType="phone-pad" />
+
+              <Button title="Guardar cambios" onPress={handleSave} loading={saving} style={styles.saveBtn} />
+            </>
+          ) : (
+            <>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Nombres</Text>
+                <Text style={styles.infoValue}>{p?.name || "—"}</Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Apellidos</Text>
+                <Text style={styles.infoValue}>{p?.surname || "—"}</Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Usuario</Text>
+                <Text style={styles.infoValue}>{p?.username || "—"}</Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Email</Text>
+                <Text style={styles.infoValue}>{p?.email || "—"}</Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Verificado</Text>
+                <Text style={[styles.infoValue, p?.emailVerified ? styles.verified : styles.notVerified]}>
+                  {p?.emailVerified ? "Sí" : "No"}
                 </Text>
-                <Text style={styles.userHandle}>@{p?.username || ""}</Text>
-                <Text style={styles.userEmail}>{p?.email || ""}</Text>
-                <View style={styles.roleBadge}>
-                    <Text style={styles.roleText}>
-                        {p?.role === "ADMIN_ROLE"
-                            ? "Administrador"
-                            : p?.role === "ADMIN_RESTAURANT_ROLE"
-                                ? "Admin. Restaurante"
-                                : "Usuario"}
-                    </Text>
-                </View>
+              </View>
+            </>
+          )}
+        </Card>
+
+        {p?.role === "ADMIN_ROLE" && (
+          <TouchableOpacity onPress={() => navigation?.getParent?.()?.navigate?.("Dashboard")}>
+            <Card style={styles.linkCard}>
+              <MaterialIcons name="admin-panel-settings" size={24} color={COLORS.primary} />
+              <View style={styles.linkContent}>
+                <Text style={styles.linkTitle}>Panel de Administración</Text>
+                <Text style={styles.linkDesc}>Gestionar usuarios, restaurantes y más</Text>
+              </View>
+              <MaterialIcons name="chevron-right" size={24} color={COLORS.secondary} />
+            </Card>
+          </TouchableOpacity>
+        )}
+
+        <TouchableOpacity onPress={() => navigation?.navigate?.("MyReservations")}>
+          <Card style={styles.linkCard}>
+            <MaterialIcons name="event-note" size={24} color={COLORS.primary} />
+            <View style={styles.linkContent}>
+              <Text style={styles.linkTitle}>Mis reservaciones</Text>
+              <Text style={styles.linkDesc}>Ver historial de reservaciones</Text>
             </View>
+            <MaterialIcons name="chevron-right" size={24} color={COLORS.secondary} />
+          </Card>
+        </TouchableOpacity>
 
-            <View style={styles.content}>
-                <Card style={styles.profileCard}>
-                    <Text style={styles.sectionTitle}>Información</Text>
-                    <View style={styles.infoRow}>
-                        <Text style={styles.label}>Nombres</Text>
-                        <Text style={styles.value}>{p?.name || "—"}</Text>
-                    </View>
-                    <View style={styles.infoRow}>
-                        <Text style={styles.label}>Apellidos</Text>
-                        <Text style={styles.value}>{p?.surname || "—"}</Text>
-                    </View>
-                    <View style={styles.infoRow}>
-                        <Text style={styles.label}>Usuario</Text>
-                        <Text style={styles.value}>{p?.username || "—"}</Text>
-                    </View>
-                    <View style={styles.infoRow}>
-                        <Text style={styles.label}>Email</Text>
-                        <Text style={styles.value}>{p?.email || "—"}</Text>
-                    </View>
-                    <View style={styles.infoRow}>
-                        <Text style={styles.label}>Verificado</Text>
-                        <Text style={[styles.value, p?.emailVerified ? styles.verified : styles.notVerified]}>
-                            {p?.emailVerified ? "Sí" : "No"}
-                        </Text>
-                    </View>
-                </Card>
+        <Button title="Cerrar Sesión" variant="secondary" onPress={handleLogout} style={styles.logoutBtn} />
 
-                <View style={styles.actions}>
-                    <Button
-                        title="Cerrar Sesión"
-                        variant="secondary"
-                        onPress={handleLogout}
-                    />
-                </View>
-
-                <Text style={styles.version}>KinalSports v1.0.0</Text>
-            </View>
-        </ScrollView>
-    );
+        <Text style={styles.version}>Leña y Fuego v1.0.0</Text>
+      </View>
+    </ScrollView>
+  );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: COLORS.background,
-    },
-    header: {
-        paddingVertical: SPACING.xxl,
-        backgroundColor: COLORS.surface,
-        alignItems: "center",
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
-    },
-    avatarImage: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        backgroundColor: COLORS.white,
-        marginBottom: SPACING.md,
-        borderWidth: 2,
-        borderColor: COLORS.primary,
-    },
-    userName: {
-        fontSize: FONT_SIZE.xl,
-        fontWeight: "700",
-        color: COLORS.text,
-    },
-    userHandle: {
-        fontSize: FONT_SIZE.md,
-        color: COLORS.secondary,
-        marginTop: 2,
-    },
-    userEmail: {
-        fontSize: FONT_SIZE.sm,
-        color: COLORS.secondary,
-        marginTop: 2,
-    },
-    roleBadge: {
-        marginTop: SPACING.sm,
-        backgroundColor: COLORS.primary + "15",
-        paddingHorizontal: SPACING.md,
-        paddingVertical: 4,
-        borderRadius: 12,
-    },
-    roleText: {
-        fontSize: FONT_SIZE.xs,
-        fontWeight: "700",
-        color: COLORS.primary,
-    },
-    content: {
-        padding: SPACING.lg,
-    },
-    profileCard: {
-        marginBottom: SPACING.xl,
-    },
-    sectionTitle: {
-        fontSize: FONT_SIZE.lg,
-        fontWeight: "700",
-        color: COLORS.text,
-        marginBottom: SPACING.md,
-    },
-    infoRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        paddingVertical: SPACING.sm,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
-    },
-    label: {
-        fontSize: FONT_SIZE.md,
-        color: COLORS.secondary,
-    },
-    value: {
-        fontSize: FONT_SIZE.md,
-        fontWeight: "600",
-        color: COLORS.text,
-    },
-    verified: {
-        color: COLORS.success,
-    },
-    notVerified: {
-        color: COLORS.warning,
-    },
-    actions: {
-        marginTop: SPACING.sm,
-    },
-    version: {
-        textAlign: "center",
-        marginTop: SPACING.xxl,
-        color: COLORS.textLight,
-        paddingBottom: SPACING.xl,
-        fontSize: FONT_SIZE.xs,
-    },
+  container: { flex: 1, backgroundColor: COLORS.background },
+  header: {
+    paddingVertical: SPACING.xxl,
+    backgroundColor: COLORS.surface,
+    alignItems: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  avatarImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: COLORS.white,
+    marginBottom: SPACING.md,
+    borderWidth: 2,
+    borderColor: COLORS.primary,
+  },
+  userName: { fontSize: FONT_SIZE.xl, fontWeight: "700", color: COLORS.text },
+  userHandle: { fontSize: FONT_SIZE.md, color: COLORS.secondary, marginTop: 2 },
+  userEmail: { fontSize: FONT_SIZE.sm, color: COLORS.secondary, marginTop: 2 },
+  roleBadge: {
+    marginTop: SPACING.sm,
+    backgroundColor: COLORS.primary + "15",
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  roleText: { fontSize: FONT_SIZE.xs, fontWeight: "700", color: COLORS.primary },
+  editToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: SPACING.md,
+    padding: SPACING.sm,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+  },
+  editToggleText: { fontSize: FONT_SIZE.sm, fontWeight: "600", color: COLORS.primary },
+  content: { padding: SPACING.lg },
+  profileCard: { marginBottom: SPACING.lg },
+  sectionTitle: { fontSize: FONT_SIZE.lg, fontWeight: "700", color: COLORS.text, marginBottom: SPACING.md },
+  label: { fontSize: FONT_SIZE.sm, fontWeight: "600", color: COLORS.text, marginTop: SPACING.sm, marginBottom: 4 },
+  input: {
+    backgroundColor: COLORS.background,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 8,
+    padding: SPACING.md,
+    fontSize: FONT_SIZE.md,
+    color: COLORS.text,
+    marginBottom: SPACING.sm,
+  },
+  saveBtn: { marginTop: SPACING.md },
+  infoRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: SPACING.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  infoLabel: { fontSize: FONT_SIZE.md, color: COLORS.secondary },
+  infoValue: { fontSize: FONT_SIZE.md, fontWeight: "600", color: COLORS.text },
+  verified: { color: COLORS.success },
+  notVerified: { color: COLORS.warning },
+  linkCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.md,
+    marginBottom: SPACING.sm,
+  },
+  linkContent: { flex: 1 },
+  linkTitle: { fontSize: FONT_SIZE.md, fontWeight: "600", color: COLORS.text },
+  linkDesc: { fontSize: FONT_SIZE.xs, color: COLORS.secondary, marginTop: 2 },
+  logoutBtn: { marginTop: SPACING.lg },
+  version: {
+    textAlign: "center",
+    marginTop: SPACING.xxl,
+    color: COLORS.textLight,
+    paddingBottom: SPACING.xl,
+    fontSize: FONT_SIZE.xs,
+  },
 });
 
 export default ProfileScreen;
