@@ -127,7 +127,7 @@ export const register = async (req, res) => {
       avatar: avatarPublicId
     });
 
-    const origin = process.env.NODE_ENV === 'development' ? 'http://192.168.1.24:3010' : 'https://tudominio.com';
+    const origin = process.env.API_URL || (process.env.NODE_ENV === 'development' ? `http://localhost:${process.env.PORT || 3010}` : 'https://tudominio.com');
     const verifyLink = `${origin}/restaurantManagement/v1/auth/verify-email?token=${emailToken}`;
 
     try {
