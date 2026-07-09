@@ -76,4 +76,4 @@ C:\Restaurante\KinalSportsIN6BM\authentication-service\auth-service\src\AuthServ
 C:\Restaurante\KinalSportsIN6BM\authentication-service\auth-service\src\AuthService.Application\obj\Debug\net8.0\refint\AuthService.Application.dll
 C:\Restaurante\KinalSportsIN6BM\authentication-service\auth-service\src\AuthService.Application\obj\Debug\net8.0\AuthService.Application.pdb
 C:\Restaurante\KinalSportsIN6BM\authentication-service\auth-service\src\AuthService.Application\obj\Debug\net8.0\ref\AuthService.Application.dll
-C:\Restaurante\KinalSportsIN6BM\authentication-service\auth-service\src\AuthService.Application\obj\Debug\net8.0\AuthServ.67992DEE.Up2Date
+C:\Restaurante\KinalSportsIN6BM\authentication-service\auth-service\src\AuthService.Application\obj\Debug\net8.0\AuthService.Application.csproj.CopyComplete

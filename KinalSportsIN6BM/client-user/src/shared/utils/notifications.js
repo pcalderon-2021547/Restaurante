@@ -1,40 +1,11 @@
-import * as Notifications from "expo-notifications";
-import { Platform } from "react-native";
-
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
+import { Alert } from "react-native";
 
 export async function requestNotificationPermission() {
-  const { status: existingStatus } = await Notifications.getPermissionsAsync();
-  let finalStatus = existingStatus;
-  if (existingStatus !== "granted") {
-    const { status } = await Notifications.requestPermissionsAsync();
-    finalStatus = status;
-  }
-  if (finalStatus !== "granted") return false;
-  if (Platform.OS === "android") {
-    await Notifications.setNotificationChannelAsync("orders", {
-      name: "Pedidos",
-      importance: Notifications.AndroidImportance.HIGH,
-    });
-    await Notifications.setNotificationChannelAsync("delivery", {
-      name: "Delivery",
-      importance: Notifications.AndroidImportance.HIGH,
-    });
-  }
   return true;
 }
 
 export async function scheduleLocalNotification(title, body, data = {}) {
-  await Notifications.scheduleNotificationAsync({
-    content: { title, body, data },
-    trigger: null,
-  });
+  Alert.alert(title, body);
 }
 
 export async function notifyOrderCreated(orderId) {
