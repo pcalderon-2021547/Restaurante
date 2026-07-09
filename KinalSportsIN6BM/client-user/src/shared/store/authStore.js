@@ -2,53 +2,75 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+const decodeJwtPayload = (token) => {
+  try {
+    const payload = token.split(".")[1];
+    return JSON.parse(atob(payload));
+  } catch {
+    return {};
+  }
+};
+
 export const useAuthStore = create(
-    persist(
-        (set) => ({
-            token: null,
-            user: null,
-            isAuthenticated: false,
-            _hasHydrated: false,
+  persist(
+    (set, get) => ({
+      token: null,
+      user: null,
+      isAuthenticated: false,
+      _hasHydrated: false,
 
-            setHasHydrated: (state) => set({ _hasHydrated: state }),
+      setHasHydrated: (state) => set({ _hasHydrated: state }),
 
-            // Guarda accessToken y refreshToken seguro
-            login: async (accessToken, user, refreshToken) => {
-                set({
-                    token: accessToken,
-                    user,
-                    isAuthenticated: true,
-                });
-                if (refreshToken) {
-                    await import("expo-secure-store").then(({ setItemAsync }) =>
-                        setItemAsync("refreshToken", refreshToken),
-                    );
-                }
-            },
+      login: async (accessToken, user, refreshToken) => {
+        set({
+          token: accessToken,
+          user: user || get().user,
+          isAuthenticated: true,
+        });
+        if (refreshToken) {
+          try {
+            const { setItemAsync } = await import("expo-secure-store");
+            await setItemAsync("refreshToken", refreshToken);
+          } catch {}
+        }
+      },
 
-            // Solo actualiza el accessToken en memoria
-            setUser: (user) => set({ user }),
+      setAccessToken: (token) => set({ token }),
 
-            setAccessToken: (token) => set({ token }),
+      setUserField: (field, value) => {
+        const user = { ...get().user, [field]: value };
+        set({ user });
+      },
 
-            // Limpia todo y borra refreshToken seguro
-            logout: async () => {
-                set({
-                    token: null,
-                    user: null,
-                    isAuthenticated: false,
-                });
-                await import("expo-secure-store").then(({ deleteItemAsync }) =>
-                    deleteItemAsync("refreshToken"),
-                );
-            },
-        }),
-        {
-            name: "auth-storage",
-            storage: createJSONStorage(() => AsyncStorage),
-            onRehydrateStorage: () => (state) => {
-                state?.setHasHydrated(true);
-            },
-        },
-    ),
+      logout: async () => {
+        set({
+          token: null,
+          user: null,
+          isAuthenticated: false,
+        });
+        try {
+          const { deleteItemAsync } = await import("expo-secure-store");
+          await deleteItemAsync("refreshToken");
+        } catch {}
+      },
+    }),
+    {
+      name: "auth-storage",
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        token: state.token,
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+      }),
+      onRehydrateStorage: () => (state) => {
+        if (state?.token) {
+          const decoded = decodeJwtPayload(state.token);
+          if (decoded.exp && Date.now() >= decoded.exp * 1000) {
+            state?.logout();
+          }
+        }
+        state?.setHasHydrated(true);
+      },
+    },
+  ),
 );
