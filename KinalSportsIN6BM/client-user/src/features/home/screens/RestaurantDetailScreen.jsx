@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { View, Text, StyleSheet, Image, ScrollView, Linking, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, Image, ScrollView, Linking, TouchableOpacity, Alert } from "react-native";
 import { COLORS, SPACING, FONT_SIZE } from "../../../shared/constants/theme";
 import Button from "../../../shared/components/Button";
 import { Card, LoadingSpinner, EmptyState } from "../../../shared/components/Common";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useDishes } from "../hooks/useDishes";
 import { useReviews } from "../hooks/useReviews";
+import { useAuthStore } from "../../../shared/store/authStore";
 
 const TABS = [
   { key: "info", label: "Info", icon: "info" },
@@ -28,7 +29,7 @@ const DishItem = ({ dish }) => (
   </View>
 );
 
-const ReviewItem = ({ review }) => (
+const ReviewItem = ({ review, isOwner, onEdit, onDelete }) => (
   <View style={styles.reviewItem}>
     <View style={styles.reviewHeader}>
       <View style={styles.reviewStars}>
@@ -46,7 +47,23 @@ const ReviewItem = ({ review }) => (
       </Text>
     </View>
     {review.comment && <Text style={styles.reviewComment}>{review.comment}</Text>}
-    {review.user && <Text style={styles.reviewUser}>— {review.user?.name || review.user}</Text>}
+    {review.userName ? (
+      <Text style={styles.reviewUser}>— {review.userName}</Text>
+    ) : review.user ? (
+      <Text style={styles.reviewUser}>— {review.user?.name || review.user}</Text>
+    ) : null}
+    {isOwner && (
+      <View style={styles.reviewActions}>
+        <TouchableOpacity style={styles.reviewActionBtn} onPress={() => onEdit(review)}>
+          <MaterialIcons name="edit" size={14} color={COLORS.primary} />
+          <Text style={styles.reviewActionText}>Editar</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.reviewActionBtn} onPress={() => onDelete(review._id)}>
+          <MaterialIcons name="delete" size={14} color={COLORS.error} />
+          <Text style={[styles.reviewActionText, { color: COLORS.error }]}>Eliminar</Text>
+        </TouchableOpacity>
+      </View>
+    )}
   </View>
 );
 
@@ -148,7 +165,7 @@ const MenuSection = ({ dishes, dishesLoading, restaurantId, navigation }) => {
   );
 };
 
-const ReviewsSection = ({ reviews, loading, restaurantId, navigation }) => {
+const ReviewsSection = ({ reviews, loading, restaurantId, navigation, userId, onEditReview, onDeleteReview }) => {
   if (loading) return <LoadingSpinner />;
 
   return (
@@ -156,11 +173,19 @@ const ReviewsSection = ({ reviews, loading, restaurantId, navigation }) => {
       {reviews.length === 0 ? (
         <EmptyState message="No hay reseñas aún. ¡Sé el primero!" />
       ) : (
-        reviews.map(r => <ReviewItem key={r._id} review={r} />)
+        reviews.map(r => (
+          <ReviewItem
+            key={r._id}
+            review={r}
+            isOwner={r.user === userId || r.user?._id === userId || r.userId === userId}
+            onEdit={onEditReview}
+            onDelete={onDeleteReview}
+          />
+        ))
       )}
       <Button
         title="Escribir una reseña"
-        onPress={() => navigation.navigate("CreateReview", { restaurantId })}
+        onPress={() => navigation.navigate("CreateReview", { restaurantId, restaurant: { _id: restaurantId } })}
         style={styles.actionBtn}
       />
     </View>
@@ -169,14 +194,33 @@ const ReviewsSection = ({ reviews, loading, restaurantId, navigation }) => {
 
 const RestaurantDetailScreen = ({ route, navigation }) => {
   const { restaurant } = route.params;
+  const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState("info");
   const { dishes, loading: dishesLoading, getDishes } = useDishes();
-  const { reviews, loading: reviewsLoading, getReviews } = useReviews();
+  const { reviews, loading: reviewsLoading, getReviews, deleteReview } = useReviews();
 
   useEffect(() => {
     getDishes(restaurant._id);
     getReviews(restaurant._id);
   }, [restaurant._id]);
+
+  const handleEditReview = (review) => {
+    navigation.navigate("CreateReview", { restaurantId: restaurant._id, restaurant: { _id: restaurant._id, name: restaurant.name }, review });
+  };
+
+  const handleDeleteReview = (reviewId) => {
+    Alert.alert("Eliminar reseña", "¿Estás seguro?", [
+      { text: "Cancelar", style: "cancel" },
+      { text: "Eliminar", style: "destructive", onPress: async () => {
+        try {
+          await deleteReview(reviewId);
+          getReviews(restaurant._id);
+        } catch (err) {
+          Alert.alert("Error", err.message);
+        }
+      }},
+    ]);
+  };
 
   const openMap = () => {
     const daddr = encodeURIComponent(restaurant.address);
@@ -194,7 +238,7 @@ const RestaurantDetailScreen = ({ route, navigation }) => {
       case "menu":
         return <MenuSection dishes={dishes} dishesLoading={dishesLoading} restaurantId={restaurant._id} navigation={navigation} />;
       case "reviews":
-        return <ReviewsSection reviews={reviews} loading={reviewsLoading} restaurantId={restaurant._id} navigation={navigation} />;
+        return <ReviewsSection reviews={reviews} loading={reviewsLoading} restaurantId={restaurant._id} navigation={navigation} userId={user?._id || user?.id || user?.sub} onEditReview={handleEditReview} onDeleteReview={handleDeleteReview} />;
       default:
         return null;
     }
@@ -355,6 +399,9 @@ const styles = StyleSheet.create({
   reviewDate: { fontSize: FONT_SIZE.xs, color: COLORS.secondary },
   reviewComment: { fontSize: FONT_SIZE.md, color: COLORS.text, marginTop: SPACING.sm, lineHeight: 20 },
   reviewUser: { fontSize: FONT_SIZE.sm, color: COLORS.secondary, marginTop: SPACING.xs, fontStyle: "italic" },
+  reviewActions: { flexDirection: "row", gap: SPACING.sm, marginTop: SPACING.sm, paddingTop: SPACING.sm, borderTopWidth: 1, borderTopColor: COLORS.border },
+  reviewActionBtn: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, backgroundColor: COLORS.background },
+  reviewActionText: { fontSize: 12, fontWeight: "600", color: COLORS.primary },
   bottomBar: {
     padding: SPACING.md,
     backgroundColor: COLORS.surface,

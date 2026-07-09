@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert } from "react-native";
 import { COLORS, SPACING, FONT_SIZE } from "../../../shared/constants/theme";
 import Button from "../../../shared/components/Button";
 import { Card, LoadingSpinner } from "../../../shared/components/Common";
+import { DateInput, TimeInput } from "../../../shared/components/DateTimePicker";
 import { useTables } from "../hooks/useTables";
 import { useReservations } from "../hooks/useReservations";
 import { useAuthStore } from "../../../shared/store/authStore";
@@ -12,13 +13,14 @@ const ReservationScreen = ({ route, navigation }) => {
   const { restaurant } = route.params;
   const { user } = useAuthStore();
   const { tables, loading: tablesLoading, getTables } = useTables();
-  const { createReservation, loading: submitting } = useReservations();
+  const { createReservation, checkAvailability, loading: submitting } = useReservations();
 
   const [selectedTable, setSelectedTable] = useState(null);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [people, setPeople] = useState("2");
   const [notes, setNotes] = useState("");
+  const [conflicts, setConflicts] = useState([]);
 
   const fullName = user ? `${user.name || ""} ${user.surname || ""}`.trim() : "";
 
@@ -26,28 +28,32 @@ const ReservationScreen = ({ route, navigation }) => {
     getTables(restaurant._id);
   }, [restaurant._id]);
 
-  const availableTables = tables.filter(t => t.status === "available" || t.status === "free");
+  const availableTables = useMemo(() =>
+    tables.filter(t => t.status === "available" || t.status === "free"),
+    [tables]
+  );
+
+  useEffect(() => {
+    if (date && time && restaurant?._id) {
+      checkAvailability(restaurant._id, date, time).then(setConflicts);
+    }
+  }, [date, time, restaurant?._id]);
+
+  const isTableConflicted = (tableId) => conflicts.some(r => r.table?._id === tableId || r.table === tableId);
 
   const handleSubmit = async () => {
-    if (!selectedTable) {
-      Alert.alert("Error", "Selecciona una mesa");
-      return;
-    }
-    if (!date || !time) {
-      Alert.alert("Error", "Completa la fecha y hora");
-      return;
-    }
-    if (!people || parseInt(people) < 1) {
-      Alert.alert("Error", "Indica el número de personas");
+    if (!selectedTable) { Alert.alert("Error", "Selecciona una mesa"); return; }
+    if (!date || !time) { Alert.alert("Error", "Completa la fecha y hora"); return; }
+    if (!people || parseInt(people) < 1) { Alert.alert("Error", "Indica el número de personas"); return; }
+
+    if (isTableConflicted(selectedTable)) {
+      Alert.alert("No disponible", "La mesa seleccionada ya tiene una reservación en esa fecha y hora.");
       return;
     }
 
     const dateTimeStr = `${date}T${time}:00.000Z`;
     const parsed = new Date(dateTimeStr);
-    if (isNaN(parsed.getTime())) {
-      Alert.alert("Error", "Fecha u hora inválida");
-      return;
-    }
+    if (isNaN(parsed.getTime())) { Alert.alert("Error", "Fecha u hora inválida"); return; }
 
     try {
       await createReservation({
@@ -87,22 +93,10 @@ const ReservationScreen = ({ route, navigation }) => {
       ) : null}
 
       <Text style={styles.sectionLabel}>Fecha</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="AAAA-MM-DD"
-        placeholderTextColor={COLORS.textLight}
-        value={date}
-        onChangeText={setDate}
-      />
+      <DateInput value={date} onChange={setDate} placeholder="Seleccionar fecha" />
 
       <Text style={styles.sectionLabel}>Hora</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="HH:MM (24h)"
-        placeholderTextColor={COLORS.textLight}
-        value={time}
-        onChangeText={setTime}
-      />
+      <TimeInput value={time} onChange={setTime} placeholder="Seleccionar hora" />
 
       <Text style={styles.sectionLabel}>Personas</Text>
       <TextInput
@@ -116,41 +110,33 @@ const ReservationScreen = ({ route, navigation }) => {
 
       <Text style={styles.sectionLabel}>Selecciona una mesa</Text>
       {availableTables.length === 0 ? (
-        <Card>
-          <Text style={styles.noTables}>No hay mesas disponibles en este momento</Text>
-        </Card>
+        <Card><Text style={styles.noTables}>No hay mesas disponibles en este momento</Text></Card>
       ) : (
         <View style={styles.tableGrid}>
           {availableTables.map(table => {
             const isSelected = selectedTable === table._id;
             const fits = parseInt(people) <= table.capacity;
+            const conflicted = isTableConflicted(table._id);
             return (
               <TouchableOpacity
                 key={table._id}
                 style={[
                   styles.tableCard,
                   isSelected && styles.tableSelected,
-                  !fits && styles.tableUnsuitable,
+                  (!fits || conflicted) && styles.tableUnsuitable,
                 ]}
-                onPress={() => fits && setSelectedTable(table._id)}
-                disabled={!fits}
+                onPress={() => (fits && !conflicted) && setSelectedTable(table._id)}
+                disabled={!fits || conflicted}
               >
                 <MaterialIcons
-                  name={isSelected ? "check-circle" : "table-restaurant"}
+                  name={isSelected ? "check-circle" : conflicted ? "block" : "table-restaurant"}
                   size={24}
-                  color={isSelected ? "#fff" : fits ? COLORS.primary : COLORS.textLight}
+                  color={isSelected ? "#fff" : conflicted ? COLORS.error : fits ? COLORS.primary : COLORS.textLight}
                 />
-                <Text style={[styles.tableNumber, isSelected && styles.tableTextSelected]}>
-                  Mesa {table.number}
-                </Text>
-                <Text style={[styles.tableCap, isSelected && styles.tableTextSelected]}>
-                  {table.capacity} pers.
-                </Text>
-                {table.location && (
-                  <Text style={[styles.tableLoc, isSelected && styles.tableTextSelected]}>
-                    {table.location}
-                  </Text>
-                )}
+                <Text style={[styles.tableNumber, isSelected && styles.tableTextSelected]}>Mesa {table.number}</Text>
+                <Text style={[styles.tableCap, isSelected && styles.tableTextSelected]}>{table.capacity} pers.</Text>
+                {table.location && <Text style={[styles.tableLoc, isSelected && styles.tableTextSelected]}>{table.location}</Text>}
+                {conflicted && <Text style={styles.conflictLabel}>Ocupada</Text>}
               </TouchableOpacity>
             );
           })}
@@ -167,65 +153,32 @@ const ReservationScreen = ({ route, navigation }) => {
         multiline
       />
 
-      <Button
-        title="Confirmar reservación"
-        onPress={handleSubmit}
-        loading={submitting}
-        style={styles.submitBtn}
-      />
+      <Button title="Confirmar reservación" onPress={handleSubmit} loading={submitting} style={styles.submitBtn} />
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background, padding: SPACING.lg },
-  restaurantCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: SPACING.md,
-    marginBottom: SPACING.md,
-  },
+  restaurantCard: { flexDirection: "row", alignItems: "center", gap: SPACING.md, marginBottom: SPACING.md },
   restaurantInfo: { flex: 1 },
   restaurantName: { fontSize: FONT_SIZE.lg, fontWeight: "700", color: COLORS.text },
   restaurantDetail: { fontSize: FONT_SIZE.sm, color: COLORS.secondary },
   userCard: { flexDirection: "row", alignItems: "center", gap: SPACING.sm, marginBottom: SPACING.md },
   userName: { fontSize: FONT_SIZE.md, color: COLORS.text },
-  sectionLabel: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: "600",
-    color: COLORS.text,
-    marginBottom: SPACING.xs,
-    marginTop: SPACING.sm,
-  },
-  input: {
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 10,
-    padding: SPACING.md,
-    fontSize: FONT_SIZE.md,
-    color: COLORS.text,
-    marginBottom: SPACING.sm,
-  },
+  sectionLabel: { fontSize: FONT_SIZE.sm, fontWeight: "600", color: COLORS.text, marginBottom: SPACING.xs, marginTop: SPACING.sm },
+  input: { backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 10, padding: SPACING.md, fontSize: FONT_SIZE.md, color: COLORS.text, marginBottom: SPACING.sm },
   notesInput: { minHeight: 80, textAlignVertical: "top" },
   noTables: { textAlign: "center", color: COLORS.secondary, padding: SPACING.md },
   tableGrid: { flexDirection: "row", flexWrap: "wrap", gap: SPACING.sm, marginBottom: SPACING.sm },
-  tableCard: {
-    width: "47%",
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 12,
-    padding: SPACING.md,
-    alignItems: "center",
-    gap: 4,
-  },
+  tableCard: { width: "47%", backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, borderRadius: 12, padding: SPACING.md, alignItems: "center", gap: 4 },
   tableSelected: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   tableUnsuitable: { opacity: 0.4 },
   tableNumber: { fontSize: FONT_SIZE.md, fontWeight: "700", color: COLORS.text },
   tableCap: { fontSize: FONT_SIZE.xs, color: COLORS.secondary },
   tableLoc: { fontSize: 11, color: COLORS.textLight },
   tableTextSelected: { color: "#fff" },
+  conflictLabel: { fontSize: 10, fontWeight: "700", color: COLORS.error, backgroundColor: COLORS.error + "20", paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4 },
   submitBtn: { marginTop: SPACING.lg, marginBottom: SPACING.xxl },
 });
 

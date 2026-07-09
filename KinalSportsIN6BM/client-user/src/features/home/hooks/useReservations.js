@@ -52,5 +52,35 @@ export const useReservations = () => {
     }
   }, []);
 
-  return { reservations, loading, error, getMyReservations, createReservation, cancelReservation };
+  const updateReservation = useCallback(async (id, reservationData) => {
+    setLoading(true);
+    try {
+      const { data } = await userClient.put(`/reservation/update/${id}`, reservationData);
+      if (data.success) {
+        setReservations(prev => prev.map(r => r._id === id ? { ...r, ...reservationData } : r));
+        return data.reservation;
+      }
+      throw new Error(data.message || 'Error al actualizar');
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Error al actualizar';
+      setError(msg);
+      throw new Error(msg);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const checkAvailability = useCallback(async (restaurantId, date, time) => {
+    try {
+      const dateStr = new Date(date + "T" + time).toISOString();
+      const { data } = await userClient.get("/reservation", {
+        params: { restaurant: restaurantId, date: dateStr }
+      });
+      return data.success ? (data.reservations || []) : [];
+    } catch {
+      return [];
+    }
+  }, []);
+
+  return { reservations, loading, error, getMyReservations, createReservation, cancelReservation, updateReservation, checkAvailability };
 };
