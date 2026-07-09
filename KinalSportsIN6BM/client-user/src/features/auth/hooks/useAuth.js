@@ -26,7 +26,7 @@ export const useAuth = () => {
             const normalizedEmail = rawIdentifier.includes("@") ? rawIdentifier : "";
 
             const response = await authClient.post("/login", {
-                email: normalizedEmail || rawIdentifier,
+                emailOrUsername: rawIdentifier,
                 password: data.password,
             });
 
