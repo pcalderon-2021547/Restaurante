@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
-import { COLORS, FONT_SIZE, SPACING } from "../../../shared/constants/theme";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Alert, TextInput } from "react-native";
+
+import { COLORS } from "../../../shared/constants/theme";
 import ScreenWrapper from "../../../shared/components/ui/ScreenWrapper";
 import Card from "../../../shared/components/ui/Card";
 import Badge from "../../../shared/components/ui/Badge";
@@ -19,6 +20,12 @@ const RestaurantDetailScreen = ({ route, navigation }) => {
   const [reviews, setReviews] = useState([]);
   const [selectedMenu, setSelectedMenu] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const [showEventModal, setShowEventModal] = useState(false);
+  const [eventName, setEventName] = useState("");
+  const [eventDescription, setEventDescription] = useState("");
+  const [eventDate, setEventDate] = useState("");
+  const [creatingEvent, setCreatingEvent] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -45,6 +52,41 @@ const RestaurantDetailScreen = ({ route, navigation }) => {
 
   const addToCart = (dish) => {
     navigation.navigate("OrderCreate", { restaurant, dish });
+  };
+
+  const handleCreateEvent = async () => {
+    if (!eventName.trim()) return Alert.alert("Error", "El nombre del evento es requerido");
+    if (!eventDescription.trim()) return Alert.alert("Error", "La descripción es requerida");
+    if (!eventDate.trim()) return Alert.alert("Error", "La fecha es requerida (YYYY-MM-DD)");
+    const parsed = new Date(eventDate.trim());
+    if (Number.isNaN(parsed.getTime())) return Alert.alert("Error", "Fecha inválida. Usa el formato YYYY-MM-DD");
+    try {
+      setCreatingEvent(true);
+      await restaurantService.createEvent({
+        name: eventName.trim(),
+        description: eventDescription.trim(),
+        date: parsed.toISOString(),
+        restaurant: restaurant._id,
+      });
+      setShowEventModal(false);
+      setEventName("");
+      setEventDescription("");
+      setEventDate("");
+      const eventsRes = await restaurantService.getEventsByRestaurant(restaurant._id).catch(() => ({ data: { events: [] } }));
+      setEvents(eventsRes.data?.events || []);
+      Alert.alert("Evento creado", "Tu evento ha sido planificado correctamente.");
+    } catch (err) {
+      Alert.alert("Error", err.response?.data?.message || "Error al crear evento");
+    } finally {
+      setCreatingEvent(false);
+    }
+  };
+
+  const resetEventForm = () => {
+    setShowEventModal(false);
+    setEventName("");
+    setEventDescription("");
+    setEventDate("");
   };
 
   return (
@@ -123,35 +165,103 @@ const RestaurantDetailScreen = ({ route, navigation }) => {
                   </View>
                 </Card>
               ))}
+              <GoldButton
+                title="Hacer Pedido"
+                onPress={() => navigation.navigate("OrderCreate", { restaurant })}
+                style={{ marginTop: 16, marginBottom: 32 }}
+              />
             </>
           )}
 
-          {activeTab === 1 && events.map((ev) => (
-            <Card key={ev._id} style={{ marginBottom: 8 }}>
-              <Text style={[styles.dishName, { fontFamily: "serif" }]}>{ev.name}</Text>
-              <Text style={styles.dishDesc}>{ev.description}</Text>
-              <Text style={styles.infoText}>📅 {new Date(ev.date).toLocaleDateString()}</Text>
-              <Badge text={ev.status} variant={ev.status === "active" ? "success" : "warning"} />
-            </Card>
-          ))}
+          {activeTab === 1 && (
+            <>
+              <GoldButton
+                title="Planificar Evento"
+                onPress={() => setShowEventModal(true)}
+                style={{ marginBottom: 16 }}
+              />
+              {events.length === 0 ? (
+                <Text style={styles.emptyText}>No hay eventos para este restaurante</Text>
+              ) : (
+                events.map((ev) => (
+                  <Card key={ev._id} style={{ marginBottom: 8 }}>
+                    <Text style={[styles.dishName, { fontFamily: "serif" }]}>{ev.name}</Text>
+                    <Text style={styles.dishDesc}>{ev.description}</Text>
+                    <Text style={styles.infoText}>📅 {new Date(ev.date).toLocaleDateString()}</Text>
+                    <Badge text={ev.status} variant={ev.status === "active" ? "success" : "warning"} />
+                  </Card>
+                ))
+              )}
+            </>
+          )}
 
-          {activeTab === 2 && reviews.map((rev) => (
-            <Card key={rev._id} style={{ marginBottom: 8 }}>
-              <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                <Text style={styles.dishName}>Usuario {rev.user}</Text>
-                <Text style={{ color: COLORS.gold, fontWeight: "700" }}>{"★".repeat(rev.rating)}{"☆".repeat(5 - rev.rating)}</Text>
-              </View>
-              {rev.comment ? <Text style={styles.dishDesc}>{rev.comment}</Text> : null}
-            </Card>
-          ))}
+          {activeTab === 2 && (
+            reviews.length === 0 ? (
+              <Text style={styles.emptyText}>No hay reseñas para este restaurante</Text>
+            ) : (
+              reviews.map((rev) => (
+                <Card key={rev._id} style={{ marginBottom: 8 }}>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                    <Text style={styles.dishName}>Usuario {rev.user}</Text>
+                    <Text style={{ color: COLORS.gold, fontWeight: "700" }}>{"★".repeat(rev.rating)}{"☆".repeat(5 - rev.rating)}</Text>
+                  </View>
+                  {rev.comment ? <Text style={styles.dishDesc}>{rev.comment}</Text> : null}
+                </Card>
+              ))
+            )
+          )}
         </>
       )}
 
-      <GoldButton
-        title="Hacer Pedido"
-        onPress={() => navigation.navigate("OrderCreate", { restaurant })}
-        style={{ marginTop: 16, marginBottom: 32 }}
-      />
+      <Modal visible={showEventModal} transparent animationType="fade" onRequestClose={resetEventForm}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Planificar Evento</Text>
+
+            <Text style={styles.modalLabel}>Nombre del evento</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={eventName}
+              onChangeText={setEventName}
+              placeholder="Ej: Cena de gala"
+              placeholderTextColor={COLORS.placeholder}
+            />
+
+            <Text style={styles.modalLabel}>Descripción</Text>
+            <TextInput
+              style={[styles.modalInput, styles.modalTextArea]}
+              value={eventDescription}
+              onChangeText={setEventDescription}
+              placeholder="Describe tu evento"
+              placeholderTextColor={COLORS.placeholder}
+              multiline
+              numberOfLines={3}
+            />
+
+            <Text style={styles.modalLabel}>Fecha del evento (YYYY-MM-DD)</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={eventDate}
+              onChangeText={setEventDate}
+              placeholder="Ej: 2026-12-25"
+              placeholderTextColor={COLORS.placeholder}
+              autoCapitalize="none"
+            />
+
+            <View style={styles.modalActions}>
+              <GoldButton
+                title={creatingEvent ? "Creando..." : "Crear Evento"}
+                onPress={handleCreateEvent}
+                loading={creatingEvent}
+                style={{ flex: 1 }}
+              />
+              <TouchableOpacity onPress={resetEventForm} style={styles.cancelBtn}>
+                <Text style={styles.cancelText}>Cancelar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScreenWrapper>
   );
 };
@@ -177,6 +287,80 @@ const styles = StyleSheet.create({
   dishDesc: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
   dishRight: { alignItems: "flex-end", marginLeft: 12 },
   dishPrice: { fontSize: 16, color: COLORS.gold, fontWeight: "700", marginBottom: 4 },
+  emptyText: { color: COLORS.textMuted, textAlign: "center", marginTop: 24, fontSize: 14 },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    justifyContent: "center",
+    paddingHorizontal: 20,
+  },
+  modalContent: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    padding: 24,
+  },
+  modalTitle: {
+    fontFamily: "serif",
+    fontSize: 22,
+    color: COLORS.gold,
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  modalLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    letterSpacing: 1.4,
+    textTransform: "uppercase",
+    color: COLORS.textMuted,
+    marginBottom: 6,
+  },
+  modalInput: {
+    width: "100%",
+    backgroundColor: COLORS.warmDark,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    color: COLORS.text,
+    fontSize: 15,
+    marginBottom: 16,
+  },
+  modalTextArea: {
+    height: 80,
+    textAlignVertical: "top",
+  },
+  dateButton: {
+    backgroundColor: COLORS.warmDark,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 16,
+  },
+  dateButtonText: {
+    color: COLORS.text,
+    fontSize: 15,
+  },
+  modalActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginTop: 8,
+  },
+  cancelBtn: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+  },
+  cancelText: {
+    color: COLORS.textMuted,
+    fontSize: 13,
+    fontWeight: "500",
+  },
 });
 
 export default RestaurantDetailScreen;

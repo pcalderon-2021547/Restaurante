@@ -497,10 +497,19 @@ export const updateProfile = async (req, res) => {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ success: false, message: 'No autorizado' });
 
-    const { name, surname, phone, profilePictureUrl, removePhoto } = req.body;
+    const { name, surname, username, email, phone, profilePictureUrl, removePhoto } = req.body;
 
     const user = await User.findByPk(userId);
     if (!user) return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
+
+    if (username && username !== user.username) {
+      const existingUsername = await User.findOne({ where: { username } });
+      if (existingUsername) return res.status(400).json({ success: false, message: 'El nombre de usuario ya está en uso' });
+    }
+    if (email && email !== user.email) {
+      const existingEmail = await User.findOne({ where: { email } });
+      if (existingEmail) return res.status(400).json({ success: false, message: 'El correo electrónico ya está en uso' });
+    }
 
     let newAvatar = user.avatar;
 
@@ -536,7 +545,7 @@ export const updateProfile = async (req, res) => {
       newAvatar = getDefaultAvatarUrl();
     }
 
-    await user.update({ name, surname, phone, avatar: newAvatar });
+    await user.update({ name, surname, username, email, phone, avatar: newAvatar });
 
     return res.json({ success: true, message: 'Perfil actualizado correctamente', user: { ...user.toJSON(), profilePicture: getFullImageUrl(newAvatar) } });
   } catch (error) {

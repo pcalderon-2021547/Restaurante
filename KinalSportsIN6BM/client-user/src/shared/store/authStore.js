@@ -37,6 +37,8 @@ export const useAuthStore = create(
 
       setAccessToken: (token) => set({ token }),
 
+      setUser: (user) => set({ user }),
+
       setUserField: (field, value) => {
         const user = { ...get().user, [field]: value };
         set({ user });

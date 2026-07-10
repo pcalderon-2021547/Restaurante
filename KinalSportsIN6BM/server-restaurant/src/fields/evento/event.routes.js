@@ -61,7 +61,7 @@ const router = Router();
  */
 
 // ── CRUD ──────────────────────────────────────────────────────────────────────
-router.post('/create', validateJWT, requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE'), attachOwnedRestaurant, createEvent);
+router.post('/create', validateJWT, requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE', 'USER_ROLE'), attachOwnedRestaurant, createEvent);
 router.get('/', validateJWT, requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE', 'USER_ROLE'), attachOwnedRestaurant, getEvents);
 router.get('/restaurant/:restaurantId', validateJWT, requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE', 'USER_ROLE'), attachOwnedRestaurant, getEventsByRestaurant);
 router.put('/:id', validateJWT, requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE'), attachOwnedRestaurant, updateEvent);
