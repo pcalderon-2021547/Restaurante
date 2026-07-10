@@ -1,5 +1,6 @@
-import React, { useEffect, useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Animated } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS, SHADOWS } from "../../../shared/constants/theme";
 import ScreenWrapper from "../../../shared/components/ui/ScreenWrapper";
@@ -100,7 +101,7 @@ const MyOrdersScreen = ({ navigation }) => {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useFocusEffect(useCallback(() => { load(); }, [load]));
 
   const filtered = filter === "todas" ? orders : orders.filter((o) => o.status === filter);
 

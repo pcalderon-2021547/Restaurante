@@ -10,7 +10,7 @@ import * as restaurantService from "../../../shared/api/restaurantService";
 import { notifyOrderCreated } from "../../../shared/utils/notifications";
 
 const TYPE_OPTIONS = [
-  { key: "dine-in", icon: "storefront-outline", label: "Presencial" },
+  { key: "dine_in", icon: "storefront-outline", label: "Presencial" },
   { key: "delivery", icon: "bicycle-outline", label: "Delivery" },
   { key: "takeaway", icon: "bag-handle-outline", label: "Para llevar" },
 ];
@@ -50,7 +50,7 @@ const CartItem = ({ item, index, onUpdateQty }) => {
 const OrderCreateScreen = ({ route, navigation }) => {
   const { restaurant, dish } = route.params;
   const [cart, setCart] = useState(dish ? [{ dish, quantity: 1 }] : []);
-  const [type, setType] = useState("dine-in");
+  const [type, setType] = useState("dine_in");
   const [address, setAddress] = useState("");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
