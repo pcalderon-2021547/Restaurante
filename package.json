@@ -1,0 +1,10 @@
+{
+  "name": "restaurante-services-runner",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install:services": "node scripts/install-services.js",
+    "dev": "node scripts/run-services.js"
+  },
+  "packageManager": "pnpm@10.29.2"
+}
