@@ -90,7 +90,7 @@ const AdminRestaurantsScreen = ({ navigation }) => {
           <Text style={styles.headerTitle}>Restaurantes</Text>
           <Text style={styles.headerSub}>{restaurants.length} registrados</Text>
         </View>
-        <TouchableOpacity style={styles.addFab} onPress={openCreate}>
+        <TouchableOpacity style={styles.addFab} onPress={openCreate} activeOpacity={0.8}>
           <Ionicons name="add" size={22} color={COLORS.obsidian} />
         </TouchableOpacity>
       </View>
@@ -250,7 +250,12 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 14 },
   headerTitle: { fontFamily: "serif", fontSize: 24, color: COLORS.text, letterSpacing: 0.5 },
   headerSub: { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
-  addFab: { width: 40, height: 40, borderRadius: 12, backgroundColor: COLORS.gold, alignItems: "center", justifyContent: "center" },
+  addFab: {
+    width: 42, height: 42, borderRadius: 12, backgroundColor: COLORS.gold,
+    alignItems: "center", justifyContent: "center",
+    borderWidth: 1, borderColor: COLORS.goldLight,
+    ...SHADOWS.sm,
+  },
 
   searchBar: {
     flexDirection: "row", alignItems: "center", gap: 8,

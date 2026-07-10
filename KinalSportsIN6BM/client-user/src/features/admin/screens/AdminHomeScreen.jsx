@@ -148,7 +148,7 @@ const AdminHomeScreen = () => {
                     )}
                   </View>
                   <View style={styles.dishInfo}>
-                    <Text style={styles.dishName}>{d.name || d._id}</Text>
+                    <Text style={styles.dishName}>{d.nombre || d.name || d._id}</Text>
                     <View style={styles.barBg}>
                       <View style={[styles.barFill, { width: `${barWidth}%`, backgroundColor: isPodium ? COLORS.gold : COLORS.textMuted }]} />
                     </View>
