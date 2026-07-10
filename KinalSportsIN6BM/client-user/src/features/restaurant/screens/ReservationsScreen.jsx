@@ -79,6 +79,10 @@ const ReservationsScreen = ({ navigation }) => {
   const [resDate, setResDate] = useState("");
   const [resTime, setResTime] = useState("");
   const [people, setPeople] = useState("2");
+  const [selectedTable, setSelectedTable] = useState("");
+  const [tables, setTables] = useState([]);
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -98,16 +102,31 @@ const ReservationsScreen = ({ navigation }) => {
 
   useEffect(() => { load(); }, [load]);
 
+  const fetchTables = async (restId) => {
+    try {
+      const res = await restaurantService.getTables(restId);
+      setTables(res.data?.tables || res.data || []);
+    } catch {
+      setTables([]);
+    }
+  };
+
   const handleCreate = async () => {
-    if (!selectedRest || !resDate) return Alert.alert("Error", "Selecciona restaurante y fecha");
+    if (!selectedRest || !resDate || !resTime) return Alert.alert("Error", "Completa todos los campos");
+    if (!selectedTable) return Alert.alert("Error", "Selecciona una mesa");
+    if (!customerName.trim()) return Alert.alert("Error", "El nombre es requerido");
+    if (!customerPhone.trim() || !/^\d{8}$/.test(customerPhone.trim())) return Alert.alert("Error", "Teléfono: 8 dígitos numéricos");
     try {
       setSaving(true);
-      const dateTime = new Date(`${resDate}T${resTime || "12:00"}`).toISOString();
+      const dateTime = new Date(`${resDate}T${resTime}`).toISOString();
       await restaurantService.createReservation({
         restaurant: selectedRest,
+        table: selectedTable,
         date: dateTime,
         numberOfPeople: parseInt(people, 10),
-        notes,
+        customerName: customerName.trim(),
+        customerPhone: customerPhone.trim(),
+        notes: notes.trim(),
       });
       Alert.alert("Éxito", "Reserva creada");
       setModalVisible(false);
@@ -126,6 +145,10 @@ const ReservationsScreen = ({ navigation }) => {
     setResDate("");
     setResTime("");
     setPeople("2");
+    setSelectedTable("");
+    setTables([]);
+    setCustomerName("");
+    setCustomerPhone("");
     setNotes("");
   };
 
@@ -203,7 +226,7 @@ const ReservationsScreen = ({ navigation }) => {
                 <Ionicons name="arrow-back" size={20} color={COLORS.text} />
               </TouchableOpacity>
               <Text style={styles.modalTitle}>Nueva Reserva</Text>
-              <Text style={styles.modalStep}>{step}/3</Text>
+              <Text style={styles.modalStep}>{step}/4</Text>
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false}>
@@ -215,7 +238,7 @@ const ReservationsScreen = ({ navigation }) => {
                       <TouchableOpacity
                         key={r._id}
                         style={[styles.restOption, selectedRest === r._id && styles.restOptionActive]}
-                        onPress={() => { setSelectedRest(r._id); setStep(2); }}
+                        onPress={() => { setSelectedRest(r._id); fetchTables(r._id); setStep(2); }}
                         activeOpacity={0.7}
                       >
                         <View style={[styles.restDot, selectedRest === r._id && styles.restDotActive]}>
@@ -291,7 +314,7 @@ const ReservationsScreen = ({ navigation }) => {
                         <TouchableOpacity
                           key={p}
                           style={[styles.peopleChip, isSelected && styles.peopleChipActive]}
-                          onPress={() => setPeople(String(p))}
+                          onPress={() => { setPeople(String(p)); setSelectedTable(""); }}
                           activeOpacity={0.7}
                         >
                           <Text style={[styles.peopleText, isSelected && styles.peopleTextActive]}>{p}</Text>
@@ -299,6 +322,69 @@ const ReservationsScreen = ({ navigation }) => {
                       );
                     })}
                   </View>
+
+                  <Text style={styles.sectionLabel}>Elige una mesa</Text>
+                  {tables.length === 0 ? (
+                    <Text style={{ color: COLORS.textMuted, textAlign: "center", paddingVertical: 20, fontSize: 13 }}>
+                      No hay mesas disponibles para este restaurante
+                    </Text>
+                  ) : (
+                    <View style={styles.tableGrid}>
+                      {tables
+                        .filter((t) => t.capacity >= parseInt(people, 10))
+                        .map((t) => {
+                          const isSelected = selectedTable === t._id;
+                          return (
+                            <TouchableOpacity
+                              key={t._id}
+                              style={[styles.tableChip, isSelected && styles.tableChipActive]}
+                              onPress={() => setSelectedTable(t._id)}
+                              activeOpacity={0.7}
+                            >
+                              <Ionicons
+                                name={isSelected ? "tablet-portrait" : "tablet-landscape-outline"}
+                                size={20}
+                                color={isSelected ? COLORS.obsidian : COLORS.textMuted}
+                              />
+                              <Text style={[styles.tableNum, isSelected && styles.tableNumActive]}>Mesa {t.number}</Text>
+                              <Text style={[styles.tableCap, isSelected && styles.tableCapActive]}>{t.capacity} pers.</Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                    </View>
+                  )}
+
+                  <View style={styles.modalActions}>
+                    <GoldButton
+                      title="Continuar"
+                      onPress={() => {
+                        if (!selectedTable) return Alert.alert("Error", "Selecciona una mesa");
+                        setStep(4);
+                      }}
+                    />
+                  </View>
+                </>
+              )}
+
+              {step === 4 && (
+                <>
+                  <Text style={styles.sectionLabel}>Tus datos</Text>
+                  <TextInput
+                    style={styles.fieldInput}
+                    value={customerName}
+                    onChangeText={setCustomerName}
+                    placeholder="Nombre completo"
+                    placeholderTextColor={COLORS.placeholder}
+                  />
+                  <TextInput
+                    style={styles.fieldInput}
+                    value={customerPhone}
+                    onChangeText={setCustomerPhone}
+                    placeholder="Teléfono (8 dígitos)"
+                    placeholderTextColor={COLORS.placeholder}
+                    keyboardType="number-pad"
+                    maxLength={8}
+                  />
 
                   <Text style={styles.sectionLabel}>Notas (opcional)</Text>
                   <TextInput
@@ -310,6 +396,18 @@ const ReservationsScreen = ({ navigation }) => {
                     multiline
                     numberOfLines={3}
                   />
+
+                  <View style={styles.summaryCard}>
+                    <Text style={styles.summaryTitle}>Resumen</Text>
+                    <View style={styles.summaryRow}>
+                      <Ionicons name="people-outline" size={14} color={COLORS.textMuted} />
+                      <Text style={styles.summaryText}>{people} personas · Mesa {tables.find((t) => t._id === selectedTable)?.number}</Text>
+                    </View>
+                    <View style={styles.summaryRow}>
+                      <Ionicons name="calendar-outline" size={14} color={COLORS.textMuted} />
+                      <Text style={styles.summaryText}>{resDate} a las {resTime}</Text>
+                    </View>
+                  </View>
 
                   <View style={styles.modalActions}>
                     <GoldButton
@@ -417,12 +515,38 @@ const styles = StyleSheet.create({
   peopleText: { fontSize: 14, color: COLORS.text },
   peopleTextActive: { color: COLORS.gold, fontWeight: "600" },
 
+  tableGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 20 },
+  tableChip: {
+    flex: 1, minWidth: "45%", alignItems: "center", gap: 4,
+    padding: 14, borderRadius: 12, borderWidth: 1,
+    borderColor: COLORS.borderLight, backgroundColor: COLORS.warmDark,
+  },
+  tableChipActive: { borderColor: COLORS.gold, backgroundColor: "rgba(201,168,76,0.1)" },
+  tableNum: { fontSize: 14, color: COLORS.text, fontWeight: "600" },
+  tableNumActive: { color: COLORS.gold },
+  tableCap: { fontSize: 11, color: COLORS.textMuted },
+  tableCapActive: { color: COLORS.gold },
+
+  fieldInput: {
+    backgroundColor: COLORS.warmDark, borderWidth: 1, borderColor: COLORS.borderLight,
+    borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12,
+    color: COLORS.text, fontSize: 14, marginBottom: 12,
+  },
+
   notesInput: {
     backgroundColor: COLORS.warmDark, borderWidth: 1, borderColor: COLORS.borderLight,
     borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12,
     color: COLORS.text, fontSize: 14, marginBottom: 20, textAlignVertical: "top",
     minHeight: 80,
   },
+
+  summaryCard: {
+    backgroundColor: COLORS.warmDark, borderRadius: 12, padding: 14,
+    borderWidth: 1, borderColor: COLORS.border, marginBottom: 16,
+  },
+  summaryTitle: { fontSize: 12, color: COLORS.gold, fontWeight: "700", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 },
+  summaryRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 6 },
+  summaryText: { fontSize: 13, color: COLORS.text },
 
   modalActions: { marginTop: 8, marginBottom: 16 },
 });
