@@ -127,8 +127,8 @@ export const register = async (req, res) => {
       avatar: avatarPublicId
     });
 
-    const origin = process.env.API_URL || (process.env.NODE_ENV === 'development' ? `http://localhost:${process.env.PORT || 3010}` : 'https://tudominio.com');
-    const verifyLink = `${origin}/restaurantManagement/v1/auth/verify-email?token=${emailToken}`;
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const verifyLink = `${frontendUrl}/verify-email?token=${emailToken}`;
 
     try {
       await sendEmail(
@@ -317,8 +317,8 @@ export const resendVerification = async (req, res) => {
         user.emailToken = newEmailToken;
         await user.save();
 
-        const verifyLink =
-            `http://localhost:${process.env.PORT}/restaurantManagement/v1/auth/verify-email?token=${newEmailToken}`;
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+        const verifyLink = `${frontendUrl}/verify-email?token=${newEmailToken}`;
 
         await sendEmail(user.email, 'Nuevo enlace de verificación — Gestión Restaurante', resendVerificationTemplate(verifyLink));
 

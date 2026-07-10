@@ -1,7 +1,15 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuthStore } from "../../../features/auth/store/authStore";
 
 export const Sidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const logout = useAuthStore((state) => state.logout);
+
+  const handleLogout = () => {
+    logout();
+    navigate("/", { replace: true });
+  };
 
   const items = [
     { label: "Canchas", to: "/dashboard/fields" },
@@ -12,8 +20,8 @@ export const Sidebar = () => {
   ];
 
   return (
-    <aside className="w-60 bg-white min-h-[calc(100vh-4rem)] p-4 shadow-sm">
-      <ul className="space-y-1">
+    <aside className="w-60 bg-white min-h-[calc(100vh-4rem)] p-4 shadow-sm flex flex-col">
+      <ul className="space-y-1 flex-1">
         {items.map((item) => {
           const active = location.pathname === item.to;
 
@@ -30,6 +38,16 @@ export const Sidebar = () => {
           );
         })}
       </ul>
+
+      <div className="border-t border-gray-200 pt-4 mt-4">
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 px-4 py-2 rounded-lg font-medium text-red-600 hover:bg-red-50 transition-colors"
+        >
+          <span className="text-lg">🚪</span>
+          Cerrar Sesión
+        </button>
+      </div>
     </aside>
   );
 };

@@ -1,4 +1,11 @@
 import { axiosAuth } from "./api";
+import axios from "axios";
+
+const axiosRestaurant = axios.create({
+  baseURL: import.meta.env.VITE_RESTAURANT_URL,
+  timeout: 8000,
+  headers: { "Content-Type": "application/json" },
+});
 
 // ================= AUTH =================
 export const login = async (data) => {
@@ -20,7 +27,7 @@ export const resetPassword = async (token, newPassword) => {
 };
 
 export const verifyEmail = async (token) => {
-  return await axiosAuth.post("/auth/verify-email", { token });
+  return await axiosRestaurant.post("/auth/verify-email", { token });
 };
 
 export const updateUserRole = async (userId, roleName) => {

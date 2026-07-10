@@ -877,3 +877,4 @@ C:\Restaurante\KinalSportsIN6BM\authentication-service\auth-service\src\AuthServ
 C:\Restaurante\KinalSportsIN6BM\authentication-service\auth-service\src\AuthService.Api\obj\Debug\net8.0\staticwebassets\msbuild.buildTransitive.AuthService.Api.props
 C:\Restaurante\KinalSportsIN6BM\authentication-service\auth-service\src\AuthService.Api\obj\Debug\net8.0\staticwebassets.pack.json
 C:\Restaurante\KinalSportsIN6BM\authentication-service\auth-service\src\AuthService.Api\obj\Debug\net8.0\AuthService.Api.csproj.CopyComplete
+C:\Restaurante\KinalSportsIN6BM\authentication-service\auth-service\src\AuthService.Api\bin\Debug\net8.0\System.Formats.Asn1.dll

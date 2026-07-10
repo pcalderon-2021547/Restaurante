@@ -43,23 +43,27 @@ const AdminOrdersScreen = () => {
 
   if (loading) return <LoadingSpinner fullScreen />;
 
+  const renderFilters = (
+    <FlatList
+      horizontal data={FILTERS} keyExtractor={(f) => f} showsHorizontalScrollIndicator={false}
+      contentContainerStyle={{ paddingVertical: 12, gap: 8 }}
+      renderItem={({ item }) => (
+        <TouchableOpacity
+          style={{ paddingHorizontal: 14, paddingVertical: 6, borderRadius: 999, borderWidth: 1, borderColor: filter === item ? COLORS.gold : COLORS.border, backgroundColor: filter === item ? "rgba(201,168,76,0.1)" : "transparent", marginRight: 8 }}
+          onPress={() => setFilter(item)}
+        >
+          <Text style={{ fontSize: 12, color: filter === item ? COLORS.gold : COLORS.textMuted }}>{FILTER_LABELS[item]}</Text>
+        </TouchableOpacity>
+      )}
+    />
+  );
+
   return (
     <ScreenWrapper>
       <FlatList
-        horizontal data={FILTERS} keyExtractor={(f) => f} showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingVertical: 12, gap: 8 }}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={{ paddingHorizontal: 14, paddingVertical: 6, borderRadius: 999, borderWidth: 1, borderColor: filter === item ? COLORS.gold : COLORS.border, backgroundColor: filter === item ? "rgba(201,168,76,0.1)" : "transparent", marginRight: 8 }}
-            onPress={() => setFilter(item)}
-          >
-            <Text style={{ fontSize: 12, color: filter === item ? COLORS.gold : COLORS.textMuted }}>{FILTER_LABELS[item]}</Text>
-          </TouchableOpacity>
-        )}
-      />
-      <FlatList
         data={filtered}
         keyExtractor={(item) => item._id}
+        ListHeaderComponent={renderFilters}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={COLORS.gold} />}
         renderItem={({ item }) => (
           <Card style={{ marginBottom: 8 }}>
@@ -77,6 +81,7 @@ const AdminOrdersScreen = () => {
           </Card>
         )}
         ListEmptyComponent={<EmptyState message="No hay pedidos" />}
+        contentContainerStyle={{ paddingBottom: 24 }}
       />
       <Modal visible={statusModal} onClose={() => setStatusModal(false)} title="Cambiar Estado" onConfirm={handleUpdateStatus} confirmText="Actualizar" confirmLoading={saving}>
         <Text style={{ color: COLORS.textMuted, fontSize: 12, marginBottom: 12 }}>Pedido: #{selectedOrder?._id?.slice(-6)}</Text>

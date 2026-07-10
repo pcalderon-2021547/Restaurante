@@ -1,6 +1,2 @@
 /node_modules
 
-# Environment
-.env
-.env.*
-!.env.example
