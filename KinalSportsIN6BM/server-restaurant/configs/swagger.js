@@ -15,8 +15,8 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: `http://localhost:${process.env.PORT || 3010}`,
-        description: 'Servidor de desarrollo local'
+        url: process.env.API_URL || `http://localhost:${process.env.PORT || 3010}`,
+        description: process.env.API_URL ? 'Servidor de producción' : 'Servidor de desarrollo local'
       }
     ],
     components: {
@@ -87,7 +87,8 @@ export const setupSwagger = (app) => {
     res.send(swaggerSpec);
   });
 
-  console.log(`📘 Swagger UI disponible en → http://localhost:${process.env.PORT || 3010}/api-docs`);
+  const baseUrl = process.env.API_URL || `http://localhost:${process.env.PORT || 3010}`;
+  console.log(`📘 Swagger UI disponible en → ${baseUrl}/api-docs`);
 };
 
 export { swaggerSpec };

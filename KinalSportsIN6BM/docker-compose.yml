@@ -1,0 +1,135 @@
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: kinalsports-mongo
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - kinalsports-network
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: kinalsports-postgres
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-KinalSports}
+      POSTGRES_USER: ${POSTGRES_USER:-root}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - kinalsports-network
+
+  server-restaurant:
+    build:
+      context: ./server-restaurant
+      dockerfile: Dockerfile
+    container_name: kinalsports-server-restaurant
+    restart: unless-stopped
+    ports:
+      - "3010:3010"
+    environment:
+      NODE_ENV: ${RESTAURANT_NODE_ENV:-production}
+      PORT: ${RESTAURANT_PORT:-3010}
+      URI_MONGO: ${RESTAURANT_URI_MONGO:-mongodb://mongo:27017/restaurante}
+      DB_NAME: ${RESTAURANT_DB_NAME:-KinalSports}
+      DB_USER: ${RESTAURANT_DB_USER:-root}
+      DB_PASS: ${RESTAURANT_DB_PASS:-admin}
+      DB_HOST: ${RESTAURANT_DB_HOST:-postgres}
+      DB_PORT: ${RESTAURANT_DB_PORT:-5432}
+      JWT_SECRET: ${RESTAURANT_JWT_SECRET:-MyVerySecretKeyForJWTTokenAuthenticationWith256Bits!}
+      JWT_ISSUER: ${RESTAURANT_JWT_ISSUER:-AuthService}
+      JWT_AUDIENCE: ${RESTAURANT_JWT_AUDIENCE:-AuthService}
+      EMAIL_USER: ${RESTAURANT_EMAIL_USER:-diegocoyote81@gmail.com}
+      EMAIL_PASS: ${RESTAURANT_EMAIL_PASS:-zcgw nzxj abxo wjir}
+      CLOUDINARY_CLOUD_NAME: ${RESTAURANT_CLOUDINARY_CLOUD_NAME:-dilia5ced}
+      CLOUDINARY_API_KEY: ${RESTAURANT_CLOUDINARY_API_KEY:-953218831863459}
+      CLOUDINARY_API_SECRET: ${RESTAURANT_CLOUDINARY_API_SECRET:-IV4ojELwtPdNSxFZMrW1n8gBS7w}
+      CLOUDINARY_FOLDER: ${RESTAURANT_CLOUDINARY_FOLDER:-lenayfuego}
+      API_URL: ${RESTAURANT_API_URL:-http://localhost:3010}
+      FRONTEND_URL: ${RESTAURANT_FRONTEND_URL:-http://localhost:3010/restaurantManagement/v1/auth}
+    depends_on:
+      mongo:
+        condition: service_started
+      postgres:
+        condition: service_started
+    networks:
+      - kinalsports-network
+
+  server-admin:
+    build:
+      context: ./server-admin
+      dockerfile: Dockerfile
+    container_name: kinalsports-server-admin
+    restart: unless-stopped
+    ports:
+      - "3006:3006"
+    environment:
+      NODE_ENV: ${ADMIN_NODE_ENV:-production}
+      PORT: ${ADMIN_PORT:-3006}
+      URI_MONGODB: ${ADMIN_URI_MONGODB:-mongodb://mongo:27017/kinalsports}
+      JWT_SECRET: ${ADMIN_JWT_SECRET:-MyVerySecretKeyForJWTTokenAuthenticationWith256Bits!}
+      JWT_ISSUER: ${ADMIN_JWT_ISSUER:-AuthService}
+      JWT_AUDIENCE: ${ADMIN_JWT_AUDIENCE:-AuthService}
+      CLOUDINARY_CLOUD_NAME: ${ADMIN_CLOUDINARY_CLOUD_NAME:-}
+      CLOUDINARY_API_KEY: ${ADMIN_CLOUDINARY_API_KEY:-}
+      CLOUDINARY_API_SECRET: ${ADMIN_CLOUDINARY_API_SECRET:-}
+      CLOUDINARY_FOLDER: ${ADMIN_CLOUDINARY_FOLDER:-kinalSports/fields}
+    depends_on:
+      mongo:
+        condition: service_started
+    networks:
+      - kinalsports-network
+
+  server-user:
+    build:
+      context: ./server-user
+      dockerfile: Dockerfile
+    container_name: kinalsports-server-user
+    restart: unless-stopped
+    ports:
+      - "3003:3003"
+    environment:
+      NODE_ENV: ${USER_NODE_ENV:-production}
+      PORT: ${USER_PORT:-3003}
+      URI_MONGODB: ${USER_URI_MONGODB:-mongodb://mongo:27017/kinalsports}
+      JWT_SECRET: ${USER_JWT_SECRET:-MyVerySecretKeyForJWTTokenAuthenticationWith256Bits!}
+      JWT_ISSUER: ${USER_JWT_ISSUER:-AuthService}
+      JWT_AUDIENCE: ${USER_JWT_AUDIENCE:-AuthService}
+      CLOUDINARY_CLOUD_NAME: ${USER_CLOUDINARY_CLOUD_NAME:-}
+      CLOUDINARY_API_KEY: ${USER_CLOUDINARY_API_KEY:-}
+      CLOUDINARY_API_SECRET: ${USER_CLOUDINARY_API_SECRET:-}
+      CLOUDINARY_FOLDER: ${USER_CLOUDINARY_FOLDER:-kinalSports/fields}
+    depends_on:
+      mongo:
+        condition: service_started
+    networks:
+      - kinalsports-network
+
+  client-user:
+    build:
+      context: ./client-user
+      dockerfile: Dockerfile
+      args:
+        EXPO_PUBLIC_API_URL: ${EXPO_PUBLIC_API_URL:-http://localhost:3010/restaurantManagement/v1}
+        EXPO_PUBLIC_AUTH_URL: ${EXPO_PUBLIC_AUTH_URL:-http://localhost:3010/restaurantManagement/v1/auth}
+    container_name: kinalsports-client-user
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - server-restaurant
+    networks:
+      - kinalsports-network
+
+volumes:
+  mongo_data:
+  postgres_data:
+
+networks:
+  kinalsports-network:
+    driver: bridge

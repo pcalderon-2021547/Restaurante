@@ -222,7 +222,7 @@ export const getOrderDetailsByOrder = async (req, res) => {
         if (req.user && req.user.role === 'USER_ROLE') {
             const existingOrder = await Order.findById(orderId);
             if (!existingOrder) return res.status(404).json({ success: false, message: 'Orden no encontrada' });
-            if ((existingOrder.user?.toString && existingOrder.user.toString()) !== (req.user.id || req.user._id)) {
+            if (String(existingOrder.user ?? '') !== String(req.user.id ?? '')) {
                 return res.status(403).json({ success: false, message: 'No tienes permiso para ver los detalles de esta orden' });
             }
         }

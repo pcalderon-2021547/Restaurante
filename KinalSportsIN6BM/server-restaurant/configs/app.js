@@ -37,9 +37,6 @@ const middlewares = (app) => {
     app.use(cors(corsOptions));
     app.use(helmet(helmetConfiguration));
     app.use(morgan('dev'));
-
-    // Servir archivos estáticos (imágenes subidas)
-    app.use('/uploads', express.static('./')); 
 };
 
 const routes = (app) => {
@@ -99,9 +96,10 @@ export const initServer = async () => {
 
         // Iniciar servidor
         app.listen(PORT, () => {
+            const baseUrl = process.env.API_URL || `http://localhost:${PORT}`;
             console.log(`🚀 Restaurant Server running on port ${PORT}`);
-            console.log(`📘 Swagger UI: http://localhost:${PORT}/api-docs`);
-            console.log(`❤️  Health check: http://localhost:${PORT}${BASE_PATH}/Health`);
+            console.log(`📘 Swagger UI: ${baseUrl}/api-docs`);
+            console.log(`❤️  Health check: ${baseUrl}${BASE_PATH}/Health`);
         });
 
     } catch (error) {

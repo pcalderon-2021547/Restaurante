@@ -32,7 +32,6 @@ const LoginScreen = ({ navigation }) => {
         defaultValues: {
             emailOrUsername: "",
             password: "",
-            emailToken: "",
         },
     });
 
@@ -96,21 +95,6 @@ const LoginScreen = ({ navigation }) => {
                                 value={value}
                                 onChangeText={onChange}
                                 error={errors.password?.message}
-                            />
-                        )}
-                    />
-
-                    <Controller
-                        control={control}
-                        name="emailToken"
-                        render={({ field: { onChange, value } }) => (
-                            <AuthInput
-                                label="Token de verificación (opcional)"
-                                placeholder="Pega el token de tu correo"
-                                autoCapitalize="none"
-                                autoCorrect={false}
-                                value={value}
-                                onChangeText={onChange}
                             />
                         )}
                     />

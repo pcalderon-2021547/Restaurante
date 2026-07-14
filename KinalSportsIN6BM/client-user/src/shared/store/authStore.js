@@ -1,6 +1,13 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const getStorage = () => {
+  if (typeof window !== "undefined" && window.localStorage) {
+    return createJSONStorage(() => localStorage);
+  }
+  const AsyncStorage = require("@react-native-async-storage/async-storage").default;
+  return createJSONStorage(() => AsyncStorage);
+};
 
 const decodeJwtPayload = (token) => {
   try {
@@ -58,7 +65,7 @@ export const useAuthStore = create(
     }),
     {
       name: "auth-storage",
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: getStorage(),
       partialize: (state) => ({
         token: state.token,
         user: state.user,

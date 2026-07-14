@@ -1,43 +1,48 @@
 import { v2 as cloudinary } from 'cloudinary';
-import fs from 'fs/promises';
 
-// Configurar Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-export const uploadImage = async (filePath, publicId, extraOptions = {}) => {
+const buildOptions = (publicId, extraOptions = {}) => ({
+  public_id: publicId,
+  folder: process.env.CLOUDINARY_FOLDER,
+  resource_type: 'image',
+  transformation: extraOptions.isAvatar
+    ? [
+        { width: 400, height: 400, crop: 'fill', gravity: 'face' },
+        { quality: 'auto', fetch_format: 'auto' },
+      ]
+    : [
+        { width: 800, height: 600, crop: 'limit' },
+        { quality: 'auto', fetch_format: 'auto' },
+      ],
+  ...extraOptions,
+});
+
+export const uploadImage = async (input, publicId, extraOptions = {}) => {
   try {
-    const folder = process.env.CLOUDINARY_FOLDER;
-    const options = {
-      public_id: publicId,
-      folder,
-      resource_type: 'image',
-      transformation: extraOptions.isAvatar
-        ? [
-            { width: 400, height: 400, crop: 'fill', gravity: 'face' },
-            { quality: 'auto', fetch_format: 'auto' },
-          ]
-        : [
-            { width: 800, height: 600, crop: 'limit' },
-            { quality: 'auto', fetch_format: 'auto' },
-          ],
-      ...extraOptions,
-    };
+    const options = buildOptions(publicId, extraOptions);
+    let result;
 
-    const result = await cloudinary.uploader.upload(filePath, options);
-
-    // Eliminar archivo local después de subir
-    try { await fs.unlink(filePath); } catch {}
+    if (Buffer.isBuffer(input)) {
+      result = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(options, (error, res) => {
+          if (error) reject(error);
+          else resolve(res);
+        });
+        stream.end(input);
+      });
+    } else {
+      result = await cloudinary.uploader.upload(input, options);
+    }
 
     if (result.error) throw new Error(result.error.message);
 
-    // devolver public_id completo (folder/filename)
     return result.public_id;
   } catch (error) {
-    try { await fs.unlink(filePath); } catch {}
     throw new Error(error?.message || 'Error uploading image');
   }
 };

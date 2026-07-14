@@ -28,7 +28,7 @@ export const createUser = async (req, res) => {
         if (req.file) {
             try {
                 const publicId = `profile-${Date.now()}`;
-                avatar = await uploadImage(req.file.path, publicId);
+                avatar = await uploadImage(req.file.buffer, publicId);
             } catch (err) {
                 console.warn('Error uploading profile picture, using default avatar', err.message || err);
             }
@@ -122,7 +122,7 @@ export const updateUser = async (req, res) => {
         if (req.file) {
             try {
                 const publicId = `profile-${Date.now()}`;
-                const uploaded = await uploadImage(req.file.path, publicId);
+                const uploaded = await uploadImage(req.file.buffer, publicId);
                 if (user.avatar && !/^https?:\/\//i.test(user.avatar) && user.avatar !== getDefaultAvatarUrl()) {
                     await deleteImage(user.avatar);
                 }
@@ -197,8 +197,9 @@ export const deleteUser = async (req, res) => {
             }
         });
 
+        const apiUrl = process.env.API_URL || `http://localhost:${process.env.PORT}`;
         const deleteLink =
-            `http://localhost:${process.env.PORT}/restaurantManagement/v1/users/confirm-delete?token=${deleteToken}`;
+            `${apiUrl}/restaurantManagement/v1/users/confirm-delete?token=${deleteToken}`;
 
         await transporter.sendMail({
             to: user.email,

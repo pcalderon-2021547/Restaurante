@@ -19,7 +19,7 @@ export const createRestaurant = async (req, res) => {
         let imagePublicId = '';
 
         if (req.file) {
-            imagePublicId = await uploadImage(req.file.path, `restaurant_${Date.now()}`);
+            imagePublicId = await uploadImage(req.file.buffer, `restaurant_${Date.now()}`);
         }
 
         const restaurant = await createRestaurantService({
@@ -70,7 +70,7 @@ export const updateRestaurant = async (req, res) => {
         if (req.file) {
             const existing = await (await import('./restaurant.model.js')).default.findById(req.params.id);
             if (existing?.image) await deleteImage(existing.image);
-            req.body.image = await uploadImage(req.file.path, `restaurant_${req.params.id}_${Date.now()}`);
+            req.body.image = await uploadImage(req.file.buffer, `restaurant_${req.params.id}_${Date.now()}`);
         }
 
         const restaurant = await updateRestaurantService(req.params.id, req.body);

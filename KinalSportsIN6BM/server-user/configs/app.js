@@ -76,8 +76,9 @@ export const initServer = async () => {
     app.use(errorHandler);
 
     app.listen(PORT, () => {
+      const baseUrl = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
       console.log(`KinalSports User Server running on port ${PORT}`);
-      console.log(`Health check: http://localhost:${PORT}${BASE_PATH}/health`);
+      console.log(`Health check: ${baseUrl}${BASE_PATH}/health`);
     });
   } catch (err) {
     console.error(`Error starting User Server: ${err.message}`);

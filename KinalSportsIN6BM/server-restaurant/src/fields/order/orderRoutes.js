@@ -159,7 +159,7 @@ router.get('/:id', validateJWT, requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE
 router.put(
     '/update/:id',
     validateJWT,
-    requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE'),
+    requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE', 'USER_ROLE'),
     attachOwnedRestaurant,
     validateOrderId,
     validateOrderStatus,

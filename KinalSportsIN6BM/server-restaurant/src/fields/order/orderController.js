@@ -248,6 +248,19 @@ export const updateOrder = async (req, res) => {
             return res.status(ownership.status).json({ success: false, message: ownership.message });
         }
 
+        if (req.user.role === 'USER_ROLE') {
+            if (String(existingOrder.user) !== String(req.user.id)) {
+                return res.status(403).json({ success: false, message: 'No puedes modificar una orden que no te pertenece' });
+            }
+            const allowedChanges = { status: 'cancelled' };
+            const requestedChanges = Object.keys(req.body);
+            for (const key of requestedChanges) {
+                if (key !== 'status' || req.body.status !== 'cancelled') {
+                    return res.status(403).json({ success: false, message: 'Como usuario solo puedes cancelar tus propias órdenes' });
+                }
+            }
+        }
+
         delete req.body.restaurant;
         delete req.body.user;
 

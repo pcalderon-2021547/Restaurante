@@ -12,6 +12,7 @@ import * as userService from "../../../shared/api/userService";
 import * as restaurantService from "../../../shared/api/restaurantService";
 import { useAuthStore } from "../../../shared/store/authStore";
 import { useProfile } from "../../home/hooks/useProfile";
+import { confirmAction } from "../../../shared/utils/confirmAction";
 
 const roleLabels = {
   ADMIN_ROLE: "Administrador",
@@ -69,10 +70,7 @@ const ProfileScreen = ({ navigation }) => {
   };
 
   const handleLogout = () => {
-    Alert.alert("Cerrar Sesión", "¿Estás seguro?", [
-      { text: "Cancelar", style: "cancel" },
-      { text: "Salir", style: "destructive", onPress: () => logout() },
-    ]);
+    confirmAction("Cerrar Sesión", "¿Estás seguro?", () => logout());
   };
 
   const handleUpdate = async () => {

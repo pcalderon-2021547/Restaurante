@@ -47,7 +47,7 @@ const RegisterScreen = ({ navigation }) => {
             if (response?.success) {
                 Alert.alert(
                     "Cuenta creada",
-                    "Revisa tu correo para verificarla.",
+                    "Revisa tu correo electrónico para verificar tu cuenta. Si no encuentras el correo, revisa la bandeja de spam.",
                     [{ text: "OK", onPress: () => {
                         reset();
                         navigation.navigate("Login");

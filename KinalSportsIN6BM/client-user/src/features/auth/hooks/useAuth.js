@@ -29,7 +29,6 @@ export const useAuth = () => {
                 emailOrUsername: rawIdentifier,
                 password: data.password,
             };
-            if (data.emailToken) body.emailToken = data.emailToken;
 
             const response = await authClient.post("/login", body);
 

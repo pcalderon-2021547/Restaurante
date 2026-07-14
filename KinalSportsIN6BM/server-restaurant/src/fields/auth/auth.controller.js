@@ -97,7 +97,7 @@ export const register = async (req, res) => {
     if (req.file) {
       try {
         const publicId = `profile-${Date.now()}`;
-        const uploadedId = await uploadImage(req.file.path, publicId);
+        const uploadedId = await uploadImage(req.file.buffer, publicId);
         avatarPublicId = uploadedId;
       } catch (err) {
         console.warn('Error uploading profile picture, using default avatar', err.message || err);
@@ -166,7 +166,7 @@ export const login = async (req, res) => {
     try {
 
         const identifier = (req.body.emailOrUsername || req.body.email || req.body.username || '').trim();
-        const { password, emailToken } = req.body;
+        const { password } = req.body;
 
         if (!identifier || !password) {
             return res.status(400).json({
@@ -186,19 +186,6 @@ export const login = async (req, res) => {
                 success: false,
                 message: 'Credenciales inválidas'
             });
-        }
-
-        if (user.role !== 'ADMIN_ROLE' && !user.emailVerified) {
-            if (emailToken && user.emailToken === emailToken) {
-                user.emailVerified = true;
-                user.emailToken = null;
-                await user.save();
-            } else {
-                return res.status(403).json({
-                    success: false,
-                    message: 'Debes verificar tu correo primero. Ingresa el token de verificación.'
-                });
-            }
         }
 
         const validPassword = await bcrypt.compare(password, user.password);
@@ -257,6 +244,9 @@ export const verifyEmail = async (req, res) => {
         });
 
         if (!user) {
+            if (req.method === 'GET') {
+                return res.send(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Verificación fallida</title><style>body{font-family:sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;background:#1a1a1a;color:#fff;}div{text-align:center;padding:40px;}h1{color:#e74c3c;}p{color:#999;}</style></head><body><div><h1>Token inválido</h1><p>El enlace de verificación no es válido o ya expiró.</p></div></body></html>`);
+            }
             return res.status(400).json({
                 success: false,
                 message: 'Token inválido'
@@ -267,6 +257,12 @@ export const verifyEmail = async (req, res) => {
         user.emailToken = null;
 
         await user.save();
+
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+        if (req.method === 'GET') {
+            return res.send(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Correo verificado</title><style>body{font-family:sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;background:#1a1a1a;color:#fff;}div{text-align:center;padding:40px;}h1{color:#2ecc71;}p{color:#999;margin:16px 0;}.btn{display:inline-block;padding:12px 32px;background:#c9a84c;color:#1a1a1a;text-decoration:none;border-radius:6px;font-weight:700;}</style></head><body><div><h1>✓ Correo verificado</h1><p>Tu cuenta ha sido verificada exitosamente. Ya puedes iniciar sesión.</p><a class="btn" href="${frontendUrl}">Ir a la aplicación</a></div></body></html>`);
+        }
 
         return res.json({
             success: true,
@@ -360,8 +356,9 @@ export const requestPasswordReset = async (req, res) => {
 
         await user.save();
 
+        const apiUrl = process.env.API_URL || `http://localhost:${process.env.PORT}`;
         const resetLink =
-            `http://localhost:${process.env.PORT}/restaurantManagement/v1/auth/reset-password?token=${resetToken}`;
+            `${apiUrl}/restaurantManagement/v1/auth/reset-password?token=${resetToken}`;
 
         await sendEmail(user.email, 'Recuperación de contraseña — Gestión Restaurante', resetPasswordTemplate(resetLink));
 
@@ -517,7 +514,7 @@ export const updateProfile = async (req, res) => {
     if (req.file) {
       try {
         const publicId = `profile-${Date.now()}`;
-        const uploadedId = await uploadImage(req.file.path, publicId);
+        const uploadedId = await uploadImage(req.file.buffer, publicId);
 
         // Si la anterior era de Cloudinary (no URL), eliminarla
         if (user.avatar && !/^https?:\/\//i.test(user.avatar) && user.avatar !== getDefaultAvatarUrl()) {
