@@ -1,5 +1,6 @@
 import { readFileSync, writeFileSync, readdirSync, statSync } from "fs";
-import { fileURLToPath, join } from "path";
+import { fileURLToPath } from "url";
+import { join } from "path";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const dir = join(__dirname, "..", "dist");
