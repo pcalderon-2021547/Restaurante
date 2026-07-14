@@ -1,0 +1,283 @@
+{
+  "info": {
+    "_postman_id": "delivery-api-collection",
+    "name": "Restaurant Delivery API",
+    "description": "Colección completa de endpoints para gestionar entregas a domicilio",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Deliveries",
+      "item": [
+        {
+          "name": "Create Delivery",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order\": \"64b9c3e4f8d5a1b2c3d4e5f6\",\n  \"deliveryAddress\": {\n    \"street\": \"Calle Principal\",\n    \"number\": \"123\",\n    \"neighborhood\": \"Centro\",\n    \"city\": \"Bogotá\",\n    \"postalCode\": \"110221\",\n    \"reference\": \"Edificio azul cerca al parque\",\n    \"latitude\": 4.5904,\n    \"longitude\": -74.0721\n  },\n  \"deliveryZone\": \"Centro\",\n  \"distance\": 5.5,\n  \"deliveryFee\": 8000,\n  \"estimatedDeliveryTime\": 30,\n  \"paymentMethod\": \"cash\",\n  \"specialInstructions\": \"Llamar al llegar al edificio\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/deliveries",
+              "host": ["{{base_url}}"],
+              "path": ["api", "deliveries"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Deliveries",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/deliveries",
+              "host": ["{{base_url}}"],
+              "path": ["api", "deliveries"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Delivery by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/deliveries/{{delivery_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "deliveries", "{{delivery_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Delivery",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"specialInstructions\": \"Llamar antes de llegar\",\n  \"estimatedDeliveryTime\": 45\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/deliveries/{{delivery_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "deliveries", "{{delivery_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Delivery Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"in_transit\",\n  \"notes\": \"Ya estoy en camino al restaurante\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/deliveries/{{delivery_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "deliveries", "{{delivery_id}}", "status"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Assign Delivery Person",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deliveryPersonId\": \"64b9c3e4f8d5a1b2c3d4e5f7\",\n  \"contact\": \"3105551234\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/deliveries/{{delivery_id}}/assign",
+              "host": ["{{base_url}}"],
+              "path": ["api", "deliveries", "{{delivery_id}}", "assign"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Confirm Delivery",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"signature\": \"data:image/png;base64,iVBORw0KGgoAAAANSUhEUg...\",\n  \"rating\": 5,\n  \"feedback\": \"Excelente entrega, muy rápido y el pedido llegó en perfecto estado\",\n  \"deliveryNotes\": \"Cliente muy satisfecho\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/deliveries/{{delivery_id}}/confirm",
+              "host": ["{{base_url}}"],
+              "path": ["api", "deliveries", "{{delivery_id}}", "confirm"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Delivery",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Cliente canceló la orden antes de que saliera a entregar\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/deliveries/{{delivery_id}}/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["api", "deliveries", "{{delivery_id}}", "cancel"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Deliveries by Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/deliveries/status/in_transit",
+              "host": ["{{base_url}}"],
+              "path": ["api", "deliveries", "status", "in_transit"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Deliveries by Person",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/deliveries/person/{{delivery_person_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "deliveries", "person", "{{delivery_person_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Delivery",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/deliveries/{{delivery_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "deliveries", "{{delivery_id}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "your-jwt-token-here",
+      "type": "string"
+    },
+    {
+      "key": "delivery_id",
+      "value": "64b9c3e4f8d5a1b2c3d4e5f6",
+      "type": "string"
+    },
+    {
+      "key": "delivery_person_id",
+      "value": "64b9c3e4f8d5a1b2c3d4e5f7",
+      "type": "string"
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "name": "server-admin-IN6BM",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "check:profile": "node tests/checkProfile.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.29.3",
+  "pnpm": {
+    "onlyBuiltDependencies": ["@scarf/scarf"]
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11",
+    "vitest": "^4.1.6"
+  },
+  "vitest": {
+    "test": {
+      "environment": "node"
+    }
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.7.0",
+    "cors": "^2.8.6",
+    "crypto": "^1.0.1",
+    "debug": "^4.4.3",
+    "dotenv": "^17.3.1",
+    "exceljs": "^4.4.0",
+    "express": "^5.2.1",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.2.1",
+    "morgan": "^1.10.1",
+    "multer": "^2.0.2",
+    "nodemailer": "^8.0.1",
+    "pdfkit": "^0.15.2",
+    "pg": "^8.19.0",
+    "pg-hstore": "^2.3.4",
+    "sequelize": "^6.37.7",
+    "swagger-jsdoc": "^6.2.8",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "swagger-ui-express": "^5.0.1",
+    "uuid": "^9.0.0"
+  }
+}

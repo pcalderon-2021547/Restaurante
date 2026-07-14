@@ -1,0 +1,91 @@
+services:
+  - type: web
+    name: server-restaurant
+    runtime: docker
+    dockerfilePath: ./server-restaurant/Dockerfile
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3010"
+      - key: URI_MONGO
+        sync: false
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: "5432"
+      - key: DB_NAME
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASS
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_ISSUER
+        sync: false
+      - key: JWT_AUDIENCE
+        sync: false
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: CLOUDINARY_FOLDER
+        sync: false
+      - key: API_URL
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+    healthCheckPath: /restaurantManagement/v1/Health
+
+  - type: web
+    name: server-admin
+    runtime: docker
+    dockerfilePath: ./server-admin/Dockerfile
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3006"
+      - key: URI_MONGODB
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: CLOUDINARY_FOLDER
+        sync: false
+    healthCheckPath: /kinalSportsAdmin/v1/health
+
+  - type: web
+    name: server-user
+    runtime: docker
+    dockerfilePath: ./server-user/Dockerfile
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3003"
+      - key: URI_MONGODB
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: CLOUDINARY_FOLDER
+        sync: false
+    healthCheckPath: /kinalSportsUser/v1/health
