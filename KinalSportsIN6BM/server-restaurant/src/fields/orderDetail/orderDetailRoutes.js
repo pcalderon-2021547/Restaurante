@@ -69,7 +69,7 @@ router.post(
 
 router.get('/', getOrderDetails);
 
-router.get('/order/:orderId', validateJWT, requireRole('ADMIN_ROLE', 'USER_ROLE'), getOrderDetailsByOrder);
+router.get('/order/:orderId', validateJWT, requireRole('ADMIN_ROLE', 'ADMIN_RESTAURANT_ROLE', 'USER_ROLE'), getOrderDetailsByOrder);
 
 router.put(
     '/update/:id',

@@ -9,6 +9,7 @@ import GoldButton from "../../../shared/components/ui/GoldButton";
 import DangerButton from "../../../shared/components/ui/DangerButton";
 import LoadingSpinner from "../../../shared/components/ui/LoadingSpinner";
 import * as restaurantService from "../../../shared/api/restaurantService";
+import { confirmAction } from "../../../shared/utils/confirmAction";
 
 const STATUS_FLOW = [
   { key: "pending", icon: "create-outline", label: "Pedido creado" },
@@ -118,21 +119,15 @@ const OrderDetailScreen = ({ route, navigation }) => {
   }, [initialOrder._id, initialOrder.type]);
 
   const handleCancel = () => {
-    Alert.alert("Cancelar Pedido", "¿Estás seguro?", [
-      { text: "No", style: "cancel" },
-      {
-        text: "Sí, cancelar", style: "destructive",
-        onPress: async () => {
-          try {
-            await restaurantService.updateOrder(order._id, { status: "cancelled" });
-            setOrder({ ...order, status: "cancelled" });
-            Alert.alert("Pedido cancelado");
-          } catch (err) {
-            Alert.alert("Error", err.response?.data?.message || "No se pudo cancelar");
-          }
-        },
-      },
-    ]);
+    confirmAction("Cancelar Pedido", "¿Estás seguro?", async () => {
+      try {
+        await restaurantService.updateOrder(order._id, { status: "cancelled" });
+        setOrder({ ...order, status: "cancelled" });
+        Alert.alert("Pedido cancelado", "Tu pedido ha sido cancelado exitosamente.");
+      } catch (err) {
+        Alert.alert("Error", err.response?.data?.message || "No se pudo cancelar");
+      }
+    });
   };
 
   const handleConfirmDelivery = async () => {

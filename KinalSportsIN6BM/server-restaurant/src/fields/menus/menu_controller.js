@@ -49,7 +49,7 @@ export const createMenu = async (req, res) => {
 
         // Subir imagen si viene en el request
         if (req.file) {
-            req.body.image = await uploadImage(req.file.path, `menu_${Date.now()}`);
+            req.body.image = await uploadImage(req.file.buffer, `menu_${Date.now()}`);
         }
 
         const menu = new Menu(req.body);
@@ -99,7 +99,7 @@ export const updateMenu = async (req, res) => {
         // Actualizar imagen si viene nueva
         if (req.file) {
             if (existingMenu.image) await deleteImage(existingMenu.image);
-            req.body.image = await uploadImage(req.file.path, `menu_${id}_${Date.now()}`);
+            req.body.image = await uploadImage(req.file.buffer, `menu_${id}_${Date.now()}`);
         }
 
         const menu = await Menu.findByIdAndUpdate(id, req.body, { new: true, runValidators: true });
